@@ -147,8 +147,8 @@ textarea { resize: vertical; min-height: 120px; }
   box-shadow: 0 24px 80px rgba(0,0,0,0.45), 0 4px 16px rgba(0,0,0,0.12);
 }
 .login-card--light h1 { color: #0A0A0A; }
-.login-card--light .subtitle { color: #666666; }
-.login-card--light label { color: #555555; }
+.login-card--light .subtitle { color: #0A0A0A; }
+.login-card--light label { color: #0A0A0A; }
 .login-card--light .error { color: var(--red); }
 
 .login-card img { width: 180px; margin-bottom: 24px; }
