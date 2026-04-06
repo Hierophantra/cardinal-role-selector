@@ -15,7 +15,7 @@ import ScreenConfirmation from './screens/ScreenConfirmation.jsx';
 import { upsertSubmission } from '../lib/supabase.js';
 import { STEPS } from '../data/content.js';
 
-const VALID_PARTNERS = { theo: 'Theo', jerry: 'Jerry' };
+const VALID_PARTNERS = { theo: 'Theo', jerry: 'Jerry', test: 'Test' };
 
 const emptyAnswers = {
   purpose_orientation: null,

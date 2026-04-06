@@ -17,6 +17,8 @@ export default function Login() {
       navigate('/q/jerry');
     } else if (trimmed === import.meta.env.VITE_ADMIN_KEY) {
       navigate('/admin');
+    } else if (trimmed === import.meta.env.VITE_TEST_KEY) {
+      navigate('/q/test');
     } else {
       setError("That code doesn't match. Try again.");
     }
