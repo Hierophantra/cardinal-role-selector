@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProgressBar from './ProgressBar.jsx';
@@ -12,7 +12,7 @@ import ScreenMirror from './screens/ScreenMirror.jsx';
 import ScreenDelegate from './screens/ScreenDelegate.jsx';
 import ScreenVision from './screens/ScreenVision.jsx';
 import ScreenConfirmation from './screens/ScreenConfirmation.jsx';
-import { upsertSubmission } from '../lib/supabase.js';
+import { upsertSubmission, fetchSubmission } from '../lib/supabase.js';
 import { STEPS } from '../data/content.js';
 
 const VALID_PARTNERS = { theo: 'Theo', jerry: 'Jerry', test: 'Test' };
@@ -34,16 +34,29 @@ export default function Questionnaire() {
   const { partner } = useParams();
   const navigate = useNavigate();
 
+  const [checking, setChecking] = useState(true);
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState(emptyAnswers);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
   if (!VALID_PARTNERS[partner]) {
     navigate('/', { replace: true });
     return null;
   }
 
   const partnerName = VALID_PARTNERS[partner];
-  const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState(emptyAnswers);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState('');
+
+  // On mount, check if this partner already has a submission
+  useEffect(() => {
+    fetchSubmission(partner)
+      .then((existing) => {
+        if (existing) setAlreadySubmitted(true);
+      })
+      .catch(console.error)
+      .finally(() => setChecking(false));
+  }, [partner]);
 
   const totalSteps = STEPS.length;
 
@@ -121,6 +134,76 @@ export default function Questionnaire() {
   };
 
   const currentKey = STEPS[step];
+
+  // Loading state while we check Supabase
+  if (checking) {
+    return (
+      <div className="app-shell">
+        <div className="app-header">
+          <div className="brand">
+            <img src="/logo.png" alt="Cardinal" />
+            <span>Role Definition Tool</span>
+          </div>
+        </div>
+        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+          <p className="muted">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Already submitted state
+  if (alreadySubmitted && step !== totalSteps - 1) {
+    return (
+      <div className="app-shell">
+        <div className="app-header">
+          <div className="brand">
+            <img src="/logo.png" alt="Cardinal" />
+            <span>Role Definition Tool</span>
+          </div>
+          <div className="partner-tag">{partnerName}</div>
+        </div>
+        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '70vh' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            style={{ maxWidth: 520, width: '100%', textAlign: 'center' }}
+          >
+            <div style={{
+              width: 64, height: 64, borderRadius: '50%',
+              background: 'rgba(45, 143, 94, 0.15)',
+              border: '1px solid rgba(45, 143, 94, 0.4)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 24px',
+              fontSize: 28,
+            }}>
+              ✓
+            </div>
+            <div className="eyebrow" style={{ color: 'var(--success)', marginBottom: 12 }}>Already Submitted</div>
+            <h2 style={{ fontSize: 26, marginBottom: 14 }}>
+              You've already completed this, {partnerName}.
+            </h2>
+            <p style={{ color: 'var(--muted)', lineHeight: 1.65, fontSize: 15 }}>
+              Your responses have been recorded and are with Trace for review.
+              If you need to make a change or have any questions, reach out to Trace directly.
+            </p>
+            <div style={{
+              marginTop: 32,
+              padding: '16px 20px',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              fontSize: 14,
+              color: 'var(--muted)',
+            }}>
+              Questions? Contact Trace Curry.
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
