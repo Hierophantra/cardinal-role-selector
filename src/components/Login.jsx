@@ -26,12 +26,13 @@ export default function Login() {
 
   return (
     <div className="login-wrap">
-      <form className="login-card fade-in" onSubmit={submit}>
+      <form className="login-card login-card--light fade-in" onSubmit={submit}>
         <img src="/logo.png" alt="Cardinal Roofing & Renovations" />
         <h1>Role Definition Tool</h1>
         <div className="subtitle">Cardinal Roofing &amp; Renovations</div>
         <label htmlFor="access">Enter your access code</label>
         <input
+          className="input--light"
           id="access"
           type="password"
           autoFocus
@@ -40,7 +41,10 @@ export default function Login() {
           placeholder="••••••••"
         />
         {error && <div className="error">{error}</div>}
-        <button className="btn btn-primary" style={{ width: '100%', marginTop: 20, justifyContent: 'center' }}>
+        <button
+          className="btn btn-primary"
+          style={{ width: '100%', marginTop: 20, justifyContent: 'center' }}
+        >
           Enter
         </button>
       </form>

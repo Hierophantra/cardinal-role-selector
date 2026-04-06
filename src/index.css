@@ -139,7 +139,19 @@ textarea { resize: vertical; min-height: 120px; }
   text-align: center;
   box-shadow: 0 30px 80px rgba(0,0,0,0.5);
 }
-.login-card img { width: 160px; margin-bottom: 24px; }
+
+/* White variant — logo shows clearly */
+.login-card--light {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,0.08);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.45), 0 4px 16px rgba(0,0,0,0.12);
+}
+.login-card--light h1 { color: #0A0A0A; }
+.login-card--light .subtitle { color: #666666; }
+.login-card--light label { color: #555555; }
+.login-card--light .error { color: var(--red); }
+
+.login-card img { width: 180px; margin-bottom: 24px; }
 .login-card h1 {
   font-size: 26px;
   margin-bottom: 6px;
@@ -165,6 +177,18 @@ textarea { resize: vertical; min-height: 120px; }
   font-size: 13px;
   margin-top: 10px;
   text-align: left;
+}
+
+/* Light input override for white card */
+.input--light {
+  background: #F5F5F5 !important;
+  color: #0A0A0A !important;
+  border-color: #DDDDDD !important;
+}
+.input--light::placeholder { color: #AAAAAA; }
+.input--light:focus {
+  border-color: var(--red) !important;
+  box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.15) !important;
 }
 
 /* ---------- screens ---------- */
@@ -547,6 +571,48 @@ textarea { resize: vertical; min-height: 120px; }
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ---------- option stagger ---------- */
+@keyframes optionIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.option-list .option { animation: optionIn 0.28s ease both; }
+.option-list .option:nth-child(1) { animation-delay: 0.04s; }
+.option-list .option:nth-child(2) { animation-delay: 0.11s; }
+.option-list .option:nth-child(3) { animation-delay: 0.18s; }
+.option-list .option:nth-child(4) { animation-delay: 0.25s; }
+
+/* Function cards stagger on ownership screen */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.function-card { animation: cardIn 0.3s ease both; }
+.function-card:nth-child(1) { animation-delay: 0.05s; }
+.function-card:nth-child(2) { animation-delay: 0.12s; }
+.function-card:nth-child(3) { animation-delay: 0.19s; }
+.function-card:nth-child(4) { animation-delay: 0.26s; }
+.function-card:nth-child(5) { animation-delay: 0.33s; }
+.function-card:nth-child(6) { animation-delay: 0.40s; }
+
+/* Insight slides up instead of just fading */
+@keyframes insightIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.insight { animation: insightIn 0.3s ease both; }
+.cap-banner { animation: insightIn 0.25s ease both; }
+
+/* Selected option pulse */
+@keyframes selectPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(196, 30, 58, 0.35); }
+  60%  { box-shadow: 0 0 0 6px rgba(196, 30, 58, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(196, 30, 58, 0); }
+}
+.option.selected { animation: selectPulse 0.4s ease; }
 
 .center { text-align: center; }
 .muted { color: var(--muted); }
