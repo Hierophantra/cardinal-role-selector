@@ -57,7 +57,7 @@ export default function AdminComparison() {
     <div className="app-shell">
       <div className="app-header">
         <div className="brand">
-          <img src="/logo.svg" alt="Cardinal" />
+          <img src="/logo.png" alt="Cardinal" />
           <span>Role Definition Tool</span>
         </div>
         <div className="partner-tag">Admin</div>

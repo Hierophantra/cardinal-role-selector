@@ -25,7 +25,7 @@ export default function Login() {
   return (
     <div className="login-wrap">
       <form className="login-card fade-in" onSubmit={submit}>
-        <img src="/logo.svg" alt="Cardinal Roofing & Renovations" />
+        <img src="/logo.png" alt="Cardinal Roofing & Renovations" />
         <h1>Role Definition Tool</h1>
         <div className="subtitle">Cardinal Roofing &amp; Renovations</div>
         <label htmlFor="access">Enter your access code</label>
