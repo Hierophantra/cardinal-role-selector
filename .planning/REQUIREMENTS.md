@@ -21,9 +21,9 @@
 ### KPI Selection
 
 - [x] **KPI-01**: Partner sees ~8-9 KPI template options across operational categories (sales, ops, client satisfaction, team management)
-- [ ] **KPI-02**: Partner must select exactly 5 KPIs from available templates
+- [x] **KPI-02**: Partner must select exactly 5 KPIs from available templates
 - [x] **KPI-03**: Partner selects 1 personal growth priority and 2 business growth priorities
-- [ ] **KPI-04**: Partner sees a lock-in confirmation screen summarizing their choices before committing for 90 days
+- [x] **KPI-04**: Partner sees a lock-in confirmation screen summarizing their choices before committing for 90 days
 - [x] **KPI-05**: After lock-in, KPI labels are snapshotted into the selection record (immune to template edits)
 - [x] **KPI-06**: Locked partners cannot modify their KPI selections without admin intervention
 
@@ -89,9 +89,9 @@
 | DATA-04 | Phase 1 | Complete |
 | DATA-05 | Phase 1 | Complete |
 | KPI-01 | Phase 2 | Complete |
-| KPI-02 | Phase 2 | Pending |
+| KPI-02 | Phase 2 | Complete |
 | KPI-03 | Phase 2 | Complete |
-| KPI-04 | Phase 2 | Pending |
+| KPI-04 | Phase 2 | Complete |
 | KPI-05 | Phase 2 | Complete |
 | KPI-06 | Phase 2 | Complete |
 | SCORE-01 | Phase 3 | Pending |

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-04-10T05:57:37.054Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-04-10T06:04:55.979Z"
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 02 (kpi-selection) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Plan: 2 of 3
 
 *Updated after each plan completion*
 | Phase 02-kpi-selection P01 | 3m | 4 tasks | 4 files |
+| Phase 02-kpi-selection P02 | ~3m | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,9 @@ Recent decisions affecting current work:
 - [Phase 02-kpi-selection]: No strict unique index on growth_priorities(partner,type) - would break 1 personal + 2 business rule; upsert by id instead
 - [Phase 02-kpi-selection]: HUB_COPY.partner.status.roleCompleteKpisLocked converted from string to (date) => string per UI-SPEC D-14
 - [Phase 02-kpi-selection]: lockKpiSelections returns ISO lock date so confirmation screen can render without recompute
+- [Phase 02-kpi-selection]: Single view-state in KpiSelection drives AnimatePresence swap (selection/confirmation/success) — keeps state co-located without URL churn; satisfies D-06 Back-preserves-state contract
+- [Phase 02-kpi-selection]: Replace-all persistence on Continue: delete non-locked rows, re-insert fresh — prevents stale-row accumulation (Pattern 1 / Pitfall 2)
+- [Phase 02-kpi-selection]: Growth priority slots store {kind, templateId, customText} so DB round-trip preserves template-vs-custom distinction
 
 ### Pending Todos
 
@@ -79,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-10T05:57:37.051Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-04-10T06:04:49.596Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
