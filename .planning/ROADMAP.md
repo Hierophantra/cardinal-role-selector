@@ -25,7 +25,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Requirements**: DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, HUB-01, HUB-02
 **Success Criteria** (what must be TRUE):
   1. All four new Supabase tables (kpi_templates, kpi_selections, growth_priorities, scorecards) exist with correct columns and constraints
-  2. A partner logging in sees a hub with three labeled options: Role Definition, KPI Selection, Scorecard
+  2. A partner logging in sees a hub showing currently functional options (Role Definition card in Phase 1; KPI Selection and Scorecard cards added as their phases ship, per D-01)
   3. The admin logging in sees a hub with labeled access to all admin tools
   4. Supabase query functions for new tables are defined in src/lib/supabase.js and callable without error
 **Plans:** 2 plans

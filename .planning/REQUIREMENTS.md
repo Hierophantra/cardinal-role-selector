@@ -7,7 +7,7 @@
 
 ### Hub & Navigation
 
-- [ ] **HUB-01**: After login, partner sees a hub screen with three options: Role Definition, KPI Selection, Scorecard
+- [ ] **HUB-01**: After login, partner sees a hub screen showing currently functional options (Role Definition in Phase 1; KPI Selection and Scorecard added as their phases ship)
 - [ ] **HUB-02**: After login, admin sees hub with access to all admin tools (dashboard, comparison, KPI management, meeting mode)
 
 ### Schema & Data Layer
@@ -117,4 +117,4 @@
 
 ---
 *Requirements defined: 2026-04-09*
-*Last updated: 2026-04-09 after roadmap creation*
+*Last updated: 2026-04-10 — HUB-01 updated to align with D-01 (partner hub shows only functional options, growing organically)*
