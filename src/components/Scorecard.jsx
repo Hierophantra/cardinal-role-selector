@@ -157,7 +157,91 @@ export default function Scorecard() {
     }
   }
 
-  // (Auto-save + submit handlers added in Task 2)
+  // Core persist function — replace-in-place JSONB upsert (Pattern 3 in RESEARCH.md)
+  async function persist(nextKpiResults) {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const row = await upsertScorecard({
+        partner,
+        week_of: currentWeekOf,
+        kpi_results: nextKpiResults,
+        committed_at: committedAt,
+        submitted_at: new Date().toISOString(),
+      });
+      // Replace row in allScorecards so history + hub derivations stay consistent
+      setAllScorecards((prev) => {
+        const without = prev.filter((s) => s.week_of !== row.week_of);
+        return [row, ...without].sort((a, b) => b.week_of.localeCompare(a.week_of));
+      });
+      // Saved indicator: show 800ms after resolve, fade out 2s later
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      if (savedFadeRef.current) clearTimeout(savedFadeRef.current);
+      savedTimerRef.current = setTimeout(() => {
+        setSavedVisible(true);
+        savedFadeRef.current = setTimeout(() => setSavedVisible(false), 2000);
+      }, 800);
+    } catch (err) {
+      console.error(err);
+      setSaveError(SCORECARD_COPY.errorSubmit);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function setResult(kpiId, result) {
+    if (weekClosed) return;
+    const next = {
+      ...kpiResults,
+      [kpiId]: {
+        result,
+        reflection: kpiResults[kpiId]?.reflection ?? '',
+      },
+    };
+    setKpiResults(next);
+    persist(next);
+  }
+
+  function setReflectionLocal(kpiId, text) {
+    // Optimistic local update — persist on blur
+    setKpiResults((prev) => ({
+      ...prev,
+      [kpiId]: {
+        result: prev[kpiId]?.result ?? null,
+        reflection: text,
+      },
+    }));
+  }
+
+  function persistReflection(kpiId) {
+    if (weekClosed) return;
+    const current = kpiResults[kpiId];
+    if (!current) return;
+    persist(kpiResults);
+  }
+
+  async function handleSubmit() {
+    if (submitting || !allAnsweredWithReflection) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await upsertScorecard({
+        partner,
+        week_of: currentWeekOf,
+        kpi_results: kpiResults,
+        committed_at: committedAt,
+        submitted_at: new Date().toISOString(),
+      });
+      setView('success');
+      setTimeout(() => navigate(`/hub/${partner}`), 1800);
+    } catch (err) {
+      console.error(err);
+      setSubmitError(SCORECARD_COPY.errorSubmit);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   // (History row toggle added in Task 3)
 
   // ---- Early returns ----
@@ -221,16 +305,109 @@ export default function Scorecard() {
 
           {view === 'editing' && (
             <motion.div key="editing" className="screen" {...motionProps}>
-              {/* Task 2 fills in: meta row, 5 KPI rows, closed banner, submit row */}
-              {/* __EDITING_BODY__ */}
+              <div className="eyebrow">{SCORECARD_COPY.eyebrow}</div>
+              <div className="screen-header">
+                <h2>{SCORECARD_COPY.headingEditing}</h2>
+              </div>
+
+              <div className="scorecard-meta-row">
+                <span className={`scorecard-counter${answeredCount === 5 ? ' complete' : ''}`}>
+                  {answeredCount === 5 ? SCORECARD_COPY.counterComplete : SCORECARD_COPY.counter(answeredCount)}
+                </span>
+                <span className={`scorecard-saved${savedVisible ? ' visible' : ''}`}>
+                  {SCORECARD_COPY.savedIndicator}
+                </span>
+              </div>
+
+              {weekClosed && (
+                <p className="muted" style={{ marginBottom: 16 }}>
+                  {SCORECARD_COPY.weekClosedBanner(formatWeekRange(currentWeekOf))}
+                </p>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {lockedKpis.map((k) => {
+                  const entry = kpiResults[k.id] || { result: null, reflection: '' };
+                  const rowClass = [
+                    'scorecard-kpi-row',
+                    entry.result === 'yes' ? 'yes' : '',
+                    entry.result === 'no' ? 'no' : '',
+                  ].filter(Boolean).join(' ');
+                  const promptLabel = entry.result === 'yes'
+                    ? SCORECARD_COPY.prompts.success
+                    : entry.result === 'no'
+                      ? SCORECARD_COPY.prompts.blocker
+                      : null;
+                  return (
+                    <div key={k.id} className={rowClass}>
+                      <div className="scorecard-kpi-label">{k.label_snapshot}</div>
+                      <div className="scorecard-yn-row">
+                        <button
+                          type="button"
+                          className={`scorecard-yn-btn yes${entry.result === 'yes' ? ' active' : ''}`}
+                          onClick={() => setResult(k.id, 'yes')}
+                          disabled={weekClosed}
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          className={`scorecard-yn-btn no${entry.result === 'no' ? ' active' : ''}`}
+                          onClick={() => setResult(k.id, 'no')}
+                          disabled={weekClosed}
+                        >
+                          No
+                        </button>
+                      </div>
+                      {entry.result && (
+                        <div className="scorecard-reflection">
+                          <label className="scorecard-reflection-label">{promptLabel}</label>
+                          <textarea
+                            value={entry.reflection}
+                            onChange={(e) => setReflectionLocal(k.id, e.target.value)}
+                            onBlur={() => persistReflection(k.id)}
+                            disabled={weekClosed}
+                            rows={3}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {!weekClosed && (
+                <div className="nav-row" style={{ marginTop: 24 }}>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={handleSubmit}
+                    disabled={!allAnsweredWithReflection || submitting}
+                  >
+                    {SCORECARD_COPY.submitCta}
+                  </button>
+                </div>
+              )}
+              {!weekClosed && !allAnsweredWithReflection && (
+                <p className="scorecard-submit-note">{SCORECARD_COPY.submitNote}</p>
+              )}
+              {submitError && (
+                <p className="muted" style={{ color: 'var(--red)', textAlign: 'center', marginTop: 8 }}>{submitError}</p>
+              )}
+              {saveError && (
+                <p className="muted" style={{ color: 'var(--red)', textAlign: 'center', marginTop: 8 }}>{saveError}</p>
+              )}
+
               {/* __HISTORY_SECTION__ */}
             </motion.div>
           )}
 
           {view === 'success' && (
             <motion.div key="success" className="screen kpi-lock-success" {...motionProps}>
-              {/* Task 2 fills in: success heading + auto-redirect */}
-              {/* __SUCCESS_BODY__ */}
+              <div className="screen-header" style={{ textAlign: 'center' }}>
+                <h2>{SCORECARD_COPY.successHeading}</h2>
+                <p className="subtext">{SCORECARD_COPY.successSubtext}</p>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
