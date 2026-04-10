@@ -12,13 +12,13 @@ export default function Login() {
     if (!trimmed) return;
 
     if (trimmed === import.meta.env.VITE_THEO_KEY) {
-      navigate('/q/theo');
+      navigate('/hub/theo');
     } else if (trimmed === import.meta.env.VITE_JERRY_KEY) {
-      navigate('/q/jerry');
+      navigate('/hub/jerry');
     } else if (trimmed === import.meta.env.VITE_ADMIN_KEY) {
-      navigate('/admin');
+      navigate('/admin/hub');
     } else if (trimmed === import.meta.env.VITE_TEST_KEY) {
-      navigate('/q/test');
+      navigate('/hub/test');
     } else {
       setError("That code doesn't match. Try again.");
     }
