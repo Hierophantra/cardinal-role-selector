@@ -113,3 +113,30 @@ export async function upsertScorecard(record) {
   if (error) throw error;
   return data;
 }
+
+// --- KPI Selection (Phase 2) ---
+
+export async function fetchGrowthPriorityTemplates() {
+  const { data, error } = await supabase
+    .from('growth_priority_templates')
+    .select('*')
+    .order('type', { ascending: true })
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function lockKpiSelections(partner) {
+  const lockedUntil = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+  const { error: e1 } = await supabase
+    .from('kpi_selections')
+    .update({ locked_until: lockedUntil })
+    .eq('partner', partner);
+  if (e1) throw e1;
+  const { error: e2 } = await supabase
+    .from('growth_priorities')
+    .update({ locked_until: lockedUntil })
+    .eq('partner', partner);
+  if (e2) throw e2;
+  return lockedUntil;
+}
