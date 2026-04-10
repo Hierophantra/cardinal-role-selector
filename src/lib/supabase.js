@@ -140,3 +140,54 @@ export async function lockKpiSelections(partner) {
   if (e2) throw e2;
   return lockedUntil;
 }
+
+// --- Weekly Scorecard (Phase 3) ---
+
+/**
+ * Fetch all scorecards for a partner, newest week first.
+ * Used by Scorecard.jsx (current-week lookup + history list) and PartnerHub.jsx (card state derivation).
+ * Returns an array — may be empty.
+ */
+export async function fetchScorecards(partner) {
+  const { data, error } = await supabase
+    .from('scorecards')
+    .select('*')
+    .eq('partner', partner)
+    .order('week_of', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Stamp committed_at for the current week, creating the scorecards row if it doesn't exist.
+ * Initializes kpi_results with the given kpi_selection_ids mapped to { result: null, reflection: '' }
+ * so downstream textareas are always controlled (never switch controlled<->uncontrolled).
+ * Idempotent: re-calling on an already-committed week updates committed_at (acceptable; D-09 edge case 2).
+ *
+ * @param {'theo'|'jerry'} partner
+ * @param {string} weekOf 'YYYY-MM-DD' Monday local-time string (use getMondayOf from ../lib/week.js)
+ * @param {string[]} kpiSelectionIds array of kpi_selections.id UUIDs (typically 5)
+ * @returns the created/updated row
+ */
+export async function commitScorecardWeek(partner, weekOf, kpiSelectionIds) {
+  const emptyResults = Object.fromEntries(
+    kpiSelectionIds.map((id) => [id, { result: null, reflection: '' }])
+  );
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('scorecards')
+    .upsert(
+      {
+        partner,
+        week_of: weekOf,
+        kpi_results: emptyResults,
+        committed_at: now,
+        submitted_at: now,
+      },
+      { onConflict: 'partner,week_of' }
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
