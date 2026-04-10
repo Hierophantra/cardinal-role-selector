@@ -48,7 +48,7 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md — SQL migration 002 (growth_priority_templates + seed data) + 2 new supabase.js functions + KPI_COPY in content.js + Phase 2 CSS
 - [x] 02-02-PLAN.md — KpiSelection.jsx (selection + confirmation + lock-in) + KpiSelectionView.jsx (read-only) + App.jsx routes
-- [ ] 02-03-PLAN.md — PartnerHub.jsx three-state KPI card + status line + human-verify checkpoint
+- [x] 02-03-PLAN.md — PartnerHub.jsx three-state KPI card + status line + human-verify checkpoint
 **UI hint**: yes
 
 ### Phase 3: Weekly Scorecard
