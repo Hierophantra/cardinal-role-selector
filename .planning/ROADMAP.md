@@ -12,7 +12,7 @@ The existing role definition tool is complete. This roadmap builds the accountab
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Schema & Hub** - Data tables created and both partner and admin hub screens are live
+- [x] **Phase 1: Schema & Hub** - Data tables created and both partner and admin hub screens are live
 - [ ] **Phase 2: KPI Selection** - Partners can select, confirm, and lock in their 5 KPIs and growth priorities
 - [ ] **Phase 3: Weekly Scorecard** - Partners can submit and review weekly binary check-ins with reflection prompts
 - [ ] **Phase 4: Admin Tools & Meeting Mode** - Admin can manage all KPI data and facilitate structured Friday meetings
@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 2 plans
 Plans:
 - [x] 01-01-PLAN.md — SQL migration for 4 Supabase tables + 8 query functions in supabase.js
-- [ ] 01-02-PLAN.md — Partner hub and admin hub components with routing and login updates
+- [x] 01-02-PLAN.md — Partner hub and admin hub components with routing and login updates
 **UI hint**: yes
 
 ### Phase 2: KPI Selection
@@ -44,7 +44,11 @@ Plans:
   3. Partner sees a confirmation screen summarizing all choices before committing
   4. After lock-in, KPI labels are stored as a snapshot and the partner cannot reach the selection screen again
   5. Admin can see that a partner's KPIs are locked and the partner cannot modify them without admin action
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 02-01-PLAN.md — SQL migration 002 (growth_priority_templates + seed data) + 2 new supabase.js functions + KPI_COPY in content.js + Phase 2 CSS
+- [ ] 02-02-PLAN.md — KpiSelection.jsx (selection + confirmation + lock-in) + KpiSelectionView.jsx (read-only) + App.jsx routes
+- [ ] 02-03-PLAN.md — PartnerHub.jsx three-state KPI card + status line + human-verify checkpoint
 **UI hint**: yes
 
 ### Phase 3: Weekly Scorecard
@@ -80,7 +84,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Schema & Hub | 0/2 | Planning complete | - |
-| 2. KPI Selection | 0/TBD | Not started | - |
+| 1. Schema & Hub | 2/2 | Complete | 2026-04-10 |
+| 2. KPI Selection | 0/3 | Not started | - |
 | 3. Weekly Scorecard | 0/TBD | Not started | - |
 | 4. Admin Tools & Meeting Mode | 0/TBD | Not started | - |
