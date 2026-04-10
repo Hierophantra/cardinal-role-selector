@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { fetchSubmission, fetchKpiSelections } from '../lib/supabase.js';
-import { VALID_PARTNERS, PARTNER_DISPLAY, HUB_COPY, KPI_COPY } from '../data/content.js';
+import { fetchSubmission, fetchKpiSelections, fetchScorecards } from '../lib/supabase.js';
+import { getMondayOf } from '../lib/week.js';
+import { VALID_PARTNERS, PARTNER_DISPLAY, HUB_COPY, KPI_COPY, SCORECARD_COPY } from '../data/content.js';
 
 export default function PartnerHub() {
   const { partner } = useParams();
   const navigate = useNavigate();
   const [submission, setSubmission] = useState(null);
   const [kpiSelections, setKpiSelections] = useState([]);
+  const [scorecards, setScorecards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -19,10 +21,12 @@ export default function PartnerHub() {
     Promise.all([
       fetchSubmission(partner),
       fetchKpiSelections(partner),
+      fetchScorecards(partner),
     ])
-      .then(([sub, sels]) => {
+      .then(([sub, sels, cards]) => {
         setSubmission(sub);
         setKpiSelections(sels);
+        setScorecards(cards);
       })
       .catch((err) => {
         console.error(err);
@@ -42,16 +46,44 @@ export default function PartnerHub() {
     ? new Date(kpiSelections[0].locked_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : '';
 
-  // Status line priority: error > locked > in-progress > submitted-no-kpis > not-submitted
+  // Scorecard state derivation (Phase 3 — D-19)
+  const currentMonday = getMondayOf();
+  const thisWeekCard = scorecards.find((s) => s.week_of === currentMonday);
+  const committedThisWeek = Boolean(thisWeekCard?.committed_at);
+  const scorecardAnsweredCount = thisWeekCard
+    ? kpiSelections.reduce((n, k) => {
+        const r = thisWeekCard.kpi_results?.[k.id]?.result;
+        return r === 'yes' || r === 'no' ? n + 1 : n;
+      }, 0)
+    : 0;
+  const scorecardAllComplete = thisWeekCard && kpiSelections.length > 0
+    ? kpiSelections.every((k) => {
+        const r = thisWeekCard.kpi_results?.[k.id];
+        return r && (r.result === 'yes' || r.result === 'no') && r.reflection?.trim().length > 0;
+      })
+    : false;
+  const scorecardState = !kpiLocked
+    ? 'hidden'
+    : scorecardAllComplete
+      ? 'complete'
+      : committedThisWeek
+        ? 'inProgress'
+        : 'notCommitted';
+
+  // Precedence: error > !kpiLocked existing branches > scorecard branches (new, when kpiLocked) > fallback
   const statusText = error
     ? copy.errorLoad
-    : kpiLocked
-      ? copy.status.roleCompleteKpisLocked(lockedUntilDate)
-      : kpiInProgress && submission
-        ? copy.status.roleCompleteKpisInProgress
-        : submission
-          ? copy.status.roleCompleteNoKpis
-          : copy.status.roleNotComplete;
+    : !kpiLocked
+      ? (kpiInProgress && submission
+          ? copy.status.roleCompleteKpisInProgress
+          : submission
+            ? copy.status.roleCompleteNoKpis
+            : copy.status.roleNotComplete)
+      : scorecardState === 'complete'
+        ? copy.status.scorecardComplete
+        : scorecardState === 'inProgress'
+          ? copy.status.scorecardInProgress(scorecardAnsweredCount)
+          : copy.status.scorecardNotCommitted;
 
   return (
     <div className="app-shell">
@@ -99,7 +131,21 @@ export default function PartnerHub() {
               </Link>
             )}
 
-            {/* Scorecard card hidden until Phase 3 ships */}
+            {/* Weekly Scorecard — three states per D-19 (hidden until KPIs locked per D-18) */}
+            {kpiLocked && (
+              <Link to={`/scorecard/${partner}`} className="hub-card">
+                <div className="hub-card-icon">{'\u{1F4CA}'}</div>
+                <h3>{SCORECARD_COPY.hubCard.title}</h3>
+                <p>{SCORECARD_COPY.hubCard.description}</p>
+                <span className="hub-card-cta">
+                  {scorecardState === 'complete'
+                    ? SCORECARD_COPY.hubCard.ctaComplete
+                    : scorecardState === 'inProgress'
+                      ? SCORECARD_COPY.hubCard.ctaInProgress(scorecardAnsweredCount)
+                      : SCORECARD_COPY.hubCard.ctaNotCommitted}
+                </span>
+              </Link>
+            )}
           </div>
         </div>
       </div>
