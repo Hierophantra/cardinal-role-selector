@@ -17,13 +17,13 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 - ✓ Admin dashboard with submission status and partner profiles — existing
 - ✓ Side-by-side comparison view with gap analysis — existing
 - ✓ Re-entry blocking after submission — existing
+- ✓ Hub screen after login: partners choose between Role Definition, KPI Selection, or Scorecard — Phase 1
+- ✓ KPI selection flow: choose 5 from ~8-9 operational KPIs (sales, ops, client satisfaction, team management mix) — Phase 2
+- ✓ Growth priority selection: 1 personal + 2 business growth priorities — Phase 2
+- ✓ 90-day lock-in confirmation for both KPIs and growth priorities — Phase 2
 
 ### Active
 
-- [ ] Hub screen after login: partners choose between Role Definition, KPI Selection, or Scorecard
-- [ ] KPI selection flow: choose 5 from ~8-9 operational KPIs (sales, ops, client satisfaction, team management mix)
-- [ ] Growth priority selection: 1 personal + 2 business growth priorities
-- [ ] 90-day lock-in confirmation for both KPIs and growth priorities
 - [ ] Admin ability to create/edit/add KPI templates
 - [ ] Weekly scorecard: binary check-in (yes/no per KPI) with prompted reflection (success contributors / blockers)
 - [ ] Growth priority tracking: admin-controlled with optional partner input (admin can toggle permissions)
@@ -46,7 +46,8 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 - This is a brownfield project with the role definition tool fully built and working
 - Two specific users (Theo, Jerry) plus one admin (the facilitator)
 - Partners have already completed the role questionnaire — their data exists in Supabase
-- KPI content is placeholder/template for now — will be refined after upcoming partner meeting
+- KPI content is placeholder/template for now — 9 kpi_templates + 8 growth_priority_templates seeded; will be refined after upcoming partner meeting
+- Phases 1 (Schema & Hub) and 2 (KPI Selection) complete — partners can select and lock in 5 KPIs + 3 growth priorities for 90 days
 - The Friday meeting is the anchor ritual: admin facilitates, both partners present
 - Access code auth is intentionally simple — no user accounts needed for 3 users
 - Dark theme with Cardinal brand (red accents, gold labels) is established and should carry forward
@@ -87,4 +88,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-09 after initialization*
+*Last updated: 2026-04-10 after Phase 2 (KPI Selection) completion*
