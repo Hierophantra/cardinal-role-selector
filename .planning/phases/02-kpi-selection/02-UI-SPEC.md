@@ -140,7 +140,7 @@ color: var(--gold)
 background: rgba(212,168,67,0.10)
 border: 1px solid rgba(212,168,67,0.25)
 border-radius: 6px
-padding: 2px 8px
+padding: 4px 8px
 ```
 
 ### `.kpi-counter`
@@ -272,6 +272,10 @@ Lock badge: inline pill showing "Locked until [date]" — 12px, weight 700, `col
 ---
 
 ## Interaction Contract
+
+### Primary Visual Anchor
+
+Primary visual anchor: the KPI card list and counter badge form the focal zone on the selection screen; the "Lock In My KPIs" CTA is the exit anchor on the confirmation screen.
 
 ### KPI Card Selection (D-03)
 
@@ -429,6 +433,7 @@ transition={{ duration: 0.28, ease: 'easeOut' }}
 | Typography collapse (7→4 sizes, 3→2 weights) | gsd-ui-checker revision 2026-04-10 |
 | Spacing fixes (gap 6→8px, gap 10→12px, locked-notice exception) | gsd-ui-checker revision 2026-04-10 |
 | Empty-list copy entry | gsd-ui-checker revision 2026-04-10 |
+| `.kpi-category-tag` padding 2px→4px; primary visual anchor declaration | gsd-ui-checker revision 2026-04-10 |
 
 ---
 
