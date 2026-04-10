@@ -54,12 +54,12 @@ Inherits globally from `src/index.css`. No new typefaces. Declare only the roles
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
-| Body | 15px | 400 | 1.55 |
-| Label / Eyebrow | 11–12px | 700 | 1.0 (uppercase) |
 | Heading | 28px | 700 | 1.2 |
-| Muted / Subtext | 15px | 400 | 1.55 (color: `--muted`) |
+| Body | 15px | 400 | 1.55 |
+| Secondary / Button / History | 14px | 400 | 1.55 |
+| Label / Eyebrow | 12px | 700 | 1.0 (uppercase) |
 
-Source: `src/index.css` `.screen-header h2` (28px/1.2), `.screen-header .subtext` (15px), `.eyebrow` (11px/700), `p` (line-height: 1.55).
+Source: `src/index.css` `.screen-header h2` (28px/1.2), `.screen-header .subtext` (15px), `.eyebrow` (12px/700), `p` (line-height: 1.55).
 
 Reflection textarea: 15px body, weight 400. Placeholder text uses `--muted-2`. No character counter (D-07).
 
@@ -139,7 +139,7 @@ Reuse: `.app-shell`, `.container`, `.screen`, `.fade-in`, `.eyebrow`, `.screen-h
 **`.scorecard-yn-btn`**
 - Base: padding 10px 24px, height 44px (touch target), border-radius 10px
 - Background: `var(--surface-2)`, border: `1px solid var(--border)`
-- Font-size: 14px, font-weight: 600, color: `var(--muted)`
+- Font-size: 14px, font-weight: 700, color: `var(--muted)`
 - Transition: `all 0.15s ease`
 
 **`.scorecard-yn-btn.yes.active`**
@@ -159,7 +159,7 @@ Reuse: `.app-shell`, `.container`, `.screen`, `.fade-in`, `.eyebrow`, `.screen-h
 - Renders only after yes/no is tapped for that KPI (D-04)
 
 **`.scorecard-reflection-label`**
-- Font-size: 13px, font-weight: 600, color: `var(--muted)`, text-transform: uppercase, letter-spacing: 0.1em, margin-bottom: 8px
+- Font-size: 14px, font-weight: 700, color: `var(--muted)`, text-transform: uppercase, letter-spacing: 0.1em, margin-bottom: 8px
 
 Textarea: reuse global `textarea` styles. Min-height: 80px (shorter than vision 120px default — check-ins are brief). Placeholder text: soft `--muted-2` color (handled by global `::placeholder`).
 
@@ -181,7 +181,7 @@ Textarea: reuse global `textarea` styles. Min-height: 80px (shorter than vision 
 Reuse `.nav-row` and `.btn-primary`. Primary CTA ("Submit check-in") disabled until all 5 KPIs have yes/no + reflection (D-05).
 
 **`.scorecard-submit-note`**
-- Font-size: 13px, color: `var(--muted-2)`, text-align: center, margin-top: 8px
+- Font-size: 14px, color: `var(--muted-2)`, text-align: center, margin-top: 8px
 - Visible only when CTA is disabled: "Fill in all 5 reflections to submit"
 
 ### History Section
@@ -191,7 +191,7 @@ Reuse `.nav-row` and `.btn-primary`. Primary CTA ("Submit check-in") disabled un
 - Optional label above it: `.eyebrow` class ("Past Check-ins"), margin-bottom: 16px
 
 **`.scorecard-history-list`**
-- Display: flex, flex-direction: column, gap: 10px
+- Display: flex, flex-direction: column, gap: 8px
 
 **`.scorecard-history-row`**
 - Background: `var(--surface)`, border: `1px solid var(--border)`, border-radius: 14px
@@ -231,7 +231,7 @@ Reuse `.nav-row` and `.btn-primary`. Primary CTA ("Submit check-in") disabled un
 - Font-size: 14px, weight: 400, color: `var(--muted)`
 
 **`.scorecard-history-kpi-result`**
-- Font-size: 13px, font-weight: 700, text-transform: uppercase, letter-spacing: 0.1em
+- Font-size: 14px, font-weight: 700, text-transform: uppercase, letter-spacing: 0.1em
 - Color `var(--success)` for "Yes", `var(--miss)` for "No", `var(--muted-2)` for "—"
 
 **`.scorecard-history-kpi-reflection`**
