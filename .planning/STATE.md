@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 01 complete
-stopped_at: Phase 2 context gathered
-last_updated: "2026-04-10T05:10:18.838Z"
+status: Ready to execute
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-04-10T05:57:37.054Z"
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 5
+  completed_plans: 3
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-09)
 
 **Core value:** Partners have clear, locked-in accountability commitments they check in on weekly, with an admin who can track progress and facilitate structured conversations.
-**Current focus:** Phase 01 complete — ready for Phase 02 (KPI Selection)
+**Current focus:** Phase 02 — kpi-selection
 
 ## Current Position
 
-Phase: 01 (schema-hub) — COMPLETE
-Next: Phase 02 (kpi-selection) — NOT STARTED
+Phase: 02 (kpi-selection) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Next: Phase 02 (kpi-selection) — NOT STARTED
 - Trend: stable
 
 *Updated after each plan completion*
+| Phase 02-kpi-selection P01 | 3m | 4 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,9 @@ Recent decisions affecting current work:
 - [Phase 01-schema-hub]: Partner hub shows only Role Definition card (D-01) — future cards added per phase
 - [Phase 01-schema-hub]: Admin hub shows all tools including disabled future ones (D-02)
 - [Phase 01-schema-hub]: Hub-first navigation — login redirects to hub, not direct to features
+- [Phase 02-kpi-selection]: No strict unique index on growth_priorities(partner,type) - would break 1 personal + 2 business rule; upsert by id instead
+- [Phase 02-kpi-selection]: HUB_COPY.partner.status.roleCompleteKpisLocked converted from string to (date) => string per UI-SPEC D-14
+- [Phase 02-kpi-selection]: lockKpiSelections returns ISO lock date so confirmation screen can render without recompute
 
 ### Pending Todos
 
@@ -75,6 +79,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-10T05:10:18.835Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-kpi-selection/02-CONTEXT.md
+Last session: 2026-04-10T05:57:37.051Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None
