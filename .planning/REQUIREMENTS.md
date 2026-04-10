@@ -12,11 +12,11 @@
 
 ### Schema & Data Layer
 
-- [ ] **DATA-01**: Supabase table `kpi_templates` stores admin-defined KPI options with label, category, and description
-- [ ] **DATA-02**: Supabase table `kpi_selections` stores partner's 5 chosen KPIs with snapshotted labels and `locked_until` timestamp
-- [ ] **DATA-03**: Supabase table `growth_priorities` stores 1 personal + 2 business priorities per partner with lock and status fields
-- [ ] **DATA-04**: Supabase table `scorecards` stores weekly check-ins with composite PK `(partner, week_of)` and per-KPI yes/no + reflection text
-- [ ] **DATA-05**: All new Supabase operations are added as named functions in `src/lib/supabase.js`
+- [x] **DATA-01**: Supabase table `kpi_templates` stores admin-defined KPI options with label, category, and description
+- [x] **DATA-02**: Supabase table `kpi_selections` stores partner's 5 chosen KPIs with snapshotted labels and `locked_until` timestamp
+- [x] **DATA-03**: Supabase table `growth_priorities` stores 1 personal + 2 business priorities per partner with lock and status fields
+- [x] **DATA-04**: Supabase table `scorecards` stores weekly check-ins with composite PK `(partner, week_of)` and per-KPI yes/no + reflection text
+- [x] **DATA-05**: All new Supabase operations are added as named functions in `src/lib/supabase.js`
 
 ### KPI Selection
 
@@ -83,11 +83,11 @@
 |-------------|-------|--------|
 | HUB-01 | Phase 1 | Pending |
 | HUB-02 | Phase 1 | Pending |
-| DATA-01 | Phase 1 | Pending |
-| DATA-02 | Phase 1 | Pending |
-| DATA-03 | Phase 1 | Pending |
-| DATA-04 | Phase 1 | Pending |
-| DATA-05 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Complete |
+| DATA-02 | Phase 1 | Complete |
+| DATA-03 | Phase 1 | Complete |
+| DATA-04 | Phase 1 | Complete |
+| DATA-05 | Phase 1 | Complete |
 | KPI-01 | Phase 2 | Pending |
 | KPI-02 | Phase 2 | Pending |
 | KPI-03 | Phase 2 | Pending |

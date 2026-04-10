@@ -30,7 +30,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Supabase query functions for new tables are defined in src/lib/supabase.js and callable without error
 **Plans:** 2 plans
 Plans:
-- [ ] 01-01-PLAN.md — SQL migration for 4 Supabase tables + 8 query functions in supabase.js
+- [x] 01-01-PLAN.md — SQL migration for 4 Supabase tables + 8 query functions in supabase.js
 - [ ] 01-02-PLAN.md — Partner hub and admin hub components with routing and login updates
 **UI hint**: yes
 
