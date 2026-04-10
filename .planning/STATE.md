@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 3 context gathered
-last_updated: "2026-04-10T07:34:28.971Z"
+status: Ready to execute
+stopped_at: Completed 03-01-PLAN.md (scorecard foundation)
+last_updated: "2026-04-10T20:31:50.046Z"
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 8
+  completed_plans: 6
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-09)
 
 **Core value:** Partners have clear, locked-in accountability commitments they check in on weekly, with an admin who can track progress and facilitate structured conversations.
-**Current focus:** Phase 02 — kpi-selection
+**Current focus:** Phase 03 — weekly-scorecard
 
 ## Current Position
 
-Phase: 3
-Plan: Not started
+Phase: 03 (weekly-scorecard) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Plan: Not started
 | Phase 02-kpi-selection P01 | 3m | 4 tasks | 4 files |
 | Phase 02-kpi-selection P02 | ~3m | 3 tasks | 3 files |
 | Phase 02-kpi-selection P03 | ~45m | 1 tasks | 1 files |
+| Phase 03-weekly-scorecard P01 | 4min | 5 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,9 @@ Recent decisions affecting current work:
 - [Phase 02-kpi-selection]: PartnerHub locked KPI card uses button+navigate() (not Link) to avoid /kpi->/kpi-view double-redirect flash (Pitfall 5)
 - [Phase 02-kpi-selection]: PartnerHub status line is a four-branch inline ternary (error > locked > in-progress > submitted-no-kpis > not-submitted) matching existing local style
 - [Phase 02-kpi-selection]: Plan 02-03 human-verify checkpoint partially approved; 6-step E2E walkthrough deferred to 02-HUMAN-UAT.md until real KPI content is designated
+- [Phase 03-weekly-scorecard]: submitted_at reinterpreted as 'last updated' (not renamed) to preserve Phase 1/2 compatibility; additive-only migration 003 adds nullable committed_at
+- [Phase 03-weekly-scorecard]: kpi_results JSONB shape { [kpi_selection_id]: { result: 'yes'|'no'|null, reflection: '' } } — commitScorecardWeek pre-populates all 5 keys so textareas stay controlled
+- [Phase 03-weekly-scorecard]: Week math is strictly local-time in src/lib/week.js; toISOString is forbidden to avoid Sunday-night UTC drift west of UTC
 
 ### Pending Todos
 
@@ -87,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-10T07:34:28.968Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-weekly-scorecard/03-CONTEXT.md
+Last session: 2026-04-10T20:31:50.044Z
+Stopped at: Completed 03-01-PLAN.md (scorecard foundation)
+Resume file: None

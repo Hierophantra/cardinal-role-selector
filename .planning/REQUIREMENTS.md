@@ -29,11 +29,11 @@
 
 ### Weekly Scorecard
 
-- [ ] **SCORE-01**: Partner checks in weekly with binary yes/no for each of their 5 locked KPIs
-- [ ] **SCORE-02**: On successful KPIs, partner is prompted "What made this successful or what contributed?"
-- [ ] **SCORE-03**: On missed KPIs, partner is prompted "What prevented you from accomplishing this?"
-- [ ] **SCORE-04**: Scorecard stores one record per partner per week (no overwrites of prior weeks)
-- [ ] **SCORE-05**: Partner can view their past weeks' check-in history
+- [x] **SCORE-01**: Partner checks in weekly with binary yes/no for each of their 5 locked KPIs
+- [x] **SCORE-02**: On successful KPIs, partner is prompted "What made this successful or what contributed?"
+- [x] **SCORE-03**: On missed KPIs, partner is prompted "What prevented you from accomplishing this?"
+- [x] **SCORE-04**: Scorecard stores one record per partner per week (no overwrites of prior weeks)
+- [x] **SCORE-05**: Partner can view their past weeks' check-in history
 
 ### Admin — KPI Management
 
@@ -94,11 +94,11 @@
 | KPI-04 | Phase 2 | Complete |
 | KPI-05 | Phase 2 | Complete |
 | KPI-06 | Phase 2 | Complete |
-| SCORE-01 | Phase 3 | Pending |
-| SCORE-02 | Phase 3 | Pending |
-| SCORE-03 | Phase 3 | Pending |
-| SCORE-04 | Phase 3 | Pending |
-| SCORE-05 | Phase 3 | Pending |
+| SCORE-01 | Phase 3 | Complete |
+| SCORE-02 | Phase 3 | Complete |
+| SCORE-03 | Phase 3 | Complete |
+| SCORE-04 | Phase 3 | Complete |
+| SCORE-05 | Phase 3 | Complete |
 | ADMIN-01 | Phase 4 | Pending |
 | ADMIN-02 | Phase 4 | Pending |
 | ADMIN-03 | Phase 4 | Pending |

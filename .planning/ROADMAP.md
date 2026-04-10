@@ -63,7 +63,7 @@ Plans:
   5. Partner can view a list of their prior weekly check-ins
 **Plans:** 3 plans
 Plans:
-- [ ] 03-01-PLAN.md — Foundation: migration 003 (committed_at), week.js helpers, fetchScorecards/commitScorecardWeek, SCORECARD_COPY, 26 .scorecard-* CSS classes
+- [x] 03-01-PLAN.md — Foundation: migration 003 (committed_at), week.js helpers, fetchScorecards/commitScorecardWeek, SCORECARD_COPY, 26 .scorecard-* CSS classes
 - [ ] 03-02-PLAN.md — Scorecard.jsx (precommit/editing/success + history) + /scorecard/:partner route
 - [ ] 03-03-PLAN.md — PartnerHub three-state scorecard card + extended status line + human-verify checkpoint
 **UI hint**: yes
