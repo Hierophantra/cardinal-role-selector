@@ -28,7 +28,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. A partner logging in sees a hub with three labeled options: Role Definition, KPI Selection, Scorecard
   3. The admin logging in sees a hub with labeled access to all admin tools
   4. Supabase query functions for new tables are defined in src/lib/supabase.js and callable without error
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 01-01-PLAN.md — SQL migration for 4 Supabase tables + 8 query functions in supabase.js
+- [ ] 01-02-PLAN.md — Partner hub and admin hub components with routing and login updates
 **UI hint**: yes
 
 ### Phase 2: KPI Selection
@@ -77,7 +80,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Schema & Hub | 0/TBD | Not started | - |
+| 1. Schema & Hub | 0/2 | Planning complete | - |
 | 2. KPI Selection | 0/TBD | Not started | - |
 | 3. Weekly Scorecard | 0/TBD | Not started | - |
 | 4. Admin Tools & Meeting Mode | 0/TBD | Not started | - |
