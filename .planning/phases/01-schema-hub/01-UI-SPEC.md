@@ -37,7 +37,7 @@ Declared values (multiples of 4 only). Derived from measured patterns in `src/in
 | xs | 4px | Icon gaps, inline item spacing |
 | sm | 8px | Button icon gap, grid gaps, small margin offsets |
 | md | 16px | Default element spacing, card internal padding row gaps |
-| lg | 24px | Container horizontal padding, section gaps |
+| lg | 24px | Container horizontal padding, section gaps, hub card padding |
 | xl | 32px | Login card padding, major section breaks |
 | 2xl | 48px | Login card vertical padding |
 | 3xl | 64px | Page bottom clearance (container `padding-bottom: 80px` — nearest multiple of 4) |
@@ -56,17 +56,18 @@ Source: `src/index.css` spacing measurements.
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
-| Body | 15px | 400 (regular) | 1.55 |
-| Label / meta | 12px | 700 (bold) | 1.4 |
+| Label / eyebrow / meta | 12px | 700 (bold) | 1.4 |
+| Body / description | 15px | 400 (regular) | 1.55 |
+| Card title / display | 20px | 700 (bold) | 1.3 |
 | Heading (screen) | 28px | 700 (bold) | 1.2 |
-| Display (card title) | 20px | 700 (bold) | 1.3 |
 
-Notes:
-- Eyebrow labels: 11px, weight 700, uppercase, letter-spacing 0.18em, color `--red` — reuse `.eyebrow` class
-- Partner tag / subtitle: 12–13px, uppercase, letter-spacing 0.10–0.14em, color `--muted` — reuse `.partner-tag` / `.subtitle` classes
-- Hub card description text: 14px, weight 400, color `--muted`, line-height 1.5
-- Hub card title: 20px (matches `.admin-card h3 { font-size: 20px }`)
-- No new type sizes introduced — all values already exist in `src/index.css`
+Usage mapping:
+- 12px: `.eyebrow` class (uppercase, letter-spacing 0.18em, color `--red`), `.partner-tag` / `.subtitle` classes (uppercase, letter-spacing 0.10–0.14em, color `--muted`), all meta/label text
+- 15px: body copy, hub card description text (color `--muted`, line-height 1.5), status lines, status summary content
+- 20px: hub card titles — matches `.admin-card h3 { font-size: 20px }`
+- 28px: partner greeting heading, screen headings — matches `.screen-header h2`
+
+No new type sizes introduced — all values already exist in `src/index.css`.
 
 Source: `src/index.css` — `.screen-header h2`, `p`, `.option .statement`, `.admin-card h3`.
 
@@ -103,6 +104,8 @@ All values are CSS custom properties already defined in `src/index.css` `:root`.
 
 **Disabled state** (for admin hub future tools): `opacity: 0.4`, `cursor: not-allowed` — matches `.option:disabled` and `.btn-primary:disabled` patterns.
 
+**Focal point:** The partner greeting heading is the visual anchor on load; the hub card grid is the action surface.
+
 Source: `src/index.css` `:root` variables + existing component rules.
 
 ---
@@ -118,7 +121,7 @@ Extends `.admin-card` pattern. Large clickable tile with icon area, title, and d
 Background: var(--surface)
 Border: 1px solid var(--border)
 Border-radius: 16px
-Padding: 28px
+Padding: 24px
 Gap (flex column): 12px
 Hover: border-color var(--border-strong), transform: translateY(-1px), transition 0.18s ease
 Active/focus: border-color var(--red), box-shadow 0 0 0 1px var(--red) inset
@@ -133,7 +136,7 @@ Two-column grid on desktop, single column on mobile (matches `.admin-grid` break
 ```
 Display: grid
 Grid-template-columns: repeat(2, 1fr)
-Gap: 20px
+Gap: 16px
 Margin-top: 24px
 @media (max-width: 720px): grid-template-columns: 1fr
 ```
@@ -142,7 +145,7 @@ Margin-top: 24px
 Groups hub cards under a labeled section (for admin hub only).
 
 ```
-Eyebrow label: .eyebrow class (--red, 11px, uppercase, letter-spacing 0.18em)
+Eyebrow label: .eyebrow class (--red, 12px, uppercase, letter-spacing 0.18em)
 Margin-bottom between groups: 32px
 ```
 
@@ -154,8 +157,8 @@ Background: var(--surface)
 Border: 1px solid var(--border)
 Border-left: 3px solid var(--gold)
 Border-radius: 10px
-Padding: 16px 18px
-Font-size: 14px
+Padding: 16px 20px
+Font-size: 15px
 Line-height: 1.6
 ```
 
@@ -169,7 +172,7 @@ Personalized heading block at top of partner hub.
 
 ```
 Heading: 28px, weight 700, line-height 1.2 — uses .screen-header h2 directly
-Status line: 14px, weight 400, color --muted, margin-top 8px
+Status line: 15px, weight 400, color --muted, margin-top 8px
 ```
 
 Status text is dynamic — pulled from Supabase data state (see Copywriting Contract below).
