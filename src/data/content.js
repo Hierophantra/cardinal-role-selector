@@ -286,3 +286,72 @@ export const STEPS = [
   'vision',
   'confirmation',
 ];
+
+// --- Hub copy (Phase 1+) ---
+
+export const VALID_PARTNERS = ['theo', 'jerry', 'test'];
+
+export const PARTNER_DISPLAY = { theo: 'Theo', jerry: 'Jerry', test: 'Test' };
+
+export const HUB_COPY = {
+  partner: {
+    eyebrow: 'YOUR WORKSPACE',
+    greeting: (name) => `Welcome back, ${name}`,
+    status: {
+      roleCompleteNoKpis: 'Role Definition complete \u00b7 KPIs not yet chosen',
+      roleCompleteKpisLocked: 'Role Definition complete \u00b7 KPIs locked in',
+      roleNotComplete: 'Role Definition not yet completed',
+    },
+    cards: {
+      roleDefinition: {
+        title: 'Role Definition',
+        description: 'Complete your role and ownership questionnaire',
+        ctaSubmitted: 'View Submission',
+        ctaNotSubmitted: 'Start Questionnaire',
+      },
+    },
+    errorLoad: "Couldn't load your status. Refresh to try again.",
+  },
+  admin: {
+    eyebrow: 'ADMIN DASHBOARD',
+    greeting: 'Cardinal Accountability',
+    statusHeading: 'System Status',
+    status: {
+      bothSubmitted: 'Both partners have completed their role questionnaires',
+      oneSubmitted: (name, otherName) => `${name} has submitted \u00b7 ${otherName} has not yet submitted`,
+      noneSubmitted: 'Neither partner has submitted their role questionnaire',
+      noKpisLocked: 'No KPIs locked yet',
+      oneKpiLocked: (name) => `${name}'s KPIs are locked in`,
+      bothKpisLocked: 'Both partners have locked in their KPIs',
+    },
+    sections: {
+      partners: 'PARTNERS',
+      accountability: 'ACCOUNTABILITY',
+    },
+    cards: {
+      dashboard: {
+        title: 'Dashboard',
+        description: 'Overview of partner submissions and questionnaire status',
+      },
+      partnerProfiles: {
+        title: 'Partner Profiles',
+        description: 'View each partner\'s full role definition and ownership selections',
+      },
+      comparison: {
+        title: 'Side-by-Side Comparison',
+        description: 'Compare both partners\' answers across all questionnaire dimensions',
+      },
+      kpiManagement: {
+        title: 'KPI Management',
+        description: 'Manage KPI templates and review partner selections',
+        disabledLabel: 'Available in next update',
+      },
+      meetingMode: {
+        title: 'Meeting Mode',
+        description: 'Run a structured Friday accountability meeting with both partners',
+        disabledLabel: 'Available in next update',
+      },
+    },
+    errorLoad: "Couldn't load partner status. Refresh to try again.",
+  },
+};
