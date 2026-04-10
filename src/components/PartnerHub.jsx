@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { fetchSubmission } from '../lib/supabase.js';
-import { VALID_PARTNERS, PARTNER_DISPLAY, HUB_COPY } from '../data/content.js';
+import { fetchSubmission, fetchKpiSelections } from '../lib/supabase.js';
+import { VALID_PARTNERS, PARTNER_DISPLAY, HUB_COPY, KPI_COPY } from '../data/content.js';
 
 export default function PartnerHub() {
   const { partner } = useParams();
   const navigate = useNavigate();
   const [submission, setSubmission] = useState(null);
+  const [kpiSelections, setKpiSelections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -15,8 +16,14 @@ export default function PartnerHub() {
       navigate('/', { replace: true });
       return;
     }
-    fetchSubmission(partner)
-      .then(setSubmission)
+    Promise.all([
+      fetchSubmission(partner),
+      fetchKpiSelections(partner),
+    ])
+      .then(([sub, sels]) => {
+        setSubmission(sub);
+        setKpiSelections(sels);
+      })
       .catch((err) => {
         console.error(err);
         setError(true);
@@ -29,17 +36,22 @@ export default function PartnerHub() {
   const partnerName = PARTNER_DISPLAY[partner] ?? partner;
   const copy = HUB_COPY.partner;
 
-  // Determine status line text (per D-04)
+  const kpiLocked = kpiSelections.length > 0 && Boolean(kpiSelections[0]?.locked_until);
+  const kpiInProgress = kpiSelections.length > 0 && !kpiLocked;
+  const lockedUntilDate = kpiLocked
+    ? new Date(kpiSelections[0].locked_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : '';
+
+  // Status line priority: error > locked > in-progress > submitted-no-kpis > not-submitted
   const statusText = error
     ? copy.errorLoad
-    : submission
-      ? copy.status.roleCompleteNoKpis
-      : copy.status.roleNotComplete;
-
-  // Role Definition card CTA and route
-  const roleCardCta = submission
-    ? copy.cards.roleDefinition.ctaSubmitted
-    : copy.cards.roleDefinition.ctaNotSubmitted;
+    : kpiLocked
+      ? copy.status.roleCompleteKpisLocked(lockedUntilDate)
+      : kpiInProgress && submission
+        ? copy.status.roleCompleteKpisInProgress
+        : submission
+          ? copy.status.roleCompleteNoKpis
+          : copy.status.roleNotComplete;
 
   return (
     <div className="app-shell">
@@ -61,8 +73,33 @@ export default function PartnerHub() {
               <p>{copy.cards.roleDefinition.description}</p>
             </Link>
 
-            {/* KPI Selection and Scorecard cards hidden in Phase 1 per D-01 */}
-            {/* They will be conditionally rendered when their respective phases ship */}
+            {/* KPI Selection — three states per D-11 (always visible per D-12) */}
+            {kpiLocked ? (
+              <button
+                type="button"
+                className="hub-card"
+                onClick={() => navigate(`/kpi-view/${partner}`)}
+              >
+                <div className="hub-card-icon">{'\u{1F512}'}</div>
+                <h3>{KPI_COPY.hubCard.title}</h3>
+                <p>{KPI_COPY.hubCard.description}</p>
+                <span className="hub-card-cta">{KPI_COPY.hubCard.ctaLocked}</span>
+              </button>
+            ) : (
+              <Link to={`/kpi/${partner}`} className="hub-card">
+                <div className="hub-card-icon">{'\u{1F3AF}'}</div>
+                <h3>{KPI_COPY.hubCard.title}</h3>
+                <p>{KPI_COPY.hubCard.description}</p>
+                {kpiInProgress && (
+                  <span className="hub-card-in-progress">{KPI_COPY.hubCard.inProgressLabel}</span>
+                )}
+                <span className="hub-card-cta">
+                  {kpiInProgress ? KPI_COPY.hubCard.ctaInProgress : KPI_COPY.hubCard.ctaNotStarted}
+                </span>
+              </Link>
+            )}
+
+            {/* Scorecard card hidden until Phase 3 ships */}
           </div>
         </div>
       </div>
