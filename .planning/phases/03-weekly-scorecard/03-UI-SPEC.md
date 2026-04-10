@@ -225,7 +225,7 @@ Reuse `.nav-row` and `.btn-primary`. Primary CTA ("Submit check-in") disabled un
 
 **`.scorecard-history-kpi-detail`**
 - Border-top: `1px solid var(--border)`, padding: 12px 0
-- Layout: flex column, gap 6px
+- Layout: flex column, gap 8px
 
 **`.scorecard-history-kpi-label`**
 - Font-size: 14px, weight: 400, color: `var(--muted)`
