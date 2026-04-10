@@ -34,7 +34,7 @@ All existing spacing uses multiples of 4px. New Phase 2 CSS must follow the same
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px | Icon gaps, category tag inner padding |
-| sm | 8px | Gap between stacked KPI cards, choice row gap |
+| sm | 8px | Gap between stacked KPI cards, choice row gap, `.kpi-card` internal gap, `.kpi-counter` internal gap |
 | md | 16px | Section padding, hub-grid gap, container horizontal padding |
 | lg | 24px | Hub-grid top margin, container section gap |
 | xl | 32px | Section breaks between KPI list and growth priority section |
@@ -42,7 +42,7 @@ All existing spacing uses multiples of 4px. New Phase 2 CSS must follow the same
 | 3xl | 64px | Page bottom padding (existing `.container` pattern) |
 
 Exceptions:
-- KPI selection card padding: 18px 20px (follows existing `.option` padding — not a clean token but matches established pattern)
+- KPI selection card padding and `.kpi-locked-notice` padding: 18px 20px (follows existing `.option` padding — not a clean token but matches established pattern; both components declared here explicitly)
 - Touch / click target minimum: 44px height on all selectable cards (accessibility floor)
 - Counter badge: 28px height (tight pill — exception to scale, declared explicitly)
 
@@ -52,18 +52,20 @@ Exceptions:
 
 Sizes and weights derived from the live CSS custom properties and existing class declarations in `src/index.css`. No new sizes introduced; Phase 2 uses only sizes already in use.
 
-| Role | Size | Weight | Line Height | CSS Element |
-|------|------|--------|-------------|-------------|
-| Body | 15px | 400 | 1.55 | `.option .statement`, `.hub-card p`, `p` global |
-| Label / Meta | 12px | 700 | 1.4 | `.eyebrow`, `.option .label`, `.summary-section h4` |
-| Heading | 20px | 700 | 1.3 | `.hub-card h3`, `.screen-header h2` subheads |
+| Role | Size | Weight | Line Height | CSS Element / Usage |
+|------|------|--------|-------------|---------------------|
+| Label / Meta | 12px | 700 | 1.4 | `.eyebrow`, `.option .label`, `.summary-section h4`, category tag on KPI cards, counter badge, read-only lock badge |
+| Body | 15px | 400 | 1.55 | `.option .statement`, `.hub-card p`, `p` global, `.growth-priority-option` text, commitment statement (line-height 1.6 for that element only) |
+| Heading | 20px | 700 | 1.3 | `.hub-card h3`, `.screen-header h2` subheads, lock-in success text |
 | Display | 28px | 700 | 1.2 | `.screen-header h2` primary (existing) |
 
-Additional type roles for Phase 2:
-- **Counter badge** ("3 of 5 selected"): 13px, weight 600, line-height 1 — tight informational chip
-- **Category tag** on KPI card: 12px, weight 700, uppercase, letter-spacing 0.12em — follows `.option .label` pattern exactly
-- **Muted description** on KPI card: 13px, weight 400, color `var(--muted)` — follows `.option .desc`
-- **Commitment statement** on confirmation screen: 15px, weight 400, color `var(--muted)`, line-height 1.6
+**Mapping from previous draft to collapsed scale:**
+- 13px (counter badge, muted description) → 12px
+- 14px (`.growth-priority-option`) → 15px
+- 18px (lock success text) → 20px at weight 700
+- Weight 600 eliminated everywhere; use weight 700 for all labels, headings, display, and success text
+
+All Phase 2 components use exactly these 4 sizes and 2 weights (400 body, 700 label/heading/display). No exceptions.
 
 ---
 
@@ -75,7 +77,7 @@ Tokens are defined in `:root` in `src/index.css`. Phase 2 does not introduce new
 |------|-------|-------|
 | Dominant (60%) | `#141414` (`--bg`) | Page background (radial gradient overlay applied by `html` rule) |
 | Secondary (30%) | `#1E1E1E` (`--surface`) | KPI selection cards (idle), confirmation summary cards, read-only view cards |
-| Surface variant | `#242424` (`--surface-2`) | Custom write-in input background, inner nested sections |
+| Surface variant | `#242424` (`--surface-2`) | Custom write-in input background, inner nested sections, `.kpi-counter` background |
 | Accent (10%) | `#C41E3A` (`--red`) | Selected KPI card border + background gradient, "Lock In" CTA button, focus rings |
 | Gold accent | `#D4A843` (`--gold`) | Section eyebrows, category tag text on selected cards, status summary border-left, counter "X of 5" number |
 | Destructive | `#C41E3A` (`--red` / `--miss`) | Shared with accent — used only on error states and cap-reached banner. Not a separate color; distinguish by context class. |
@@ -118,7 +120,7 @@ transition: all 0.18s ease
 min-height: 44px
 display: flex
 flex-direction: column
-gap: 6px
+gap: 8px
 ```
 
 **Selected state** (`.kpi-card.selected`): mirrors `.option.selected` exactly — `border-color: var(--red)`, background gradient, `box-shadow: 0 0 0 1px var(--red) inset`, plus `selectPulse` animation (already defined in `@keyframes selectPulse`).
@@ -147,9 +149,9 @@ Sticky counter badge showing "X of 5 selected". Positioned at the top of the KPI
 ```
 display: inline-flex
 align-items: center
-gap: 6px
-font-size: 13px
-font-weight: 600
+gap: 8px
+font-size: 12px
+font-weight: 700
 color: var(--muted)
 background: var(--surface-2)
 border: 1px solid var(--border)
@@ -166,7 +168,7 @@ Vertical list container for KPI cards. Follows `.option-list` pattern.
 ```
 display: flex
 flex-direction: column
-gap: 10px
+gap: 12px
 ```
 
 Cards animate in using the existing `optionIn` keyframe with staggered `animation-delay` (0.04s per card, same as `.option-list .option:nth-child(n)`). Extend stagger to nth-child up to 9.
@@ -204,7 +206,8 @@ padding: 12px 16px
 border-radius: 10px
 background: var(--surface-2)
 border: 1px solid var(--border)
-font-size: 14px
+font-size: 15px
+font-weight: 400
 color: var(--muted)
 cursor: pointer
 transition: all 0.15s ease
@@ -238,9 +241,12 @@ border-left: 3px solid var(--red)
 border-radius: 10px
 padding: 18px 20px
 font-size: 15px
+font-weight: 400
 line-height: 1.6
 color: var(--text)
 ```
+
+Note: `padding: 18px 20px` matches the established `.option` padding exception declared in the Spacing Scale section above.
 
 ### `.kpi-lock-success`
 Post-lock-in success state message. Shown after `lockIn()` resolves, before redirect.
@@ -254,7 +260,7 @@ align-items: center
 gap: 16px
 ```
 
-Success text: `color: var(--success)`, font-size 18px, weight 600.
+Success text: `color: var(--success)`, font-size 20px, weight 700.
 
 ### `.kpi-readonly-view`
 Read-only selections view (`KpiSelectionView.jsx`). Reuses `.summary-section` for each KPI group and growth priority group.
@@ -340,6 +346,7 @@ All copy goes to a `KPI_COPY` constant in `src/data/content.js`. Hub status line
 | Read-only view heading | `Your locked KPIs` |
 | Read-only locked-until badge | `Locked until {date}` |
 | Loading state | `Loading...` (implicit — return null pattern; no copy needed) |
+| Empty list (0 templates returned) | `No KPI options available yet. Ask your admin to set up your KPI templates.` |
 | Error loading templates | `Failed to load KPI options. Please refresh and try again.` |
 | Submit error on Continue | `Failed to save your selections. Please try again.` |
 | Submit error on Lock In | `Failed to lock in your KPIs. Please try again.` |
@@ -419,6 +426,9 @@ transition={{ duration: 0.28, ease: 'easeOut' }}
 | Copy — lock success message | `02-CONTEXT.md` D-07 |
 | Route structure | `02-RESEARCH.md` recommended routes |
 | Pitfall: hub card locked click | `02-RESEARCH.md` Pitfall 5 |
+| Typography collapse (7→4 sizes, 3→2 weights) | gsd-ui-checker revision 2026-04-10 |
+| Spacing fixes (gap 6→8px, gap 10→12px, locked-notice exception) | gsd-ui-checker revision 2026-04-10 |
+| Empty-list copy entry | gsd-ui-checker revision 2026-04-10 |
 
 ---
 
