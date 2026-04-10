@@ -302,6 +302,9 @@ export const HUB_COPY = {
       roleCompleteKpisLocked: (date) => `Role Definition complete \u00b7 KPIs locked in until ${date}`,
       roleCompleteKpisInProgress: 'Role Definition complete \u00b7 KPI selection in progress',
       roleNotComplete: 'Role Definition not yet completed',
+      scorecardNotCommitted: 'This week: not committed',
+      scorecardInProgress: (n) => `This week: ${n} of 5`,
+      scorecardComplete: 'This week complete',
     },
     cards: {
       roleDefinition: {
@@ -416,5 +419,44 @@ export const KPI_COPY = {
     ctaInProgress: 'Continue Selection',
     ctaLocked: 'View Selections',
     inProgressLabel: 'In Progress',
+  },
+};
+
+// --- Weekly Scorecard copy (Phase 3) ---
+
+export const SCORECARD_COPY = {
+  eyebrow: 'Weekly Scorecard',
+  headingPreCommit: 'Your week starts here',
+  subtextPreCommit: 'Review your 5 KPIs and commit to tracking them this week.',
+  headingEditing: "This week's check-in",
+  commitCta: 'Commit to this week',
+  committingCta: 'Committing\u2026',
+  submitCta: 'Submit check-in',
+  submitNote: 'Fill in all 5 reflections to submit',
+  prompts: {
+    success: 'What made this work?',
+    blocker: 'What got in the way?',
+  },
+  counter: (n) => `${n} of 5 checked in`,
+  counterComplete: '5 of 5 \u2014 all done',
+  savedIndicator: 'Saved',
+  weekClosedBanner: (date) => `This week closed on ${date}.`,
+  successHeading: 'Check-in submitted',
+  successSubtext: 'See you next week.',
+  historyEyebrow: 'Past Check-ins',
+  historyEmpty: 'No past check-ins yet. Your history will appear here after your first week closes.',
+  historyNoCheckin: 'No check-in this week',
+  errorCommit: 'Could not commit. Try again.',
+  errorSubmit: 'Submission failed. Your progress is saved \u2014 try again.',
+  errorLoad: 'Could not load your scorecard. Refresh to try again.',
+  hubCard: {
+    title: 'Weekly Scorecard',
+    description: 'Check in on your 5 KPIs each week and track your progress over time.',
+    ctaNotCommitted: 'Commit to this week \u2192',
+    ctaInProgress: (n) => `${n} of 5 checked in \u2192`,
+    ctaComplete: 'This week complete \u2713',
+    statusNotCommitted: 'This week: not committed',
+    statusInProgress: (n) => `This week: ${n} of 5`,
+    statusComplete: 'This week complete',
   },
 };
