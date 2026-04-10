@@ -916,3 +916,263 @@ textarea { resize: vertical; min-height: 120px; }
   border-radius: 6px;
   padding: 4px 8px;
 }
+
+/* --- Scorecard (Phase 3) --- */
+
+.scorecard-commit-gate {
+  background: linear-gradient(180deg, rgba(196,30,58,0.08), rgba(196,30,58,0.02));
+  border: 1px solid rgba(196,30,58,0.25);
+  border-left: 3px solid var(--red);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.scorecard-kpi-preview {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.scorecard-kpi-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.18s ease;
+}
+
+.scorecard-kpi-row.yes {
+  border-color: rgba(45,143,94,0.4);
+  border-left: 3px solid var(--success);
+}
+
+.scorecard-kpi-row.no {
+  border-color: rgba(196,30,58,0.4);
+  border-left: 3px solid var(--red);
+}
+
+.scorecard-kpi-label {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.scorecard-yn-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.scorecard-yn-btn {
+  padding: 10px 24px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.scorecard-yn-btn.yes.active {
+  background: rgba(45,143,94,0.18);
+  border-color: var(--success);
+  color: var(--text);
+}
+
+.scorecard-yn-btn.no.active {
+  background: rgba(196,30,58,0.18);
+  border-color: var(--red);
+  color: var(--text);
+}
+
+.scorecard-yn-btn:hover:not(.active):not(:disabled) {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.scorecard-reflection {
+  animation: fadeIn 0.25s ease both;
+  display: flex;
+  flex-direction: column;
+}
+
+.scorecard-reflection-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.scorecard-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.scorecard-counter {
+  display: inline-flex;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.scorecard-counter.complete {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.scorecard-saved {
+  font-size: 12px;
+  color: var(--gold);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.scorecard-saved.visible {
+  opacity: 1;
+}
+
+.scorecard-submit-note {
+  font-size: 14px;
+  color: var(--muted-2);
+  text-align: center;
+  margin-top: 8px;
+}
+
+.scorecard-divider {
+  border-top: 1px solid var(--border);
+  margin: 32px 0;
+}
+
+.scorecard-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scorecard-history-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.scorecard-history-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+}
+
+.scorecard-history-week {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.scorecard-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.scorecard-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.scorecard-dot.yes {
+  background: var(--success);
+}
+
+.scorecard-dot.no {
+  background: var(--miss);
+}
+
+.scorecard-dot.null {
+  background: var(--muted-2);
+}
+
+.scorecard-hit-rate {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-left: 12px;
+}
+
+.scorecard-history-detail {
+  padding: 0 20px 20px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.22s ease;
+}
+
+.scorecard-history-row.expanded .scorecard-history-detail {
+  max-height: 400px;
+}
+
+.scorecard-history-kpi-detail {
+  border-top: 1px solid var(--border);
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scorecard-history-kpi-label {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.scorecard-history-kpi-result {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.scorecard-history-kpi-result.yes {
+  color: var(--success);
+}
+
+.scorecard-history-kpi-result.no {
+  color: var(--miss);
+}
+
+.scorecard-history-kpi-result.null {
+  color: var(--muted-2);
+}
+
+.scorecard-history-kpi-reflection {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.scorecard-history-empty {
+  font-size: 15px;
+  color: var(--muted-2);
+  text-align: center;
+  padding: 24px 0;
+}
