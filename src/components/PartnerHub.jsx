@@ -42,9 +42,6 @@ export default function PartnerHub() {
 
   const kpiLocked = kpiSelections.length > 0 && Boolean(kpiSelections[0]?.locked_until);
   const kpiInProgress = kpiSelections.length > 0 && !kpiLocked;
-  const lockedUntilDate = kpiLocked
-    ? new Date(kpiSelections[0].locked_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-    : '';
 
   // Scorecard state derivation (Phase 3 — D-19)
   const currentMonday = getMondayOf();
