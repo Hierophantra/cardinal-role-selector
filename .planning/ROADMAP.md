@@ -61,7 +61,11 @@ Plans:
   3. After a no, partner is prompted to describe what prevented completion
   4. Submitting a check-in creates one record for that week; past weeks are not overwritten
   5. Partner can view a list of their prior weekly check-ins
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 03-01-PLAN.md — Foundation: migration 003 (committed_at), week.js helpers, fetchScorecards/commitScorecardWeek, SCORECARD_COPY, 26 .scorecard-* CSS classes
+- [ ] 03-02-PLAN.md — Scorecard.jsx (precommit/editing/success + history) + /scorecard/:partner route
+- [ ] 03-03-PLAN.md — PartnerHub three-state scorecard card + extended status line + human-verify checkpoint
 **UI hint**: yes
 
 ### Phase 4: Admin Tools & Meeting Mode
@@ -86,5 +90,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Schema & Hub | 2/2 | Complete | 2026-04-10 |
 | 2. KPI Selection | 0/3 | Not started | - |
-| 3. Weekly Scorecard | 0/TBD | Not started | - |
+| 3. Weekly Scorecard | 0/3 | Not started | - |
 | 4. Admin Tools & Meeting Mode | 0/TBD | Not started | - |
