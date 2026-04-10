@@ -242,7 +242,81 @@ export default function Scorecard() {
     }
   }
 
-  // (History row toggle added in Task 3)
+  function toggleHistoryRow(weekOf) {
+    setExpandedHistoryWeek((prev) => (prev === weekOf ? null : weekOf));
+  }
+
+  // Render the history section — used inside both precommit and editing views
+  function renderHistory() {
+    return (
+      <>
+        <hr className="scorecard-divider" />
+        <div className="eyebrow" style={{ marginBottom: 16 }}>{SCORECARD_COPY.historyEyebrow}</div>
+        {historyRows.length === 0 ? (
+          <p className="scorecard-history-empty">{SCORECARD_COPY.historyEmpty}</p>
+        ) : (
+          <div className="scorecard-history-list">
+            {historyRows.map((row) => {
+              const expanded = expandedHistoryWeek === row.week_of;
+              const rowResults = row.kpi_results || {};
+              const hitCount = lockedKpis.reduce(
+                (n, k) => (rowResults[k.id]?.result === 'yes' ? n + 1 : n),
+                0
+              );
+              return (
+                <div
+                  key={row.week_of}
+                  className={`scorecard-history-row${expanded ? ' expanded' : ''}`}
+                  onClick={() => toggleHistoryRow(row.week_of)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleHistoryRow(row.week_of);
+                    }
+                  }}
+                >
+                  <div className="scorecard-history-summary">
+                    <span className="scorecard-history-week">{formatWeekRange(row.week_of)}</span>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <div className="scorecard-dots">
+                        {lockedKpis.map((k) => {
+                          const r = rowResults[k.id]?.result;
+                          const cls = r === 'yes' ? 'yes' : r === 'no' ? 'no' : 'null';
+                          return <span key={k.id} className={`scorecard-dot ${cls}`} />;
+                        })}
+                      </div>
+                      <span className="scorecard-hit-rate">{hitCount}/{lockedKpis.length}</span>
+                    </div>
+                  </div>
+                  {expanded && (
+                    <div className="scorecard-history-detail">
+                      {lockedKpis.map((k) => {
+                        const r = rowResults[k.id];
+                        const result = r?.result;
+                        const resultLabel = result === 'yes' ? 'Yes' : result === 'no' ? 'No' : '\u2014';
+                        const resultClass = result === 'yes' ? 'yes' : result === 'no' ? 'no' : 'null';
+                        return (
+                          <div key={k.id} className="scorecard-history-kpi-detail">
+                            <div className="scorecard-history-kpi-label">{k.label_snapshot}</div>
+                            <div className={`scorecard-history-kpi-result ${resultClass}`}>{resultLabel}</div>
+                            {r?.reflection && (
+                              <div className="scorecard-history-kpi-reflection">{r.reflection}</div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </>
+    );
+  }
 
   // ---- Early returns ----
   if (loading) return null;
@@ -298,8 +372,7 @@ export default function Scorecard() {
                 )}
               </div>
 
-              {/* History section rendered by Task 3 (below divider, inside this motion.div) */}
-              {/* __HISTORY_SECTION__ */}
+              {renderHistory()}
             </motion.div>
           )}
 
@@ -398,7 +471,7 @@ export default function Scorecard() {
                 <p className="muted" style={{ color: 'var(--red)', textAlign: 'center', marginTop: 8 }}>{saveError}</p>
               )}
 
-              {/* __HISTORY_SECTION__ */}
+              {renderHistory()}
             </motion.div>
           )}
 

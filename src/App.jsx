@@ -4,6 +4,7 @@ import Questionnaire from './components/Questionnaire.jsx';
 import PartnerHub from './components/PartnerHub.jsx';
 import KpiSelection from './components/KpiSelection.jsx';
 import KpiSelectionView from './components/KpiSelectionView.jsx';
+import Scorecard from './components/Scorecard.jsx';
 import Admin from './components/admin/Admin.jsx';
 import AdminHub from './components/admin/AdminHub.jsx';
 import AdminProfile from './components/admin/AdminProfile.jsx';
@@ -17,6 +18,7 @@ export default function App() {
       <Route path="/hub/:partner" element={<PartnerHub />} />
       <Route path="/kpi/:partner" element={<KpiSelection />} />
       <Route path="/kpi-view/:partner" element={<KpiSelectionView />} />
+      <Route path="/scorecard/:partner" element={<Scorecard />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/admin/hub" element={<AdminHub />} />
       <Route path="/admin/profile/:partner" element={<AdminProfile />} />
