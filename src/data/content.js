@@ -299,7 +299,8 @@ export const HUB_COPY = {
     greeting: (name) => `Welcome back, ${name}`,
     status: {
       roleCompleteNoKpis: 'Role Definition complete \u00b7 KPIs not yet chosen',
-      roleCompleteKpisLocked: 'Role Definition complete \u00b7 KPIs locked in',
+      roleCompleteKpisLocked: (date) => `Role Definition complete \u00b7 KPIs locked in until ${date}`,
+      roleCompleteKpisInProgress: 'Role Definition complete \u00b7 KPI selection in progress',
       roleNotComplete: 'Role Definition not yet completed',
     },
     cards: {
@@ -353,5 +354,67 @@ export const HUB_COPY = {
       },
     },
     errorLoad: "Couldn't load partner status. Refresh to try again.",
+  },
+};
+
+// --- KPI Selection copy (Phase 2) ---
+
+export const KPI_COPY = {
+  selection: {
+    eyebrow: 'KPI SELECTION',
+    heading: 'Choose your 5 KPIs',
+    subtext:
+      "These are the metrics you're committing to track weekly for the next 90 days. Select exactly 5.",
+    counterLabel: (n) => `${n} of 5 selected`,
+    counterAtCap: '5 of 5 selected \u2014 deselect to swap',
+    growth: {
+      eyebrow: 'GROWTH PRIORITIES',
+      heading: 'Set your growth priorities',
+      subtext:
+        'Choose 1 personal growth priority and 2 business growth priorities for this 90-day period.',
+      personalLabel: 'Personal Growth Priority',
+      businessLabel1: 'Business Priority 1',
+      businessLabel2: 'Business Priority 2',
+      customToggle: 'Write my own',
+      customPlaceholderPersonal:
+        'Describe your personal growth focus for the next 90 days...',
+      customPlaceholderBusiness:
+        'Describe your business priority for the next 90 days...',
+    },
+    primaryCta: 'Review & Confirm',
+    emptyTemplates:
+      'No KPI options available yet. Ask your admin to set up your KPI templates.',
+    errorLoad: 'Failed to load KPI options. Please refresh and try again.',
+    errorContinue: 'Failed to save your selections. Please try again.',
+  },
+  confirmation: {
+    eyebrow: 'REVIEW YOUR COMMITMENT',
+    heading: 'Your 90-day accountability commitment',
+    commitmentStatement:
+      'These are locked for 90 days. Only your admin can unlock them.',
+    kpiSectionLabel: 'Your 5 KPIs',
+    growthSectionLabel: 'Growth Priorities',
+    backCta: 'Back to Edit',
+    lockCta: 'Lock In My KPIs',
+    errorLock: 'Failed to lock in your KPIs. Please try again.',
+  },
+  lockSuccess: {
+    heading: 'Your KPIs are locked in for 90 days.',
+    subtext: 'Redirecting you back to your hub...',
+  },
+  readOnly: {
+    eyebrow: 'YOUR COMMITMENTS',
+    heading: 'Your locked KPIs',
+    lockedUntilBadge: (date) => `Locked until ${date}`,
+    kpiSectionLabel: 'Your 5 KPIs',
+    growthSectionLabel: 'Growth Priorities',
+  },
+  hubCard: {
+    title: 'KPI Selection',
+    description: "Choose the 5 metrics you'll commit to tracking every week.",
+    ctaNotStarted: 'Select Your KPIs',
+    ctaInProgress: 'Continue Selection',
+    ctaLocked: 'View Selections',
+    inProgressLabel: 'In Progress',
   },
 };
