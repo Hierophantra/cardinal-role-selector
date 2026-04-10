@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 03-01-PLAN.md (scorecard foundation)
-last_updated: "2026-04-10T20:31:50.046Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-04-10T20:39:31.360Z"
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 03 (weekly-scorecard) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Plan: 2 of 3
 | Phase 02-kpi-selection P02 | ~3m | 3 tasks | 3 files |
 | Phase 02-kpi-selection P03 | ~45m | 1 tasks | 1 files |
 | Phase 03-weekly-scorecard P01 | 4min | 5 tasks | 5 files |
+| Phase 03 P02 | 3min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,8 @@ Recent decisions affecting current work:
 - [Phase 03-weekly-scorecard]: submitted_at reinterpreted as 'last updated' (not renamed) to preserve Phase 1/2 compatibility; additive-only migration 003 adds nullable committed_at
 - [Phase 03-weekly-scorecard]: kpi_results JSONB shape { [kpi_selection_id]: { result: 'yes'|'no'|null, reflection: '' } } — commitScorecardWeek pre-populates all 5 keys so textareas stay controlled
 - [Phase 03-weekly-scorecard]: Week math is strictly local-time in src/lib/week.js; toISOString is forbidden to avoid Sunday-night UTC drift west of UTC
+- [Phase 03]: Stable currentWeekOfRef via useRef(getMondayOf()) captured at mount — persist payload never recomputes week_of, fortifying SCORE-04 against midnight-boundary drift
+- [Phase 03]: Auto-save routes every mutation (yes/no tap, reflection blur) through a single persist() upsert — blur-only for reflections avoids per-keystroke network churn
 
 ### Pending Todos
 
@@ -91,6 +94,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-10T20:31:50.044Z
-Stopped at: Completed 03-01-PLAN.md (scorecard foundation)
+Last session: 2026-04-10T20:39:22.072Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
