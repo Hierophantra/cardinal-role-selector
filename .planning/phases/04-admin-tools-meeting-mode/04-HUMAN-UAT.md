@@ -3,7 +3,7 @@ status: partial
 phase: 04-admin-tools-meeting-mode
 source: [04-VERIFICATION.md]
 started: 2026-04-11T00:00:00Z
-updated: 2026-04-11T00:00:00Z
+updated: 2026-04-11T00:00:01Z
 ---
 
 ## Current Test
@@ -14,7 +14,7 @@ updated: 2026-04-11T00:00:00Z
 
 ### 1. Apply Supabase migration 005_admin_meeting_phase4.sql via the Supabase SQL editor
 expected: meetings and meeting_notes tables exist; growth_priorities.admin_note, scorecards.admin_override_at, scorecards.admin_reopened_at columns exist
-result: [pending]
+result: passed (2026-04-11 — applied via Supabase MCP to project pkiijsrxfnokfvopdjuh; all 5 schema objects verified via information_schema query)
 
 ### 2. Log in as admin and navigate to /admin/hub; click the Meeting Mode hero card
 expected: Lands at /admin/meeting with a week picker, Start CTA, and empty/populated meetings history list
@@ -39,9 +39,9 @@ result: [pending]
 ## Summary
 
 total: 6
-passed: 0
+passed: 1
 issues: 0
-pending: 6
+pending: 5
 skipped: 0
 blocked: 0
 
