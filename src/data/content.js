@@ -313,6 +313,10 @@ export const HUB_COPY = {
         ctaSubmitted: 'View Submission',
         ctaNotSubmitted: 'Start Questionnaire',
       },
+      comparison: {
+        title: 'Side-by-Side Comparison',
+        description: 'See how your answers line up with your partner\u2019s across every dimension',
+      },
     },
     errorLoad: "Couldn't load your status. Refresh to try again.",
   },
@@ -338,8 +342,8 @@ export const HUB_COPY = {
         description: 'Overview of partner submissions and questionnaire status',
       },
       partnerProfiles: {
-        title: 'Partner Profiles',
-        description: 'View each partner\'s full role definition and ownership selections',
+        title: 'Partner Management',
+        description: 'Review Theo and Jerry\u2019s state, open their profiles, and reset data if needed',
       },
       comparison: {
         title: 'Side-by-Side Comparison',
@@ -348,12 +352,15 @@ export const HUB_COPY = {
       kpiManagement: {
         title: 'KPI Management',
         description: 'Manage KPI templates and review partner selections',
-        disabledLabel: 'Available in next update',
       },
       meetingMode: {
         title: 'Meeting Mode',
-        description: 'Run a structured Friday accountability meeting with both partners',
-        disabledLabel: 'Available in next update',
+        description:
+          "Run Friday's accountability review \u2014 step through each KPI and growth priority with both partners.",
+      },
+      scorecardOversight: {
+        title: 'Scorecard Oversight',
+        description: 'Review weekly check-in history and reopen closed weeks',
       },
     },
     errorLoad: "Couldn't load partner status. Refresh to try again.",
@@ -386,7 +393,7 @@ export const KPI_COPY = {
     },
     primaryCta: 'Review & Confirm',
     emptyTemplates:
-      'No KPI options available yet. Ask your admin to set up your KPI templates.',
+      'No KPI options available yet. Ask Trace to set up your KPI templates.',
     errorLoad: 'Failed to load KPI options. Please refresh and try again.',
     errorContinue: 'Failed to save your selections. Please try again.',
   },
@@ -394,7 +401,7 @@ export const KPI_COPY = {
     eyebrow: 'REVIEW YOUR COMMITMENT',
     heading: 'Your 90-day accountability commitment',
     commitmentStatement:
-      'These are locked for 90 days. Only your admin can unlock them.',
+      'These are locked for 90 days. Only Trace can unlock them.',
     kpiSectionLabel: 'Your 5 KPIs',
     growthSectionLabel: 'Growth Priorities',
     backCta: 'Back to Edit',
@@ -458,5 +465,102 @@ export const SCORECARD_COPY = {
     statusNotCommitted: 'This week: not committed',
     statusInProgress: (n) => `This week: ${n} of 5`,
     statusComplete: 'This week complete',
+  },
+};
+
+// --- Phase 4: Admin Tools & Meeting Mode ---
+
+export const GROWTH_STATUS_COPY = {
+  active: 'Active',
+  achieved: 'Achieved',
+  stalled: 'Stalled',
+  deferred: 'Deferred',
+  adminNoteLabel: 'ADMIN NOTE',
+  adminNotePlaceholder: (partnerName) => `Add a note visible to ${partnerName}...`,
+  savedFlash: 'Saved',
+};
+
+export const ADMIN_KPI_COPY = {
+  eyebrow: 'KPI MANAGEMENT',
+  heading: 'KPI Templates & Partner Selections',
+  templateSectionHeading: 'KPI Template Library',
+  templateSectionSubtext:
+    'Changes to templates do not affect locked partner selections \u2014 labels are snapshotted at lock time.',
+  addTemplateCta: '+ Add Template',
+  editBtn: 'Edit Template',
+  saveBtn: 'Save Template',
+  discardBtn: 'Discard Changes',
+  deleteBtn: 'Delete Template',
+  deleteConfirmBtn: 'Confirm Delete',
+  keepBtn: 'Keep Template',
+  deleteWarning:
+    'This removes the template. Partner commitments already locked are unaffected.',
+  selectionsSectionHeading: 'Partner KPI Selections',
+  unlockBtn: 'Unlock KPIs',
+  unlockConfirmBtn: 'Confirm Unlock KPIs',
+  unlockWarning: (partnerName) =>
+    `This lets ${partnerName} re-select KPIs. Current picks are preserved. Re-lock starts a new 90-day period.`,
+  editSlotBtn: 'Edit Slot',
+  saveSlotBtn: 'Save Change',
+  emptyTemplates: 'No KPI templates yet. Add the first one below.',
+  emptySelections: (partnerName) => `${partnerName} has not locked KPIs yet.`,
+  errors: {
+    saveFail: "Couldn't save template. Try again.",
+    deleteFail: "Couldn't delete template. Try again.",
+    unlockFail: "Couldn't unlock KPIs. Try again.",
+  },
+};
+
+export const ADMIN_GROWTH_COPY = {
+  eyebrow: 'GROWTH PRIORITIES',
+  savedFlash: 'Saved',
+  errors: {
+    statusFail: "Couldn't update status. Try again.",
+    noteFail: "Couldn't update note. Try again.",
+  },
+};
+
+export const ADMIN_SCORECARD_COPY = {
+  eyebrow: 'SCORECARD OVERSIGHT',
+  heading: 'Weekly Check-In History',
+  reopenBtn: 'Reopen Week',
+  reopenConfirmBtn: 'Confirm Reopen',
+  reopenWarning: (partnerName) =>
+    `This allows ${partnerName} to edit their check-in for this week again.`,
+  reopenedBadge: 'Reopened',
+  overrideMarker: 'Edited by admin',
+  empty: 'No completed check-ins yet.',
+  errors: {
+    reopenFail: "Couldn't reopen this week. Try again.",
+  },
+};
+
+export const MEETING_COPY = {
+  landingEyebrow: 'MEETING MODE',
+  startCta: 'Start Meeting',
+  heroCardTitle: 'Meeting Mode',
+  heroCardDescription:
+    "Run Friday's accountability review \u2014 step through each KPI and growth priority with both partners.",
+  progressPill: (n, total) => `Stop ${n} of ${total}`,
+  weekPickerLabel: 'Week:',
+  endBtn: 'End Meeting',
+  endConfirmBtn: 'Confirm End',
+  endedNav: 'Back to Meeting History',
+  landingEmpty: 'No past meetings yet. Start your first Friday review.',
+  stops: {
+    introEyebrow: 'FRIDAY REVIEW',
+    introHeading: (weekLabel) => `Week of ${weekLabel}`,
+    kpiEyebrow: (n) => `KPI ${n} of 5`,
+    growthPersonalEyebrow: 'PERSONAL GROWTH',
+    growthBusinessEyebrow: (n) => `BUSINESS GROWTH ${n} of 2`,
+    wrapHeading: 'Closing Thoughts',
+    wrapSubtext:
+      'Capture any action items or follow-ups before ending the session.',
+  },
+  notesPlaceholder: 'Add notes for this stop...',
+  savedFlash: 'Saved',
+  errors: {
+    loadFail: "Couldn't load meeting data. Check your connection and refresh.",
+    noteSaveFail: "Note didn't save \u2014 check your connection.",
   },
 };
