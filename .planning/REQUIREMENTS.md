@@ -37,7 +37,7 @@
 
 ### Admin — KPI Management
 
-- [ ] **ADMIN-01**: Admin can view both partners' KPI selections side-by-side
+- [x] **ADMIN-01**: Admin can view both partners' KPI selections side-by-side
 - [x] **ADMIN-02**: Admin can unlock a partner's locked KPIs to allow re-selection
 - [x] **ADMIN-03**: Admin can directly modify a partner's KPI selections
 - [x] **ADMIN-04**: Admin can create, edit, and remove KPI template options
@@ -99,7 +99,7 @@
 | SCORE-03 | Phase 3 | Complete |
 | SCORE-04 | Phase 3 | Complete |
 | SCORE-05 | Phase 3 | Complete |
-| ADMIN-01 | Phase 4 | Pending |
+| ADMIN-01 | Phase 4 | Complete |
 | ADMIN-02 | Phase 4 | Complete |
 | ADMIN-03 | Phase 4 | Complete |
 | ADMIN-04 | Phase 4 | Complete |
