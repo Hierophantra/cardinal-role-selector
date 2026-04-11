@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { fetchKpiSelections, fetchGrowthPriorities } from '../lib/supabase.js';
-import { VALID_PARTNERS, PARTNER_DISPLAY, KPI_COPY } from '../data/content.js';
+import { VALID_PARTNERS, PARTNER_DISPLAY, KPI_COPY, GROWTH_STATUS_COPY } from '../data/content.js';
 
 export default function KpiSelectionView() {
   const { partner } = useParams();
@@ -16,11 +16,6 @@ export default function KpiSelectionView() {
     // Guard 1: invalid partner slug
     if (!VALID_PARTNERS.includes(partner)) {
       navigate('/', { replace: true });
-      return;
-    }
-    // Guard 2: test partner has no accountability data (DB CHECK, Pitfall 3)
-    if (partner === 'test') {
-      navigate(`/hub/${partner}`, { replace: true });
       return;
     }
 
@@ -108,6 +103,17 @@ export default function KpiSelectionView() {
                   {KPI_COPY.selection.growth.personalLabel}
                 </span>
                 <p>{personalPriority.description}</p>
+                <span className={`growth-status-badge ${personalPriority.status || 'active'}`}>
+                  {GROWTH_STATUS_COPY[personalPriority.status || 'active']}
+                </span>
+                {personalPriority.admin_note && personalPriority.admin_note.trim() ? (
+                  <div className="growth-admin-note">
+                    <div className="eyebrow" style={{ marginBottom: 4 }}>
+                      {GROWTH_STATUS_COPY.adminNoteLabel}
+                    </div>
+                    {personalPriority.admin_note}
+                  </div>
+                ) : null}
               </div>
             )}
             {businessPriorities[0] && (
@@ -116,6 +122,17 @@ export default function KpiSelectionView() {
                   {KPI_COPY.selection.growth.businessLabel1}
                 </span>
                 <p>{businessPriorities[0].description}</p>
+                <span className={`growth-status-badge ${businessPriorities[0].status || 'active'}`}>
+                  {GROWTH_STATUS_COPY[businessPriorities[0].status || 'active']}
+                </span>
+                {businessPriorities[0].admin_note && businessPriorities[0].admin_note.trim() ? (
+                  <div className="growth-admin-note">
+                    <div className="eyebrow" style={{ marginBottom: 4 }}>
+                      {GROWTH_STATUS_COPY.adminNoteLabel}
+                    </div>
+                    {businessPriorities[0].admin_note}
+                  </div>
+                ) : null}
               </div>
             )}
             {businessPriorities[1] && (
@@ -124,6 +141,17 @@ export default function KpiSelectionView() {
                   {KPI_COPY.selection.growth.businessLabel2}
                 </span>
                 <p>{businessPriorities[1].description}</p>
+                <span className={`growth-status-badge ${businessPriorities[1].status || 'active'}`}>
+                  {GROWTH_STATUS_COPY[businessPriorities[1].status || 'active']}
+                </span>
+                {businessPriorities[1].admin_note && businessPriorities[1].admin_note.trim() ? (
+                  <div className="growth-admin-note">
+                    <div className="eyebrow" style={{ marginBottom: 4 }}>
+                      {GROWTH_STATUS_COPY.adminNoteLabel}
+                    </div>
+                    {businessPriorities[1].admin_note}
+                  </div>
+                ) : null}
               </div>
             )}
           </div>
