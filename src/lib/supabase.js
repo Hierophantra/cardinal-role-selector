@@ -169,6 +169,43 @@ export async function fetchScorecards(partner) {
  * @param {string[]} kpiSelectionIds array of kpi_selections.id UUIDs (typically 5)
  * @returns the created/updated row
  */
+// --- Admin reset helpers ---
+// Parameterized by partner. Guards against arbitrary values — only theo/jerry/test allowed.
+// The test-specific wrappers below are kept as thin aliases for backward compatibility.
+
+const RESETTABLE_PARTNERS = ['theo', 'jerry', 'test'];
+
+function assertResettable(partner) {
+  if (!RESETTABLE_PARTNERS.includes(partner)) {
+    throw new Error(`Refusing to reset unknown partner: ${partner}`);
+  }
+}
+
+export async function resetPartnerSubmission(partner) {
+  assertResettable(partner);
+  const { error } = await supabase.from('submissions').delete().eq('partner', partner);
+  if (error) throw error;
+}
+
+export async function resetPartnerKpis(partner) {
+  assertResettable(partner);
+  const { error: e1 } = await supabase.from('kpi_selections').delete().eq('partner', partner);
+  if (e1) throw e1;
+  const { error: e2 } = await supabase.from('growth_priorities').delete().eq('partner', partner);
+  if (e2) throw e2;
+}
+
+export async function resetPartnerScorecards(partner) {
+  assertResettable(partner);
+  const { error } = await supabase.from('scorecards').delete().eq('partner', partner);
+  if (error) throw error;
+}
+
+// Test-specific aliases (used by existing AdminTest.jsx)
+export const resetTestSubmission = () => resetPartnerSubmission('test');
+export const resetTestKpis = () => resetPartnerKpis('test');
+export const resetTestScorecards = () => resetPartnerScorecards('test');
+
 export async function commitScorecardWeek(partner, weekOf, kpiSelectionIds) {
   const emptyResults = Object.fromEntries(
     kpiSelectionIds.map((id) => [id, { result: null, reflection: '' }])
@@ -185,6 +222,240 @@ export async function commitScorecardWeek(partner, weekOf, kpiSelectionIds) {
         submitted_at: now,
       },
       { onConflict: 'partner,week_of' }
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// --- Admin: KPI Template CRUD (ADMIN-04) — Phase 4 ---
+
+export async function createKpiTemplate({ label, category, description }) {
+  const { data, error } = await supabase
+    .from('kpi_templates')
+    .insert({ label, category, description })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateKpiTemplate(id, { label, category, description }) {
+  const { data, error } = await supabase
+    .from('kpi_templates')
+    .update({ label, category, description, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteKpiTemplate(id) {
+  const { error } = await supabase.from('kpi_templates').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// --- Admin: Growth Priority Template CRUD (ADMIN-04) — Phase 4 ---
+
+export async function createGrowthPriorityTemplate({ type, description, sort_order }) {
+  const { data, error } = await supabase
+    .from('growth_priority_templates')
+    .insert({ type, description, sort_order })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateGrowthPriorityTemplate(id, { type, description, sort_order }) {
+  const { data, error } = await supabase
+    .from('growth_priority_templates')
+    .update({ type, description, sort_order })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteGrowthPriorityTemplate(id) {
+  const { error } = await supabase.from('growth_priority_templates').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// --- Admin: KPI Selection direct-edit (ADMIN-03) — Phase 4 ---
+// CRITICAL (Pitfall 2 + 3): UPDATE the existing row by id — never DELETE+INSERT.
+// kpi_results JSONB keys are kpi_selections.id UUIDs; reinserting orphans history.
+// Also: locked_until is NOT touched here (D-05 — 90-day clock is preserved).
+
+export async function adminEditKpiLabel(selectionId, newLabel) {
+  const { data, error } = await supabase
+    .from('kpi_selections')
+    .update({ label_snapshot: newLabel })
+    .eq('id', selectionId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function adminSwapKpiTemplate(selectionId, newTemplate) {
+  // newTemplate: { id, label, category } from kpi_templates
+  const { data, error } = await supabase
+    .from('kpi_selections')
+    .update({
+      template_id: newTemplate.id,
+      label_snapshot: newTemplate.label,
+      category_snapshot: newTemplate.category,
+      // locked_until is NOT touched — D-05 preserves 90-day clock
+    })
+    .eq('id', selectionId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// --- Admin: Unlock partner selections (ADMIN-02, D-04) — Phase 4 ---
+// Sets locked_until = null on BOTH kpi_selections AND growth_priorities for the partner.
+// Existing rows are preserved — partner re-enters KpiSelection.jsx with current picks pre-selected.
+
+export async function unlockPartnerSelections(partner) {
+  assertResettable(partner);
+  const { error: e1 } = await supabase
+    .from('kpi_selections')
+    .update({ locked_until: null })
+    .eq('partner', partner);
+  if (e1) throw e1;
+  const { error: e2 } = await supabase
+    .from('growth_priorities')
+    .update({ locked_until: null })
+    .eq('partner', partner);
+  if (e2) throw e2;
+}
+
+// --- Admin: Growth Priority status + admin note (ADMIN-05, ADMIN-06) — Phase 4 ---
+
+export async function updateGrowthPriorityStatus(id, status) {
+  const { data, error } = await supabase
+    .from('growth_priorities')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateGrowthPriorityAdminNote(id, adminNote) {
+  const { data, error } = await supabase
+    .from('growth_priorities')
+    .update({ admin_note: adminNote, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// --- Admin: Scorecard reopen + override (D-15, D-21) — Phase 4 ---
+
+export async function reopenScorecardWeek(partner, weekOf) {
+  assertResettable(partner);
+  const { data, error } = await supabase
+    .from('scorecards')
+    .update({ admin_reopened_at: new Date().toISOString() })
+    .eq('partner', partner)
+    .eq('week_of', weekOf)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function adminOverrideScorecardEntry(partner, weekOf, kpiId, entry, labelSnapshot) {
+  // entry: { result, reflection } — label is snapshotted per D-06
+  assertResettable(partner);
+  const row = await fetchScorecard(partner, weekOf);
+  const current = row?.kpi_results ?? {};
+  const updated = {
+    ...current,
+    [kpiId]: { label: labelSnapshot, ...entry },
+  };
+  const { data, error } = await supabase
+    .from('scorecards')
+    .update({
+      kpi_results: updated,
+      admin_override_at: new Date().toISOString(),
+      submitted_at: new Date().toISOString(),
+    })
+    .eq('partner', partner)
+    .eq('week_of', weekOf)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// --- Admin: Meetings + Meeting Notes (MEET-01, MEET-04) — Phase 4 ---
+
+export async function createMeeting(weekOf) {
+  const { data, error } = await supabase
+    .from('meetings')
+    .insert({ week_of: weekOf, held_at: new Date().toISOString() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function endMeeting(meetingId) {
+  const { data, error } = await supabase
+    .from('meetings')
+    .update({ ended_at: new Date().toISOString() })
+    .eq('id', meetingId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchMeetings() {
+  const { data, error } = await supabase
+    .from('meetings')
+    .select('*')
+    .order('held_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchMeeting(meetingId) {
+  const { data, error } = await supabase
+    .from('meetings')
+    .select('*')
+    .eq('id', meetingId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchMeetingNotes(meetingId) {
+  const { data, error } = await supabase
+    .from('meeting_notes')
+    .select('*')
+    .eq('meeting_id', meetingId);
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertMeetingNote({ meeting_id, agenda_stop_key, body }) {
+  const { data, error } = await supabase
+    .from('meeting_notes')
+    .upsert(
+      { meeting_id, agenda_stop_key, body, updated_at: new Date().toISOString() },
+      { onConflict: 'meeting_id,agenda_stop_key' }
     )
     .select()
     .single();
