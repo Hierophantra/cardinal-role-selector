@@ -15,6 +15,7 @@ import AdminKpi from './components/admin/AdminKpi.jsx';
 import AdminScorecards from './components/admin/AdminScorecards.jsx';
 import AdminMeeting from './components/admin/AdminMeeting.jsx';
 import AdminMeetingSession from './components/admin/AdminMeetingSession.jsx';
+import AdminMeetingSessionMock from './components/admin/AdminMeetingSessionMock.jsx';
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
       <Route path="/admin/comparison" element={<AdminComparison />} />
       <Route path="/comparison" element={<AdminComparison />} />
       <Route path="/admin/test" element={<AdminTest />} />
+      <Route path="/admin/test/meeting-mock" element={<AdminMeetingSessionMock />} />
       <Route path="/admin/kpi" element={<AdminKpi />} />
       <Route path="/admin/scorecards" element={<AdminScorecards />} />
       <Route path="/admin/meeting" element={<AdminMeeting />} />
