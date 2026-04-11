@@ -1176,3 +1176,302 @@ textarea { resize: vertical; min-height: 120px; }
   text-align: center;
   padding: 24px 0;
 }
+
+/* === Phase 4: Admin Tools & Meeting Mode === */
+
+/* --- Meeting Mode Wizard Shell --- */
+
+.meeting-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+.meeting-shell-header {
+  position: sticky;
+  top: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  background: rgba(10, 10, 10, 0.80);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+}
+
+.meeting-progress-pill {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 16px;
+}
+
+.meeting-stop {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 48px 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  flex: 1;
+}
+
+/* .meeting-stop-eyebrow reuses the existing .eyebrow class in markup */
+
+.meeting-stop-heading {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.meeting-stop-display {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.meeting-stop-subtext {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.meeting-nav {
+  position: sticky;
+  bottom: 0;
+  height: 64px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 40px;
+  border-top: 1px solid var(--border);
+  background: rgba(10, 10, 10, 0.80);
+  backdrop-filter: blur(8px);
+}
+
+/* --- Meeting KPI Stop Side-by-Side --- */
+
+.meeting-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.meeting-kpi-cell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.meeting-kpi-cell.yes {
+  border-left: 3px solid var(--success);
+  border-color: rgba(45, 143, 94, 0.4);
+}
+
+.meeting-kpi-cell.no {
+  border-left: 3px solid var(--red);
+  border-color: rgba(196, 30, 58, 0.4);
+}
+
+.meeting-kpi-cell.null {
+  border-color: var(--border);
+}
+
+.meeting-partner-name {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.meeting-yn-override {
+  min-width: 80px;
+  height: 48px;
+}
+
+.meeting-notes-area {
+  min-height: 96px;
+  margin-top: 16px;
+  resize: vertical;
+  width: 100%;
+}
+
+.meeting-admin-override-marker {
+  font-size: 11px;
+  color: var(--gold);
+  font-style: italic;
+}
+
+/* --- Meeting Growth Priority Stop --- */
+
+.meeting-growth-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.meeting-growth-cell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.growth-status-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.growth-status-badge.active {
+  color: var(--gold);
+  background: rgba(212, 168, 67, 0.10);
+  border: 1px solid rgba(212, 168, 67, 0.25);
+}
+
+.growth-status-badge.achieved {
+  color: var(--success);
+  background: rgba(45, 143, 94, 0.10);
+  border: 1px solid rgba(45, 143, 94, 0.25);
+}
+
+.growth-status-badge.stalled {
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.growth-status-badge.deferred {
+  color: var(--muted-2);
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
+}
+
+.growth-admin-note {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin-top: 8px;
+}
+
+/* --- AdminHub Hero Card --- */
+
+.hub-card--hero {
+  border-left: 3px solid var(--red);
+  background: linear-gradient(135deg, rgba(196, 30, 58, 0.10), rgba(196, 30, 58, 0.03));
+  padding: 32px;
+  width: 100%;
+  display: block;
+  margin-bottom: 32px;
+  grid-column: 1 / -1;
+}
+
+.hub-card--hero h3 {
+  font-size: 20px;
+}
+
+.hub-card--hero p {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+/* --- KPI Template Inline Card Editor --- */
+
+.kpi-template-editor-card {
+  position: relative;
+}
+
+.kpi-template-editor-card.editing {
+  border-color: var(--red);
+  box-shadow: 0 0 0 1px var(--red) inset;
+}
+
+.kpi-template-editor-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+
+.kpi-template-add-card {
+  border-style: dashed;
+  color: var(--muted);
+  justify-content: center;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 600;
+  min-height: 72px;
+  cursor: pointer;
+  display: flex;
+}
+
+.kpi-template-add-card:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+/* --- Admin Scorecard Oversight --- */
+
+.scorecard-oversight-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scorecard-oversight-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.scorecard-oversight-header {
+  display: grid;
+  grid-template-columns: 160px 1fr 1fr;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.scorecard-oversight-cell {
+  padding: 16px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.scorecard-oversight-cell.week {
+  font-size: 15px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.scorecard-reopened-badge {
+  font-size: 11px;
+  color: var(--gold);
+  font-style: italic;
+  margin-left: 8px;
+}
