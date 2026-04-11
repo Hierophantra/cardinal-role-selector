@@ -44,7 +44,7 @@ Declared values (multiples of 4 only). These match the existing system extracted
 
 Exceptions:
 - Touch targets for Yes/No scorecard override buttons inside Meeting Mode: minimum `48px` height (admin drives fast during live meeting)
-- Inline edit inputs inside KPI template cards: `14px 16px` padding matches existing `input` rule
+- Inline edit inputs inside KPI template cards reuse the existing `.input` CSS rule — no new spacing value declared here.
 
 Note: Meeting wizard stop top/bottom padding uses the 2xl (48px) token — the existing "major section breaks" semantic is appropriate for full-screen wizard stops.
 
@@ -109,7 +109,7 @@ New CSS classes Phase 4 adds to `src/index.css`. Executor writes these.
 ```
 .meeting-shell          — full-viewport flex column; background inherits html radial gradient
 .meeting-shell-header   — sticky top bar: progress pill + week label + End Meeting button; height 56px; backdrop-filter blur(8px)
-.meeting-progress-pill  — "Stop {n} of 10"; font 12px weight 700 uppercase letter-spacing 0.12em color var(--gold); background var(--surface-2); border 1px solid var(--border); border-radius 20px; padding 4px 14px
+.meeting-progress-pill  — "Stop {n} of 10"; font 12px weight 700 uppercase letter-spacing 0.12em color var(--gold); background var(--surface-2); border 1px solid var(--border); border-radius 20px; padding 4px 16px
 .meeting-stop           — flex column gap 32px; padding 48px 40px; max-width 1200px; margin 0 auto; width 100%
 .meeting-stop-eyebrow   — reuses .eyebrow class
 .meeting-stop-heading   — 20px weight 700; maps to existing h3 treatment
@@ -136,7 +136,7 @@ New CSS classes Phase 4 adds to `src/index.css`. Executor writes these.
 ```
 .meeting-growth-grid    — same as .meeting-kpi-grid (2-col)
 .meeting-growth-cell    — same as .meeting-kpi-cell minus yes/no border variants
-.growth-status-badge    — inline-block; font-size 12px weight 700 uppercase letter-spacing 0.1em; border-radius 6px; padding 3px 8px
+.growth-status-badge    — inline-block; font-size 12px weight 700 uppercase letter-spacing 0.1em; border-radius 6px; padding 4px 8px
 .growth-status-badge.active    — color var(--gold); background rgba(212,168,67,0.10); border 1px solid rgba(212,168,67,0.25)
 .growth-status-badge.achieved  — color var(--success); background rgba(45,143,94,0.10); border 1px solid rgba(45,143,94,0.25)
 .growth-status-badge.stalled   — color var(--muted); background var(--surface-2); border 1px solid var(--border)
@@ -160,6 +160,7 @@ New CSS classes Phase 4 adds to `src/index.css`. Executor writes these.
 .kpi-template-editor-actions    — display flex; gap 8px; margin-top 12px; justify-content flex-end
 .kpi-template-add-card          — .kpi-card style; border-style dashed; color var(--muted); justify-content center; align-items center; font-size 14px font-weight 600; min-height 72px; cursor pointer
 .kpi-template-add-card:hover    — border-color var(--border-strong); color var(--text); background var(--surface-2)
+.kpi-template-editor input      — inherits from .input rule — no new spacing value declared here
 ```
 
 ### Admin Scorecard Oversight
@@ -168,7 +169,7 @@ New CSS classes Phase 4 adds to `src/index.css`. Executor writes these.
 .scorecard-oversight-grid       — display flex; flex-direction column; gap 8px
 .scorecard-oversight-row        — background var(--surface); border 1px solid var(--border); border-radius 14px; overflow hidden
 .scorecard-oversight-header     — display grid; grid-template-columns 160px 1fr 1fr; gap 0; border-bottom 1px solid var(--border)
-.scorecard-oversight-cell       — padding 14px 18px; font-size 14px line-height 1.5
+.scorecard-oversight-cell       — padding 16px; font-size 14px line-height 1.5
 .scorecard-oversight-cell.week  — font-size 14px color var(--muted); font-weight 600
 .scorecard-reopened-badge       — font-size 11px color var(--gold) italic; margin-left 8px
 ```
@@ -345,6 +346,9 @@ No component registries. All UI is project-owned vanilla CSS + React components.
 | Meeting stop padding uses 48px (2xl token, not 56px exception) | Checker fix — 56px not in standard set; 48px semantically appropriate | Yes |
 | Cancel labels context-specific: "Discard Changes" / "Keep Template" | Checker fix — generic "Cancel" blocked | Yes |
 | Single-word CTAs strengthened: "Edit Template", "Delete Template", "Reopen Week", "Confirm Unlock KPIs" | Checker recommendation | Yes |
+| Spacing exceptions: 14px removed from inline input declaration; inherits .input rule instead | Checker fix — 14px not a multiple of 4 | Yes |
+| scorecard-oversight-cell padding changed from 14px 18px to 16px; .growth-status-badge padding changed from 3px 8px to 4px 8px | Checker fix — all declared spacing values now conform to scale | Yes |
+| .meeting-progress-pill padding changed from 4px 14px to 4px 16px | Checker fix — 14px not in standard set | Yes |
 
 ---
 
