@@ -9,6 +9,12 @@ import Admin from './components/admin/Admin.jsx';
 import AdminHub from './components/admin/AdminHub.jsx';
 import AdminProfile from './components/admin/AdminProfile.jsx';
 import AdminComparison from './components/admin/AdminComparison.jsx';
+import AdminPartners from './components/admin/AdminPartners.jsx';
+import AdminTest from './components/admin/AdminTest.jsx';
+import AdminKpi from './components/admin/AdminKpi.jsx';
+import AdminScorecards from './components/admin/AdminScorecards.jsx';
+import AdminMeeting from './components/admin/AdminMeeting.jsx';
+import AdminMeetingSession from './components/admin/AdminMeetingSession.jsx';
 
 export default function App() {
   return (
@@ -21,8 +27,15 @@ export default function App() {
       <Route path="/scorecard/:partner" element={<Scorecard />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/admin/hub" element={<AdminHub />} />
+      <Route path="/admin/partners" element={<AdminPartners />} />
       <Route path="/admin/profile/:partner" element={<AdminProfile />} />
       <Route path="/admin/comparison" element={<AdminComparison />} />
+      <Route path="/comparison" element={<AdminComparison />} />
+      <Route path="/admin/test" element={<AdminTest />} />
+      <Route path="/admin/kpi" element={<AdminKpi />} />
+      <Route path="/admin/scorecards" element={<AdminScorecards />} />
+      <Route path="/admin/meeting" element={<AdminMeeting />} />
+      <Route path="/admin/meeting/:id" element={<AdminMeetingSession />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
