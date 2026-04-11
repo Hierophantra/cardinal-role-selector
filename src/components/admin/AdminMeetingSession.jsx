@@ -690,7 +690,7 @@ function KpiStop({
 
               {override && (
                 <div className="meeting-admin-override-marker">
-                  Edited by admin {new Date(override).toLocaleString()}
+                  Edited by Trace {new Date(override).toLocaleString()}
                 </div>
               )}
             </div>

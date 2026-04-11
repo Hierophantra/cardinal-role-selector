@@ -258,10 +258,13 @@ export default function AdminMeetingSessionMock() {
           ...prev[partner],
           scorecard: {
             ...sc,
-            admin_override_at: new Date().toISOString(),
             kpi_results: {
               ...sc.kpi_results,
-              [kpiId]: { ...prior, result: newResult },
+              [kpiId]: {
+                ...prior,
+                result: newResult,
+                override_at: new Date().toISOString(),
+              },
             },
           },
         },
@@ -590,7 +593,7 @@ function KpiStop({
           const reflection = entry.reflection ?? '';
           const cellStateClass =
             result === 'yes' ? 'yes' : result === 'no' ? 'no' : 'null';
-          const override = data[p].scorecard?.admin_override_at;
+          const override = entry.override_at;
 
           return (
             <div key={p} className={`meeting-kpi-cell ${cellStateClass}`}>
@@ -646,7 +649,7 @@ function KpiStop({
 
               {override && (
                 <div className="meeting-admin-override-marker">
-                  Edited by admin {new Date(override).toLocaleString()}
+                  Edited by Trace {new Date(override).toLocaleString()}
                 </div>
               )}
             </div>
