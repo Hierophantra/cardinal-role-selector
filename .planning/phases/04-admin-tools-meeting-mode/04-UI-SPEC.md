@@ -39,13 +39,14 @@ Declared values (multiples of 4 only). These match the existing system extracted
 | md | 16px | Card internal padding (compact), textarea padding, input padding |
 | lg | 24px | Section padding, container padding, card gaps |
 | xl | 32px | Hub section margin-bottom, wizard stop vertical padding |
-| 2xl | 48px | Major section breaks, success screen vertical padding |
+| 2xl | 48px | Major section breaks, success screen vertical padding, meeting wizard stop top/bottom padding |
 | 3xl | 64px | Page-level spacing (bottom safe area) |
 
 Exceptions:
-- Meeting wizard stop: minimum `56px` top/bottom padding per stop (projector legibility — content must breathe at TV viewing distance)
 - Touch targets for Yes/No scorecard override buttons inside Meeting Mode: minimum `48px` height (admin drives fast during live meeting)
 - Inline edit inputs inside KPI template cards: `14px 16px` padding matches existing `input` rule
+
+Note: Meeting wizard stop top/bottom padding uses the 2xl (48px) token — the existing "major section breaks" semantic is appropriate for full-screen wizard stops.
 
 ---
 
@@ -56,9 +57,9 @@ All sizes match the existing scale extracted from `src/index.css`. Phase 4 does 
 | Role | Size | Weight | Line Height | Usage in Phase 4 |
 |------|------|--------|-------------|------------------|
 | Body | 15px | 400 | 1.55 | Meeting stop body text, growth priority custom text, admin note textarea content, scorecard reflection text in oversight view |
-| Label / Meta | 14px | 400 | 1.5 | Side-by-side KPI cell secondary data, history table row text, meeting notes placeholder, partner name labels in meeting stops |
-| Heading | 20px | 700 | 1.3 | Per-stop heading in meeting wizard (KPI label displayed large), section headings on `/admin/kpi` and `/admin/scorecards` |
-| Display | 28px | 700 | 1.2 | Meeting Mode intro stop week summary heading, AdminHub hero card title |
+| Label / Meta | 14px | 400 | 1.5 | Side-by-side KPI cell secondary data, history table row text, meeting notes placeholder, partner name labels in meeting stops, week column in scorecard oversight |
+| Heading | 20px | 700 | 1.3 | Per-stop heading in meeting wizard (KPI label displayed large), section headings on `/admin/kpi` and `/admin/scorecards`, AdminHub hero card title |
+| Display | 28px | 700 | 1.2 | Meeting Mode intro stop week summary heading |
 
 Eyebrow / Overline (existing pattern, unchanged): 11px, weight 700, uppercase, letter-spacing 0.18em, color `var(--red)`.
 
@@ -86,7 +87,7 @@ All tokens are pre-existing CSS custom properties from `src/index.css` `:root`. 
 - Selected KPI card border + gradient fill (template editor selected state)
 - Meeting Mode hero card left-border accent stripe on AdminHub
 - Active/in-progress meeting indicator badge on AdminHub status summary
-- Primary CTA buttons (`btn-primary` class): "Start Meeting", "Lock Changes", "Save Template", "Confirm Unlock"
+- Primary CTA buttons (`btn-primary` class): "Start Meeting", "Lock Changes", "Save Template", "Confirm Unlock KPIs"
 - Destructive armed-state buttons: second click in two-click arm/confirm sequence
 - Eyebrow labels (`var(--red)`) — unchanged from existing pattern
 
@@ -109,7 +110,7 @@ New CSS classes Phase 4 adds to `src/index.css`. Executor writes these.
 .meeting-shell          — full-viewport flex column; background inherits html radial gradient
 .meeting-shell-header   — sticky top bar: progress pill + week label + End Meeting button; height 56px; backdrop-filter blur(8px)
 .meeting-progress-pill  — "Stop {n} of 10"; font 12px weight 700 uppercase letter-spacing 0.12em color var(--gold); background var(--surface-2); border 1px solid var(--border); border-radius 20px; padding 4px 14px
-.meeting-stop           — flex column gap 32px; padding 56px 40px; max-width 1200px; margin 0 auto; width 100%
+.meeting-stop           — flex column gap 32px; padding 48px 40px; max-width 1200px; margin 0 auto; width 100%
 .meeting-stop-eyebrow   — reuses .eyebrow class
 .meeting-stop-heading   — 20px weight 700; maps to existing h3 treatment
 .meeting-stop-subtext   — 15px color var(--muted) line-height 1.55
@@ -147,7 +148,7 @@ New CSS classes Phase 4 adds to `src/index.css`. Executor writes these.
 
 ```
 .hub-card--hero         — all .hub-card rules PLUS: border-left 3px solid var(--red); background linear-gradient(135deg, rgba(196,30,58,0.10), rgba(196,30,58,0.03)); grid-column 1/-1 (spans full width); padding 32px
-.hub-card--hero h3      — font-size 24px
+.hub-card--hero h3      — font-size 20px
 .hub-card--hero p       — font-size 15px color var(--muted)
 ```
 
@@ -168,7 +169,7 @@ New CSS classes Phase 4 adds to `src/index.css`. Executor writes these.
 .scorecard-oversight-row        — background var(--surface); border 1px solid var(--border); border-radius 14px; overflow hidden
 .scorecard-oversight-header     — display grid; grid-template-columns 160px 1fr 1fr; gap 0; border-bottom 1px solid var(--border)
 .scorecard-oversight-cell       — padding 14px 18px; font-size 14px line-height 1.5
-.scorecard-oversight-cell.week  — font-size 13px color var(--muted); font-weight 600
+.scorecard-oversight-cell.week  — font-size 14px color var(--muted); font-weight 600
 .scorecard-reopened-badge       — font-size 11px color var(--gold) italic; margin-left 8px
 ```
 
@@ -195,10 +196,10 @@ Reuse `.growth-status-badge` classes above. KpiSelectionView renders badge inlin
 
 ### KPI Template Editor
 
-- Cards render in `.kpi-list` (existing class) with inline "Edit" button visible on hover (`opacity: 0` default, `opacity: 1` on `.kpi-template-editor-card:hover`).
-- Clicking "Edit" swaps label/description/category to inputs in-place. Card transitions to `.kpi-template-editor-card.editing` state.
-- "Save" submits. "Cancel" discards. No modal. Both buttons appear in `.kpi-template-editor-actions`.
-- "Delete" button: two-click arm/confirm. First click shows "Confirm Delete?" text with a red-accented confirm button and a cancel ghost button. Three-second auto-disarm (cancel armed state after 3s of inactivity — matching existing AdminPartners ResetButton auto-disarm convention).
+- Cards render in `.kpi-list` (existing class) with inline "Edit Template" button visible on hover (`opacity: 0` default, `opacity: 1` on `.kpi-template-editor-card:hover`).
+- Clicking "Edit Template" swaps label/description/category to inputs in-place. Card transitions to `.kpi-template-editor-card.editing` state.
+- "Save Template" submits. "Discard Changes" discards. No modal. Both buttons appear in `.kpi-template-editor-actions`.
+- "Delete Template" button: two-click arm/confirm. First click shows "Confirm Delete?" text with a red-accented confirm button and a "Keep Template" ghost button. Three-second auto-disarm (cancel armed state after 3s of inactivity — matching existing AdminPartners ResetButton auto-disarm convention).
 - "+ Add Template" card at bottom of list opens a blank editing card in place.
 - Category field: `<select>` element with options sales / ops / client / team. Styled to match existing `input` rules.
 
@@ -210,7 +211,7 @@ Reuse `.growth-status-badge` classes above. KpiSelectionView renders badge inlin
 
 ### Scorecard Reopen (admin/scorecards only)
 
-- "Reopen" button per closed week row. Two-click arm/confirm. Confirm triggers `reopenScorecardWeek`. Badge `.scorecard-reopened-badge` "Reopened" appears inline after reopen.
+- "Reopen Week" button per closed week row. Two-click arm/confirm. Confirm triggers `reopenScorecardWeek`. Badge `.scorecard-reopened-badge` "Reopened" appears inline after reopen.
 
 ### Unlock Partner KPIs
 
@@ -252,15 +253,16 @@ Reuse `.growth-status-badge` classes above. KpiSelectionView renders badge inlin
 | Template section heading | "KPI Template Library" |
 | Template section subtext | "Changes to templates do not affect locked partner selections — labels are snapshotted at lock time." |
 | Add template CTA | "+ Add Template" |
-| Edit button label | "Edit" |
-| Save button label | "Save" |
-| Cancel button label | "Cancel" |
-| Delete button (unarmed) | "Delete" |
+| Edit button label | "Edit Template" |
+| Save button label | "Save Template" |
+| Cancel (in-progress edit) button label | "Discard Changes" |
+| Delete button (unarmed) | "Delete Template" |
 | Delete button (armed) | "Confirm Delete" |
+| Cancel (armed delete) button label | "Keep Template" |
 | Delete confirm warning | "This removes the template. Partner commitments already locked are unaffected." |
 | Partner selections section heading | "Partner KPI Selections" |
 | Unlock button (unarmed) | "Unlock KPIs" |
-| Unlock button (armed) | "Confirm Unlock" |
+| Unlock button (armed) | "Confirm Unlock KPIs" |
 | Unlock confirmation subtext | "This lets {Partner} re-select KPIs. Current picks are preserved. Re-lock starts a new 90-day period." |
 | Direct-edit button | "Edit Slot" |
 | Direct-edit save | "Save Change" |
@@ -285,7 +287,7 @@ Reuse `.growth-status-badge` classes above. KpiSelectionView renders badge inlin
 |---------|------|
 | Page eyebrow | "SCORECARD OVERSIGHT" |
 | Page heading | "Weekly Check-In History" |
-| Reopen button (unarmed) | "Reopen" |
+| Reopen button (unarmed) | "Reopen Week" |
 | Reopen button (armed) | "Confirm Reopen" |
 | Reopen warning | "This allows {Partner} to edit their check-in for this week again." |
 | Reopened badge | "Reopened" |
@@ -329,7 +331,7 @@ No component registries. All UI is project-owned vanilla CSS + React components.
 | `.kpi-card` flat card pattern for template editor | CONTEXT.md D-18, Phase 2 D-02 | Yes |
 | Two-click arm/confirm for all destructive actions | CONTEXT.md code_context, AdminPartners ResetButton | Yes |
 | AnimatePresence mode="wait" for wizard transitions | CONTEXT.md code_context, CLAUDE.md Framer Motion pattern | Yes |
-| Full-screen wizard layout for Meeting Mode | CONTEXT.md D-12 |Yes |
+| Full-screen wizard layout for Meeting Mode | CONTEXT.md D-12 | Yes |
 | Fixed 10-stop agenda | CONTEXT.md D-14 | Yes |
 | Meeting hero card promoted above hub section grid | CONTEXT.md D-02 | Yes |
 | Growth status 4-state: active/achieved/stalled/deferred | CONTEXT.md D-09 | Yes |
@@ -338,6 +340,11 @@ No component registries. All UI is project-owned vanilla CSS + React components.
 | Click-to-cycle for growth status | CONTEXT.md Claude's Discretion | Yes |
 | 400ms debounce on meeting notes | CONTEXT.md Claude's Discretion | Yes |
 | Past meetings as card list (no search in v1) | CONTEXT.md Claude's Discretion | Yes — card list newest-first |
+| hub-card--hero h3 uses 20px heading size (not 24px) | Checker fix — aligns to declared typography scale | Yes |
+| scorecard-oversight-cell.week uses 14px label size (not 13px) | Checker fix — aligns to declared typography scale | Yes |
+| Meeting stop padding uses 48px (2xl token, not 56px exception) | Checker fix — 56px not in standard set; 48px semantically appropriate | Yes |
+| Cancel labels context-specific: "Discard Changes" / "Keep Template" | Checker fix — generic "Cancel" blocked | Yes |
+| Single-word CTAs strengthened: "Edit Template", "Delete Template", "Reopen Week", "Confirm Unlock KPIs" | Checker recommendation | Yes |
 
 ---
 
