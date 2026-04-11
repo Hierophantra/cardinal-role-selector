@@ -38,18 +38,18 @@
 ### Admin — KPI Management
 
 - [ ] **ADMIN-01**: Admin can view both partners' KPI selections side-by-side
-- [ ] **ADMIN-02**: Admin can unlock a partner's locked KPIs to allow re-selection
-- [ ] **ADMIN-03**: Admin can directly modify a partner's KPI selections
-- [ ] **ADMIN-04**: Admin can create, edit, and remove KPI template options
-- [ ] **ADMIN-05**: Admin can update growth priority status (active / achieved / stalled / deferred)
-- [ ] **ADMIN-06**: Admin can annotate or override partner growth priority entries
+- [x] **ADMIN-02**: Admin can unlock a partner's locked KPIs to allow re-selection
+- [x] **ADMIN-03**: Admin can directly modify a partner's KPI selections
+- [x] **ADMIN-04**: Admin can create, edit, and remove KPI template options
+- [x] **ADMIN-05**: Admin can update growth priority status (active / achieved / stalled / deferred)
+- [x] **ADMIN-06**: Admin can annotate or override partner growth priority entries
 
 ### Admin — Meeting Mode
 
-- [ ] **MEET-01**: Admin can launch a guided Friday meeting agenda that steps through each KPI one at a time
+- [x] **MEET-01**: Admin can launch a guided Friday meeting agenda that steps through each KPI one at a time
 - [ ] **MEET-02**: Meeting mode shows both partners' status for each KPI side-by-side at each step
 - [ ] **MEET-03**: Meeting mode includes growth priority review as agenda steps
-- [ ] **MEET-04**: Admin can add inline notes/annotations at each agenda stop during the meeting
+- [x] **MEET-04**: Admin can add inline notes/annotations at each agenda stop during the meeting
 
 ## v2 Requirements
 
@@ -100,15 +100,15 @@
 | SCORE-04 | Phase 3 | Complete |
 | SCORE-05 | Phase 3 | Complete |
 | ADMIN-01 | Phase 4 | Pending |
-| ADMIN-02 | Phase 4 | Pending |
-| ADMIN-03 | Phase 4 | Pending |
-| ADMIN-04 | Phase 4 | Pending |
-| ADMIN-05 | Phase 4 | Pending |
-| ADMIN-06 | Phase 4 | Pending |
-| MEET-01 | Phase 4 | Pending |
+| ADMIN-02 | Phase 4 | Complete |
+| ADMIN-03 | Phase 4 | Complete |
+| ADMIN-04 | Phase 4 | Complete |
+| ADMIN-05 | Phase 4 | Complete |
+| ADMIN-06 | Phase 4 | Complete |
+| MEET-01 | Phase 4 | Complete |
 | MEET-02 | Phase 4 | Pending |
 | MEET-03 | Phase 4 | Pending |
-| MEET-04 | Phase 4 | Pending |
+| MEET-04 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 28 total

@@ -13,8 +13,8 @@ The existing role definition tool is complete. This roadmap builds the accountab
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Schema & Hub** - Data tables created and both partner and admin hub screens are live
-- [ ] **Phase 2: KPI Selection** - Partners can select, confirm, and lock in their 5 KPIs and growth priorities
-- [ ] **Phase 3: Weekly Scorecard** - Partners can submit and review weekly binary check-ins with reflection prompts
+- [x] **Phase 2: KPI Selection** - Partners can select, confirm, and lock in their 5 KPIs and growth priorities
+- [x] **Phase 3: Weekly Scorecard** - Partners can submit and review weekly binary check-ins with reflection prompts
 - [ ] **Phase 4: Admin Tools & Meeting Mode** - Admin can manage all KPI data and facilitate structured Friday meetings
 
 ## Phase Details
@@ -78,7 +78,13 @@ Plans:
   3. Admin can update growth priority status and annotate or override partner entries
   4. Admin can launch meeting mode and step through each KPI with both partners' statuses shown together
   5. Admin can add inline notes at each agenda stop during a live meeting
-**Plans**: TBD
+**Plans:** 5 plans
+Plans:
+- [x] 04-01-PLAN.md — Migration 005 + admin/meeting helpers in supabase.js + COPY constants + Phase 4 CSS
+- [ ] 04-02-PLAN.md — AdminKpi.jsx (template library + growth templates + per-partner selections editor) + AdminPartners deep link
+- [ ] 04-03-PLAN.md — AdminPartners growth editor + KpiSelectionView status badge + AdminScorecards.jsx
+- [ ] 04-04-PLAN.md — AdminMeeting.jsx landing + AdminMeetingSession.jsx 10-stop wizard
+- [ ] 04-05-PLAN.md — App.jsx routes + AdminHub hero card & enabled accountability cards + ROADMAP finalization
 **UI hint**: yes
 
 ## Progress
@@ -89,6 +95,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Schema & Hub | 2/2 | Complete | 2026-04-10 |
-| 2. KPI Selection | 0/3 | Not started | - |
-| 3. Weekly Scorecard | 0/3 | Not started | - |
-| 4. Admin Tools & Meeting Mode | 0/TBD | Not started | - |
+| 2. KPI Selection | 3/3 | Complete | 2026-04-10 |
+| 3. Weekly Scorecard | 3/3 | Complete | 2026-04-10 |
+| 4. Admin Tools & Meeting Mode | 0/5 | Not started | - |
