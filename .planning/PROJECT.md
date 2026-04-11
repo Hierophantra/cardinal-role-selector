@@ -22,16 +22,16 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 - ✓ Growth priority selection: 1 personal + 2 business growth priorities — Phase 2
 - ✓ 90-day lock-in confirmation for both KPIs and growth priorities — Phase 2
 - ✓ Weekly scorecard: binary check-in (yes/no per KPI) with prompted reflection (success contributors / blockers) — Phase 3 (code complete; E2E UAT deferred to 03-HUMAN-UAT.md)
+- ✓ Admin ability to create/edit/add KPI templates — Phase 4
+- ✓ Growth priority tracking: admin-controlled status cycle + admin note surfaced to partners — Phase 4
+- ✓ Admin comparison view: side-by-side KPI selections with unlock/swap/edit-label per slot — Phase 4 (AdminKpi)
+- ✓ Admin control panel: unlock/modify locked KPIs, manage growth priority status, reopen closed scorecard weeks — Phase 4
+- ✓ Admin meeting mode: 10-stop guided agenda (intro → 5 KPIs → 3 growth → wrap) with inline notes and scorecard override — Phase 4
+- ✓ Admin ability to override, annotate, or change partner choices based on discussions — Phase 4 (admin_override_at + admin_reopened_at)
 
 ### Active
 
-- [ ] Admin ability to create/edit/add KPI templates
-- [ ] Growth priority tracking: admin-controlled with optional partner input (admin can toggle permissions)
-- [ ] Partner progress view: partners see their own KPI and growth status when logged in
-- [ ] Admin comparison view: side-by-side KPI selections and status for both partners
-- [ ] Admin control panel: unlock/modify locked KPIs, manage growth priority status, toggle partner input permissions
-- [ ] Admin meeting mode: guided agenda walking through each KPI, growth priority, and discussion points for Friday meetings
-- [ ] Admin ability to override, annotate, or change partner choices based on discussions
+- [ ] Partner progress view: partners see their own KPI and growth status when logged in (partial — KpiSelectionView surfaces growth status + admin note as of Phase 4; full progress dashboard still open)
 
 ### Out of Scope
 
@@ -47,7 +47,7 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 - Two specific users (Theo, Jerry) plus one admin (the facilitator)
 - Partners have already completed the role questionnaire — their data exists in Supabase
 - KPI content is placeholder/template for now — 9 kpi_templates + 8 growth_priority_templates seeded; will be refined after upcoming partner meeting
-- Phases 1 (Schema & Hub), 2 (KPI Selection), and 3 (Weekly Scorecard) complete — partners can select/lock 5 KPIs + 3 growth priorities for 90 days and run a binary weekly check-in with reflections; E2E UAT for Phases 2 & 3 deferred pending migration apply and a locked test partner
+- Phases 1 (Schema & Hub), 2 (KPI Selection), 3 (Weekly Scorecard), and 4 (Admin Tools & Meeting Mode) complete — partners can select/lock 5 KPIs + 3 growth priorities for 90 days and run a binary weekly check-in with reflections; admin has full template/selection/growth/scorecard management plus a 10-stop guided Friday Meeting Mode with inline notes and scorecard override; E2E UAT for Phases 2, 3, and 4 (5 browser smokes) deferred to per-phase HUMAN-UAT files
 - The Friday meeting is the anchor ritual: admin facilitates, both partners present
 - Access code auth is intentionally simple — no user accounts needed for 3 users
 - Dark theme with Cardinal brand (red accents, gold labels) is established and should carry forward
@@ -88,4 +88,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-10 after Phase 3 (Weekly Scorecard) completion*
+*Last updated: 2026-04-11 after Phase 4 (Admin Tools & Meeting Mode) completion*
