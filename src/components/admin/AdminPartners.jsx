@@ -225,6 +225,13 @@ function PartnerSection({ partner }) {
             <Link to={`/hub/${partner}?admin=1`} className="btn-ghost" style={{ textDecoration: 'none' }}>
               Open Partner Hub
             </Link>
+            <Link
+              to={`/admin/kpi?partner=${partner}`}
+              className="btn btn-ghost"
+              style={{ textDecoration: 'none' }}
+            >
+              Manage KPIs
+            </Link>
           </div>
 
           {/* Growth Priorities editor (P04-03) */}
