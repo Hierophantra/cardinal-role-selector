@@ -47,8 +47,8 @@
 ### Admin — Meeting Mode
 
 - [x] **MEET-01**: Admin can launch a guided Friday meeting agenda that steps through each KPI one at a time
-- [ ] **MEET-02**: Meeting mode shows both partners' status for each KPI side-by-side at each step
-- [ ] **MEET-03**: Meeting mode includes growth priority review as agenda steps
+- [x] **MEET-02**: Meeting mode shows both partners' status for each KPI side-by-side at each step
+- [x] **MEET-03**: Meeting mode includes growth priority review as agenda steps
 - [x] **MEET-04**: Admin can add inline notes/annotations at each agenda stop during the meeting
 
 ## v2 Requirements
@@ -106,8 +106,8 @@
 | ADMIN-05 | Phase 4 | Complete |
 | ADMIN-06 | Phase 4 | Complete |
 | MEET-01 | Phase 4 | Complete |
-| MEET-02 | Phase 4 | Pending |
-| MEET-03 | Phase 4 | Pending |
+| MEET-02 | Phase 4 | Complete |
+| MEET-03 | Phase 4 | Complete |
 | MEET-04 | Phase 4 | Complete |
 
 **Coverage:**

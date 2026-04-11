@@ -82,8 +82,8 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md — Migration 005 + admin/meeting helpers in supabase.js + COPY constants + Phase 4 CSS
 - [x] 04-02-PLAN.md — AdminKpi.jsx (template library + growth templates + per-partner selections editor) + AdminPartners deep link
-- [ ] 04-03-PLAN.md — AdminPartners growth editor + KpiSelectionView status badge + AdminScorecards.jsx
-- [ ] 04-04-PLAN.md — AdminMeeting.jsx landing + AdminMeetingSession.jsx 10-stop wizard
+- [x] 04-03-PLAN.md — AdminPartners growth editor + KpiSelectionView status badge + AdminScorecards.jsx
+- [x] 04-04-PLAN.md — AdminMeeting.jsx landing + AdminMeetingSession.jsx 10-stop wizard
 - [ ] 04-05-PLAN.md — App.jsx routes + AdminHub hero card & enabled accountability cards + ROADMAP finalization
 **UI hint**: yes
 
@@ -97,4 +97,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Schema & Hub | 2/2 | Complete | 2026-04-10 |
 | 2. KPI Selection | 3/3 | Complete | 2026-04-10 |
 | 3. Weekly Scorecard | 3/3 | Complete | 2026-04-10 |
-| 4. Admin Tools & Meeting Mode | 0/5 | Not started | - |
+| 4. Admin Tools & Meeting Mode | 4/5 | In progress | - |
