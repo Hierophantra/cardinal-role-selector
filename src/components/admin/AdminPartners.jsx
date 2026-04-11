@@ -1,0 +1,376 @@
+import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  fetchSubmission,
+  fetchKpiSelections,
+  fetchGrowthPriorities,
+  fetchScorecards,
+  resetPartnerSubmission,
+  resetPartnerKpis,
+  resetPartnerScorecards,
+  updateGrowthPriorityStatus,
+  updateGrowthPriorityAdminNote,
+} from '../../lib/supabase.js';
+import { PARTNER_DISPLAY, GROWTH_STATUS_COPY, ADMIN_GROWTH_COPY } from '../../data/content.js';
+
+const MANAGED = ['theo', 'jerry'];
+
+// Growth priority status cycle (D-09, UI-SPEC 207-211): active -> achieved -> stalled -> deferred -> active
+const STATUS_CYCLE = ['active', 'achieved', 'stalled', 'deferred'];
+function nextStatus(current) {
+  const i = STATUS_CYCLE.indexOf(current);
+  return STATUS_CYCLE[(i + 1) % STATUS_CYCLE.length];
+}
+
+export default function AdminPartners() {
+  return (
+    <div className="app-shell">
+      <div className="app-header">
+        <div className="brand">
+          <img src="/logo.png" alt="Cardinal" />
+          <span>Role Definition Tool</span>
+        </div>
+        <div className="partner-tag">Admin</div>
+      </div>
+      <div className="container">
+        <div className="screen fade-in">
+          <div style={{ marginBottom: 16 }}>
+            <Link to="/admin/hub" className="btn btn-ghost" style={{ textDecoration: 'none' }}>
+              {'\u2190'} Back to Admin Hub
+            </Link>
+          </div>
+
+          <div className="screen-header">
+            <div className="eyebrow">Partner Management</div>
+            <h2>Theo &amp; Jerry</h2>
+            <p className="muted" style={{ fontSize: 13 }}>
+              Review each partner's current state, open their profile or hub, and reset
+              individual pieces of their data when needed.
+            </p>
+          </div>
+
+          {MANAGED.map((p) => (
+            <PartnerSection key={p} partner={p} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PartnerSection({ partner }) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [submission, setSubmission] = useState(null);
+  const [kpis, setKpis] = useState([]);
+  const [growth, setGrowth] = useState([]);
+  const [scorecards, setScorecards] = useState([]);
+  const [pendingReset, setPendingReset] = useState(null);
+  const [resetting, setResetting] = useState(false);
+  const [statusMsg, setStatusMsg] = useState('');
+
+  // Growth priority admin state (P04-03)
+  const [growthSaving, setGrowthSaving] = useState({}); // { [id]: 'status'|'note'|null }
+  const [growthError, setGrowthError] = useState('');
+  const [noteDrafts, setNoteDrafts] = useState({}); // { [id]: string }
+
+  const loadState = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const [sub, sels, gps, cards] = await Promise.all([
+        fetchSubmission(partner),
+        fetchKpiSelections(partner),
+        fetchGrowthPriorities(partner),
+        fetchScorecards(partner),
+      ]);
+      setSubmission(sub);
+      setKpis(sels);
+      setGrowth(gps);
+      setScorecards(cards);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to load state.');
+    } finally {
+      setLoading(false);
+    }
+  }, [partner]);
+
+  useEffect(() => {
+    loadState();
+  }, [loadState]);
+
+  // Seed note drafts whenever fresh growth rows arrive from loadState
+  useEffect(() => {
+    const seeded = {};
+    for (const g of growth) seeded[g.id] = g.admin_note ?? '';
+    setNoteDrafts(seeded);
+  }, [growth]);
+
+  async function handleCycleStatus(priorityId, currentStatus) {
+    setGrowthSaving((s) => ({ ...s, [priorityId]: 'status' }));
+    setGrowthError('');
+    try {
+      const ns = nextStatus(currentStatus || 'active');
+      await updateGrowthPriorityStatus(priorityId, ns);
+      await loadState();
+    } catch (err) {
+      console.error(err);
+      setGrowthError(ADMIN_GROWTH_COPY.errors.statusFail);
+    } finally {
+      setGrowthSaving((s) => ({ ...s, [priorityId]: null }));
+    }
+  }
+
+  async function handleSaveNote(priorityId) {
+    const text = noteDrafts[priorityId] ?? '';
+    setGrowthSaving((s) => ({ ...s, [priorityId]: 'note' }));
+    setGrowthError('');
+    try {
+      await updateGrowthPriorityAdminNote(priorityId, text);
+      await loadState();
+    } catch (err) {
+      console.error(err);
+      setGrowthError(ADMIN_GROWTH_COPY.errors.noteFail);
+    } finally {
+      setGrowthSaving((s) => ({ ...s, [priorityId]: null }));
+    }
+  }
+
+  async function performReset(kind) {
+    setResetting(true);
+    setStatusMsg('');
+    try {
+      if (kind === 'submission' || kind === 'all') {
+        await resetPartnerSubmission(partner);
+      }
+      if (kind === 'kpis' || kind === 'all') {
+        await resetPartnerKpis(partner);
+      }
+      if (kind === 'scorecards' || kind === 'all') {
+        await resetPartnerScorecards(partner);
+      }
+      setStatusMsg(`Reset complete: ${kind}`);
+      await loadState();
+    } catch (err) {
+      console.error(err);
+      setStatusMsg('Reset failed. Check console.');
+    } finally {
+      setResetting(false);
+      setPendingReset(null);
+    }
+  }
+
+  function handleResetClick(kind) {
+    if (pendingReset === kind) {
+      performReset(kind);
+    } else {
+      setPendingReset(kind);
+      setStatusMsg('');
+    }
+  }
+
+  const kpiLocked = kpis.length > 0 && Boolean(kpis[0]?.locked_until);
+  const committedScorecards = scorecards.filter((s) => s.committed_at).length;
+  const latestWeek = scorecards.length > 0 ? scorecards[0].week_of : null;
+  const name = PARTNER_DISPLAY[partner] ?? partner;
+
+  return (
+    <div
+      className="summary-section"
+      style={{
+        padding: 20,
+        border: '1px solid var(--border)',
+        borderRadius: 8,
+        marginBottom: 20,
+      }}
+    >
+      <h3 style={{ marginTop: 0 }}>{name}</h3>
+
+      {loading ? (
+        <p className="muted">Loading...</p>
+      ) : error ? (
+        <p className="muted" style={{ color: 'var(--miss)' }}>{error}</p>
+      ) : (
+        <>
+          <div className="kv">
+            <div className="k">Role Definition</div>
+            <div>
+              {submission
+                ? `Submitted ${new Date(submission.submitted_at).toLocaleString()}`
+                : 'Not submitted'}
+            </div>
+            <div className="k">KPI Selections</div>
+            <div>
+              {kpis.length === 0
+                ? 'None'
+                : `${kpis.length} selected${kpiLocked ? ' (locked)' : ' (unlocked)'}`}
+            </div>
+            <div className="k">Growth Priorities</div>
+            <div>{growth.length === 0 ? 'None' : `${growth.length} set`}</div>
+            <div className="k">Scorecards</div>
+            <div>
+              {scorecards.length === 0
+                ? 'None'
+                : `${scorecards.length} total \u00b7 ${committedScorecards} committed${
+                    latestWeek ? ` \u00b7 latest week ${latestWeek}` : ''
+                  }`}
+            </div>
+          </div>
+
+          <div className="nav-row" style={{ flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
+            <Link to={`/admin/profile/${partner}`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+              View Full Profile
+            </Link>
+            <Link to={`/hub/${partner}?admin=1`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+              Open Partner Hub
+            </Link>
+          </div>
+
+          {/* Growth Priorities editor (P04-03) */}
+          <div className="eyebrow" style={{ marginTop: 24 }}>{ADMIN_GROWTH_COPY.eyebrow}</div>
+          {growth.length === 0 ? (
+            <p className="muted" style={{ fontSize: 13, marginTop: 8 }}>
+              No growth priorities set.
+            </p>
+          ) : (
+            growth.map((g) => (
+              <div
+                key={g.id}
+                className="admin-growth-row"
+                style={{
+                  marginTop: 16,
+                  padding: 16,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 12,
+                }}
+              >
+                <div>
+                  {g.description}
+                  <span className="muted" style={{ marginLeft: 8, fontSize: 12 }}>
+                    ({g.type})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className={`growth-status-badge ${g.status || 'active'}`}
+                  onClick={() => handleCycleStatus(g.id, g.status)}
+                  disabled={growthSaving[g.id] === 'status'}
+                  style={{ marginTop: 8, cursor: 'pointer' }}
+                >
+                  {GROWTH_STATUS_COPY[g.status || 'active']}
+                </button>
+                <div style={{ marginTop: 12 }}>
+                  <div className="eyebrow">{GROWTH_STATUS_COPY.adminNoteLabel}</div>
+                  <textarea
+                    value={noteDrafts[g.id] ?? ''}
+                    onChange={(e) =>
+                      setNoteDrafts((d) => ({ ...d, [g.id]: e.target.value }))
+                    }
+                    onBlur={() => handleSaveNote(g.id)}
+                    placeholder={GROWTH_STATUS_COPY.adminNotePlaceholder(
+                      PARTNER_DISPLAY[partner] || partner
+                    )}
+                    rows={3}
+                    className="input"
+                    style={{ width: '100%', resize: 'vertical', marginTop: 4 }}
+                  />
+                </div>
+              </div>
+            ))
+          )}
+          {growthError && (
+            <div className="muted" style={{ color: 'var(--red)', marginTop: 8 }}>
+              {growthError}
+            </div>
+          )}
+
+          {/* Scorecard History deep link (P04-03) */}
+          <div style={{ marginTop: 16 }}>
+            <Link
+              to={`/admin/scorecards?partner=${partner}`}
+              className="btn btn-ghost"
+              style={{ textDecoration: 'none' }}
+            >
+              View Scorecard History
+            </Link>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>Reset Controls</div>
+            <p className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
+              Click once to arm, click again to confirm.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <ResetButton
+                label="Reset Role Definition"
+                armedLabel="Click again to delete role submission"
+                kind="submission"
+                pending={pendingReset}
+                resetting={resetting}
+                onClick={handleResetClick}
+              />
+              <ResetButton
+                label="Reset KPIs & Growth Priorities"
+                armedLabel="Click again to delete KPIs and growth priorities"
+                kind="kpis"
+                pending={pendingReset}
+                resetting={resetting}
+                onClick={handleResetClick}
+              />
+              <ResetButton
+                label="Reset Scorecards"
+                armedLabel="Click again to delete all scorecards"
+                kind="scorecards"
+                pending={pendingReset}
+                resetting={resetting}
+                onClick={handleResetClick}
+              />
+              <ResetButton
+                label="Reset Everything"
+                armedLabel={`Click again to delete ALL ${name} data`}
+                kind="all"
+                pending={pendingReset}
+                resetting={resetting}
+                onClick={handleResetClick}
+                danger
+              />
+            </div>
+            {statusMsg && (
+              <p className="muted" style={{ marginTop: 12, color: 'var(--success)' }}>
+                {statusMsg}
+              </p>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ResetButton({ label, armedLabel, kind, pending, resetting, onClick, danger }) {
+  const isArmed = pending === kind;
+  const display = isArmed ? armedLabel : label;
+  const style = {
+    textAlign: 'left',
+    justifyContent: 'flex-start',
+  };
+  if (isArmed) {
+    style.borderColor = 'var(--miss)';
+    style.color = 'var(--miss)';
+  } else if (danger) {
+    style.borderColor = 'var(--border)';
+  }
+  return (
+    <button
+      type="button"
+      className="btn btn-ghost"
+      style={style}
+      onClick={() => onClick(kind)}
+      disabled={resetting}
+    >
+      {display}
+    </button>
+  );
+}
