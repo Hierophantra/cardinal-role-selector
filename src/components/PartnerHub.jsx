@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { fetchSubmission, fetchKpiSelections, fetchScorecards } from '../lib/supabase.js';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { fetchSubmission, fetchSubmissions, fetchKpiSelections, fetchScorecards } from '../lib/supabase.js';
 import { getMondayOf } from '../lib/week.js';
 import { VALID_PARTNERS, PARTNER_DISPLAY, HUB_COPY, KPI_COPY, SCORECARD_COPY } from '../data/content.js';
 
 export default function PartnerHub() {
   const { partner } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const adminView = new URLSearchParams(location.search).get('admin') === '1';
   const [submission, setSubmission] = useState(null);
   const [kpiSelections, setKpiSelections] = useState([]);
   const [scorecards, setScorecards] = useState([]);
+  const [allSubs, setAllSubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -22,11 +25,13 @@ export default function PartnerHub() {
       fetchSubmission(partner),
       fetchKpiSelections(partner),
       fetchScorecards(partner),
+      fetchSubmissions().catch(() => []),
     ])
-      .then(([sub, sels, cards]) => {
+      .then(([sub, sels, cards, subs]) => {
         setSubmission(sub);
         setKpiSelections(sels);
         setScorecards(cards);
+        setAllSubs(subs);
       })
       .catch((err) => {
         console.error(err);
@@ -82,10 +87,22 @@ export default function PartnerHub() {
           ? copy.status.scorecardInProgress(scorecardAnsweredCount)
           : copy.status.scorecardNotCommitted;
 
+  // Comparison is enabled only when both theo and jerry have submitted (D-comparison-gate)
+  const theoSubmitted = allSubs.some((s) => s.partner === 'theo');
+  const jerrySubmitted = allSubs.some((s) => s.partner === 'jerry');
+  const comparisonReady = theoSubmitted && jerrySubmitted;
+
   return (
     <div className="app-shell">
       <div className="container">
         <div className="screen fade-in">
+          {adminView && (
+            <div className="nav-row" style={{ marginBottom: 12 }}>
+              <Link to="/admin/hub" className="btn-ghost">
+                {'\u2190'} Back to Admin Hub
+              </Link>
+            </div>
+          )}
           <div className="eyebrow">{copy.eyebrow}</div>
           <div className="partner-greeting">
             <div className="screen-header">
@@ -142,6 +159,38 @@ export default function PartnerHub() {
                       : SCORECARD_COPY.hubCard.ctaNotCommitted}
                 </span>
               </Link>
+            )}
+
+            {/* Meeting Summary — visible only when KPIs are locked (D-18) */}
+            {kpiLocked && (
+              <Link to={`/meeting-summary/${partner}`} className="hub-card">
+                <div className="hub-card-icon">{'\u{1F4DD}'}</div>
+                <h3>Meeting Summary</h3>
+                <p>Review the latest Friday meeting — notes per stop and how the week scored.</p>
+                <span className="hub-card-cta">View latest summary {'\u2192'}</span>
+              </Link>
+            )}
+
+            {/* Side-by-Side Comparison — enabled only when both partners have submitted */}
+            {comparisonReady ? (
+              <Link
+                to="/comparison"
+                state={{ from: `/hub/${partner}${adminView ? '?admin=1' : ''}` }}
+                className="hub-card"
+              >
+                <div className="hub-card-icon">{'\u{1F500}'}</div>
+                <h3>{copy.cards.comparison.title}</h3>
+                <p>{copy.cards.comparison.description}</p>
+              </Link>
+            ) : (
+              <div className="hub-card hub-card--disabled">
+                <div className="hub-card-icon">{'\u{1F500}'}</div>
+                <h3>{copy.cards.comparison.title}</h3>
+                <p>{copy.cards.comparison.description}</p>
+                <span className="hub-card-disabled-label">
+                  Unlocks when both partners submit
+                </span>
+              </div>
             )}
           </div>
         </div>

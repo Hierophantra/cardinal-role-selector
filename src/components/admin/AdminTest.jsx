@@ -158,6 +158,13 @@ export default function AdminTest() {
                   >
                     Launch Mock Meeting Session
                   </Link>
+                  <Link
+                    to="/admin/test/meeting-summary-mock"
+                    className="btn-ghost"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    View Mock Meeting Summary
+                  </Link>
                 </div>
               </div>
 
