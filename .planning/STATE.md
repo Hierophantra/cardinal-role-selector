@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Milestone complete
-stopped_at: Completed 04-05-PLAN.md — Phase 4 Wave 3 integration (routes + hero hub)
-last_updated: "2026-04-11T06:42:17.395Z"
+stopped_at: Completed quick task 260411-47z — per-cell override fix + MeetingSummary views
+last_updated: "2026-04-11T08:00:00.000Z"
 progress:
   total_phases: 4
   completed_phases: 4
@@ -123,6 +123,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260411-3uw | Add mock Meeting Mode session triggerable from AdminTest | 2026-04-11 | 1a4923b | [260411-3uw-add-mock-meeting-mode-session-triggerabl](./quick/260411-3uw-add-mock-meeting-mode-session-triggerabl/) |
+| 260411-47z | Fix mock per-card override + add MeetingSummary partner view and mock | 2026-04-11 | e2d05c8 | [260411-47z-fix-mock-per-card-override-add-meetingsu](./quick/260411-47z-fix-mock-per-card-override-add-meetingsu/) |
 
 ## Session Continuity
 
