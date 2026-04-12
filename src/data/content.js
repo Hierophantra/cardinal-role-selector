@@ -1,6 +1,18 @@
 // All copy for the questionnaire lives here so content can be updated
 // without touching component logic.
 
+// --- Season configuration ---
+export const CURRENT_SEASON = 'Spring Season 2026';
+export const SEASON_END_DATE = '2026-06-30T23:59:59Z';
+
+export const CATEGORY_LABELS = {
+  sales: 'Sales & BD',
+  ops: 'Operations',
+  client: 'Client Satisfaction',
+  team: 'Team & Culture',
+  finance: 'Finance',
+};
+
 export const purposeOptions = [
   {
     id: 'revenue_driver',
@@ -374,22 +386,22 @@ export const KPI_COPY = {
     eyebrow: 'KPI SELECTION',
     heading: 'Choose your 5 KPIs',
     subtext:
-      "These are the metrics you're committing to track weekly for the next 90 days. Select exactly 5.",
+      `These are the metrics you're committing to track weekly for ${CURRENT_SEASON}. Select exactly 5.`,
     counterLabel: (n) => `${n} of 5 selected`,
     counterAtCap: '5 of 5 selected \u2014 deselect to swap',
     growth: {
       eyebrow: 'GROWTH PRIORITIES',
       heading: 'Set your growth priorities',
       subtext:
-        'Choose 1 personal growth priority and 2 business growth priorities for this 90-day period.',
+        `Choose 1 personal growth priority and 2 business growth priorities for ${CURRENT_SEASON}.`,
       personalLabel: 'Personal Growth Priority',
       businessLabel1: 'Business Priority 1',
       businessLabel2: 'Business Priority 2',
       customToggle: 'Write my own',
       customPlaceholderPersonal:
-        'Describe your personal growth focus for the next 90 days...',
+        `Describe your personal growth focus for ${CURRENT_SEASON}...`,
       customPlaceholderBusiness:
-        'Describe your business priority for the next 90 days...',
+        `Describe your business priority for ${CURRENT_SEASON}...`,
     },
     primaryCta: 'Review & Confirm',
     emptyTemplates:
@@ -399,9 +411,9 @@ export const KPI_COPY = {
   },
   confirmation: {
     eyebrow: 'REVIEW YOUR COMMITMENT',
-    heading: 'Your 90-day accountability commitment',
+    heading: `Your ${CURRENT_SEASON} accountability commitment`,
     commitmentStatement:
-      'These are locked for 90 days. Only Trace can unlock them.',
+      `These are locked for ${CURRENT_SEASON}. Only Trace can unlock them.`,
     kpiSectionLabel: 'Your 5 KPIs',
     growthSectionLabel: 'Growth Priorities',
     backCta: 'Back to Edit',
@@ -409,7 +421,7 @@ export const KPI_COPY = {
     errorLock: 'Failed to lock in your KPIs. Please try again.',
   },
   lockSuccess: {
-    heading: 'Your KPIs are locked in for 90 days.',
+    heading: `Your KPIs are locked in for ${CURRENT_SEASON}.`,
     subtext: 'Redirecting you back to your hub...',
   },
   readOnly: {
@@ -499,7 +511,7 @@ export const ADMIN_KPI_COPY = {
   unlockBtn: 'Unlock KPIs',
   unlockConfirmBtn: 'Confirm Unlock KPIs',
   unlockWarning: (partnerName) =>
-    `This lets ${partnerName} re-select KPIs. Current picks are preserved. Re-lock starts a new 90-day period.`,
+    `This lets ${partnerName} re-select KPIs. Current picks are preserved. Re-lock starts a new ${CURRENT_SEASON} period.`,
   editSlotBtn: 'Edit Slot',
   saveSlotBtn: 'Save Change',
   emptyTemplates: 'No KPI templates yet. Add the first one below.',
