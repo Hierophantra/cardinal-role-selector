@@ -11,7 +11,7 @@ import {
   updateGrowthPriorityStatus,
   updateGrowthPriorityAdminNote,
 } from '../../lib/supabase.js';
-import { PARTNER_DISPLAY, GROWTH_STATUS_COPY, ADMIN_GROWTH_COPY } from '../../data/content.js';
+import { PARTNER_DISPLAY, GROWTH_STATUS_COPY, ADMIN_GROWTH_COPY, ADMIN_ACCOUNTABILITY_COPY } from '../../data/content.js';
 
 const MANAGED = ['theo', 'jerry'];
 
@@ -175,6 +175,13 @@ function PartnerSection({ partner }) {
   const latestWeek = scorecards.length > 0 ? scorecards[0].week_of : null;
   const name = PARTNER_DISPLAY[partner] ?? partner;
 
+  const missCount = scorecards.reduce((total, card) => {
+    const results = card.kpi_results ?? {};
+    return total + Object.values(results).filter((entry) => entry?.result === 'no').length;
+  }, 0);
+  const submittedWeekCount = scorecards.filter((s) => s.committed_at).length;
+  const pipTriggered = missCount >= 5;
+
   return (
     <div
       className="summary-section"
@@ -302,6 +309,23 @@ function PartnerSection({ partner }) {
             >
               View Scorecard History
             </Link>
+          </div>
+
+          {/* Accountability tracking (ADMIN-09, ADMIN-10) */}
+          <div className="admin-accountability-card">
+            <div className="eyebrow">{ADMIN_ACCOUNTABILITY_COPY.eyebrow}</div>
+            <p className={`admin-miss-count${missCount === 0 ? ' admin-miss-count--zero' : ''}`}>
+              {missCount === 0
+                ? ADMIN_ACCOUNTABILITY_COPY.zeroMisses
+                : ADMIN_ACCOUNTABILITY_COPY.missCount(missCount, submittedWeekCount)}
+            </p>
+            <p className="admin-miss-footnote">{ADMIN_ACCOUNTABILITY_COPY.footnote}</p>
+            {pipTriggered && (
+              <div className="admin-pip-flag">
+                <p className="admin-pip-flag-heading">{ADMIN_ACCOUNTABILITY_COPY.pipHeading}</p>
+                <p className="admin-pip-flag-body">{ADMIN_ACCOUNTABILITY_COPY.pipBody(missCount)}</p>
+              </div>
+            )}
           </div>
 
           <div style={{ marginTop: 16 }}>
