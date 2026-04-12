@@ -96,7 +96,7 @@ Plans:
 **Milestone Goal:** Evolve from shared 5-KPI pool to per-partner mandatory+choice structure (7 KPIs each), seed real Cardinal content, replace "90-day" language with "Spring Season 2026", and update all downstream systems.
 
 - [ ] **Phase 5: Schema Evolution & Content Seeding** - Migration adds partner_scope/mandatory columns, seeds 20 real KPI templates + growth options, extends scorecard columns
-- [ ] **Phase 6: Partner & Meeting Flow Updates** - Selection shows 5 mandatory + 2 choice, scorecard renders 7 rows, meeting mode walks 7 stops, all copy says "Spring Season 2026"
+- [x] **Phase 6: Partner & Meeting Flow Updates** - Selection shows 5 mandatory + 2 choice, scorecard renders 7 rows, meeting mode walks 7 stops, all copy says "Spring Season 2026" (completed 2026-04-12)
 - [ ] **Phase 7: Admin Model Evolution** - Trace can edit all KPIs, template management enforces mandatory rules, PIP tracking surfaces cumulative misses
 
 ## Phase Details
@@ -126,11 +126,11 @@ Plans:
   3. Lock confirmation screen uses "Spring Season 2026" language and summarizes all 7 KPIs + growth priorities
   4. Weekly scorecard renders 7 KPI rows with mandatory KPIs visually distinguished from choice KPIs, plus fields for tasks completed, tasks carried over, weekly win, weekly learning, and week rating
   5. Meeting Mode walks 7 KPI stops per partner with mandatory vs choice distinction visible in stop headers
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [x] 06-01-PLAN.md — Content.js copy updates + Phase 6 CSS classes + fetchKpiSelections mandatory join
 - [x] 06-02-PLAN.md — KpiSelection.jsx mandatory+choice restructure + KpiSelectionView.jsx Core badges
-- [ ] 06-03-PLAN.md — Scorecard.jsx 7-KPI + Weekly Reflection + AdminMeetingSession.jsx 12-stop + human-verify
+- [x] 06-03-PLAN.md — Scorecard.jsx 7-KPI + Weekly Reflection + AdminMeetingSession.jsx 12-stop + human-verify
 **UI hint**: yes
 
 ### Phase 7: Admin Model Evolution
@@ -156,5 +156,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 3. Weekly Scorecard | v1.0 | 3/3 | Complete | 2026-04-10 |
 | 4. Admin Tools & Meeting Mode | v1.0 | 5/5 | Complete | 2026-04-11 |
 | 5. Schema Evolution & Content Seeding | v1.1 | 0/2 | Not started | - |
-| 6. Partner & Meeting Flow Updates | v1.1 | 1/3 | In Progress|  |
+| 6. Partner & Meeting Flow Updates | v1.1 | 3/3 | Complete   | 2026-04-12 |
 | 7. Admin Model Evolution | v1.1 | 0/? | Not started | - |

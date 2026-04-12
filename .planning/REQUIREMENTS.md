@@ -72,13 +72,13 @@
 ### Scorecard
 
 - [x] **SCORE-06**: Weekly scorecard renders 7 KPI rows per partner (5 mandatory + 2 chosen)
-- [ ] **SCORE-07**: Scorecard includes tasks completed, tasks carried over, weekly win, weekly learning, and 1-5 week rating fields
-- [ ] **SCORE-08**: Mandatory KPIs visually distinguished from choice KPIs on the scorecard
+- [x] **SCORE-07**: Scorecard includes tasks completed, tasks carried over, weekly win, weekly learning, and 1-5 week rating fields
+- [x] **SCORE-08**: Mandatory KPIs visually distinguished from choice KPIs on the scorecard
 
 ### Meeting Mode
 
-- [ ] **MEET-05**: Meeting Mode walks 7 KPI stops per partner instead of 5
-- [ ] **MEET-06**: Meeting Mode displays mandatory vs choice distinction in KPI stop headers
+- [x] **MEET-05**: Meeting Mode walks 7 KPI stops per partner instead of 5
+- [x] **MEET-06**: Meeting Mode displays mandatory vs choice distinction in KPI stop headers
 
 ### Admin
 
@@ -156,10 +156,10 @@
 | SELECT-04 | Phase 6 | Complete |
 | SELECT-05 | Phase 6 | Complete |
 | SCORE-06 | Phase 6 | Complete |
-| SCORE-07 | Phase 6 | Pending |
-| SCORE-08 | Phase 6 | Pending |
-| MEET-05 | Phase 6 | Pending |
-| MEET-06 | Phase 6 | Pending |
+| SCORE-07 | Phase 6 | Complete |
+| SCORE-08 | Phase 6 | Complete |
+| MEET-05 | Phase 6 | Complete |
+| MEET-06 | Phase 6 | Complete |
 | ADMIN-07 | Phase 7 | Pending |
 | ADMIN-08 | Phase 7 | Pending |
 | ADMIN-09 | Phase 7 | Pending |
