@@ -137,7 +137,7 @@ Structure:
 - Zero-miss state: miss count line text uses `var(--success)` color — `"No missed KPIs this season"`
 
 **PIP flag (triggered at miss count >= 5):**
-- Container: `background: linear-gradient(180deg, rgba(196,30,58,0.12), rgba(196,30,58,0.04))`, `border: 1px solid rgba(196,30,58,0.40)`, `border-left: 3px solid var(--red)`, `border-radius: 10px`, `padding: 16px 18px`, `margin-top: 12px`
+- Container: `background: linear-gradient(180deg, rgba(196,30,58,0.12), rgba(196,30,58,0.04))`, `border: 1px solid rgba(196,30,58,0.40)`, `border-left: 3px solid var(--red)`, `border-radius: 10px`, `padding: 16px 20px`, `margin-top: 12px`
 - Flag heading: `"⚠ Performance Improvement Plan threshold reached"` — 15px, `#f2c7cf`, weight 700
 - Flag body: `"X missed KPIs counted this season. Review with partner."` — 12px, `#f2c7cf`, weight 400
 
@@ -210,7 +210,7 @@ The following classes do not yet exist and must be added to `src/index.css` in a
 | `.kpi-scope-tag` | Partner scope badge — identical visual to `.kpi-category-tag` (gold tint pill). Reuse rule or alias. |
 | `.kpi-mandatory-badge` | Mandatory/Choice badge — identical visual to `.kpi-core-badge`. Reuse rule or alias. |
 | `.admin-accountability-card` | Container for accountability section — `var(--surface)` bg, `var(--border)` border, `border-radius: 14px`, `padding: 20px 24px`, `display: flex`, `flex-direction: column`, `gap: 12px` |
-| `.admin-pip-flag` | PIP alert panel — red gradient bg tint, `border-left: 3px solid var(--red)`, `border-radius: 10px`, `padding: 16px 18px`, `margin-top: 12px` |
+| `.admin-pip-flag` | PIP alert panel — red gradient bg tint, `border-left: 3px solid var(--red)`, `border-radius: 10px`, `padding: 16px 20px`, `margin-top: 12px` |
 | `.admin-pip-flag-heading` | Flag heading — 15px, `#f2c7cf`, weight 700 |
 | `.admin-pip-flag-body` | Flag sub-text — 12px, `#f2c7cf`, weight 400 |
 | `.admin-miss-count` | Miss count line — 15px, `var(--text)`, weight 400 |
