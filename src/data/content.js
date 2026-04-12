@@ -3,6 +3,7 @@
 
 // --- Season configuration ---
 export const CURRENT_SEASON = 'Spring Season 2026';
+export const SEASON_START_DATE = '2026-01-05'; // First Monday of the season
 export const SEASON_END_DATE = '2026-06-30T23:59:59Z';
 
 export const CATEGORY_LABELS = {
@@ -512,8 +513,7 @@ export const ADMIN_KPI_COPY = {
   eyebrow: 'KPI MANAGEMENT',
   heading: 'KPI Templates & Partner Selections',
   templateSectionHeading: 'KPI Template Library',
-  templateSectionSubtext:
-    'Changes to templates do not affect locked partner selections \u2014 labels are snapshotted at lock time.',
+  templateSectionSubtext: 'Editing a template label updates all partner selections that reference it.',
   addTemplateCta: '+ Add Template',
   editBtn: 'Edit Template',
   saveBtn: 'Save Template',
@@ -532,10 +532,13 @@ export const ADMIN_KPI_COPY = {
   saveSlotBtn: 'Save Change',
   emptyTemplates: 'No KPI templates yet. Add the first one below.',
   emptySelections: (partnerName) => `${partnerName} has not locked KPIs yet.`,
+  savedFlash: 'Template updated',
+  mandatoryNoDeleteNote: 'Mandatory templates cannot be deleted.',
   errors: {
     saveFail: "Couldn't save template. Try again.",
     deleteFail: "Couldn't delete template. Try again.",
     unlockFail: "Couldn't unlock KPIs. Try again.",
+    cascadeFail: 'Template saved, but KPI selection labels could not be updated. Refresh and try again.',
   },
 };
 

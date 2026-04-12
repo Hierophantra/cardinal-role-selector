@@ -258,6 +258,16 @@ export async function deleteKpiTemplate(id) {
   if (error) throw error;
 }
 
+// --- Admin Model Evolution (Phase 7) ---
+
+export async function cascadeTemplateLabelSnapshot(templateId, newLabel) {
+  const { error } = await supabase
+    .from('kpi_selections')
+    .update({ label_snapshot: newLabel })
+    .eq('template_id', templateId);
+  if (error) throw error;
+}
+
 // --- Admin: Growth Priority Template CRUD (ADMIN-04) — Phase 4 ---
 
 export async function createGrowthPriorityTemplate({ type, description, sort_order, mandatory, partner_scope, measure }) {
