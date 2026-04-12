@@ -36,9 +36,9 @@ Declared values (multiples of 4 only):
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px | Icon gaps, badge padding (horizontal 4px), dot gaps |
-| sm | 8px | Gap between KPI card internal elements, button gaps, badge padding (vertical 8px) |
-| md | 16px | Section internal padding, input padding, growth field gaps |
+| xs | 4px | Icon gaps, badge padding (vertical 4px), dot gaps |
+| sm | 8px | Gap between KPI card internal elements, button gaps, badge padding (horizontal 8px) |
+| md | 16px | Section internal padding, input padding, growth field gaps, mandatory item padding (vertical) |
 | lg | 24px | KPI card padding, confirmation section padding, scorecard section padding |
 | xl | 32px | Between major sections (mandatory list ↔ choice section, KPI rows ↔ weekly reflection) |
 | 2xl | 48px | Meeting stop top padding, lock-success vertical padding |
@@ -53,20 +53,21 @@ Exceptions:
 
 ## Typography
 
-Source: existing `src/index.css` global declarations. No new font sizes introduced.
+Source: existing `src/index.css` global declarations. Exactly 4 discrete sizes declared.
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body / KPI label | 15px | 400 | 1.55 |
 | Label / meta / badge text | 12px | 700 | 1.2 |
-| Subtext / description / muted | 13–14px | 400 | 1.5–1.6 |
+| Subtext / description / muted | 13px | 400 | 1.5 |
 | Heading / screen title | 28px | 700 | 1.2 |
 
 Notes (all sourced from existing CSS):
-- Body: `.kpi-card-label`, `.scorecard-kpi-label`, `.meeting-stop-subtext` all use `font-size: 15px; line-height: 1.55`
-- Labels: `.kpi-category-tag`, `.growth-priority-group-label`, `.meeting-partner-name` all use `font-size: 12px; font-weight: 700; letter-spacing: 0.12–0.14em; text-transform: uppercase`
-- Headings: `.screen-header h2` uses `font-size: 28px; line-height: 1.2`
-- No new font sizes. The "Core" badge and week-rating labels fit the 12px/700 label role.
+- Body (15px): `.kpi-card-label`, `.scorecard-kpi-label`, `.meeting-stop-subtext` all use `font-size: 15px; line-height: 1.55`
+- Labels (12px): `.kpi-category-tag`, `.growth-priority-group-label`, `.meeting-partner-name` all use `font-size: 12px; font-weight: 700; letter-spacing: 0.12–0.14em; text-transform: uppercase`; `.kpi-core-badge` aligns to this role
+- Subtext (13px): `.kpi-mandatory-item-measure`, description text, muted secondary lines
+- Headings (28px): `.screen-header h2` uses `font-size: 28px; line-height: 1.2`
+- No new font sizes introduced. The "Core" badge fits the 12px/700 label role. Subtext is a single value of 13px (not a range).
 
 ---
 
@@ -102,12 +103,14 @@ Source: CSS custom properties in `:root` block of `src/index.css`.
 
 New CSS classes required for Phase 6 (extend `src/index.css`):
 
+**Primary visual anchor — KPI selection screen:** The "Choose 2 More" section heading (`.eyebrow`) and the interactive card grid below it are the primary visual focal point of the selection screen. The mandatory section above it is intentionally lower-contrast (no hover, gold border only) to direct attention toward the choice cards.
+
 ### Core Badge (used in selection, scorecard, meeting mode, KPI view)
 
 ```
 .kpi-core-badge
   display: inline-block
-  font-size: 11px
+  font-size: 12px
   font-weight: 700
   text-transform: uppercase
   letter-spacing: 0.12em
@@ -115,7 +118,7 @@ New CSS classes required for Phase 6 (extend `src/index.css`):
   background: rgba(212,168,67,0.10)
   border: 1px solid rgba(212,168,67,0.30)
   border-radius: 6px
-  padding: 2px 6px
+  padding: 4px 8px
   vertical-align: middle
   margin-left: 8px
 ```
@@ -126,7 +129,7 @@ New CSS classes required for Phase 6 (extend `src/index.css`):
 .kpi-mandatory-section
   display: flex
   flex-direction: column
-  gap: 12px
+  gap: 16px
   margin-bottom: 32px
 
 .kpi-mandatory-item
@@ -134,10 +137,10 @@ New CSS classes required for Phase 6 (extend `src/index.css`):
   border: 1px solid var(--border)
   border-left: 3px solid var(--gold)
   border-radius: 14px
-  padding: 18px 20px
+  padding: 16px 24px
   display: flex
   flex-direction: column
-  gap: 6px
+  gap: 8px
   cursor: default
 
 .kpi-mandatory-item-label
