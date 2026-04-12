@@ -129,7 +129,7 @@ Plans:
 **Plans:** 1/3 plans executed
 Plans:
 - [x] 06-01-PLAN.md — Content.js copy updates + Phase 6 CSS classes + fetchKpiSelections mandatory join
-- [ ] 06-02-PLAN.md — KpiSelection.jsx mandatory+choice restructure + KpiSelectionView.jsx Core badges
+- [x] 06-02-PLAN.md — KpiSelection.jsx mandatory+choice restructure + KpiSelectionView.jsx Core badges
 - [ ] 06-03-PLAN.md — Scorecard.jsx 7-KPI + Weekly Reflection + AdminMeetingSession.jsx 12-stop + human-verify
 **UI hint**: yes
 

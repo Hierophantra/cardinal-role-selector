@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Mandatory/Choice KPI Model
 status: Ready to execute
-stopped_at: Completed 06-01-PLAN.md
-last_updated: "2026-04-12T05:25:28.771Z"
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-04-12T05:29:37.882Z"
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-04-11)
 ## Current Position
 
 Phase: 06 (partner-meeting-flow-updates) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -45,6 +45,7 @@ Plan: 2 of 3
 | Phase 05 P02 | 2 | 2 tasks | 2 files |
 | Phase 05-schema-evolution-content-seeding P01 | 2 | 1 tasks | 1 files |
 | Phase 06-partner-meeting-flow-updates P01 | 8 | 3 tasks | 3 files |
+| Phase 06-partner-meeting-flow-updates P02 | 7 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,8 @@ Recent decisions affecting current work:
 - [Phase 05-schema-evolution-content-seeding]: Pre-expand meeting_notes CHECK to kpi_7 in Phase 5 to avoid extra migration in Phase 6
 - [Phase 06-partner-meeting-flow-updates]: SCORECARD_COPY counter/counterComplete and MEETING_COPY kpiEyebrow now accept total parameter — downstream components must pass KPI count dynamically
 - [Phase 06-partner-meeting-flow-updates]: fetchKpiSelections joins kpi_templates(mandatory, measure) — consumers access via sel.kpi_templates?.mandatory; zero-migration approach
+- [Phase 06-partner-meeting-flow-updates]: Self-chosen personal growth stored as 'Title — Measure' single string — split on em-dash for hydration
+- [Phase 06-partner-meeting-flow-updates]: Mandatory personal growth priority inserted at lockIn time, not continueToConfirmation — avoids duplicate rows if partner navigates back
 
 ### Pending Todos
 
@@ -82,6 +85,6 @@ None — real KPI content provided 2026-04-11, unblocking schema seeding.
 
 ## Session Continuity
 
-Last session: 2026-04-12T05:25:28.768Z
-Stopped at: Completed 06-01-PLAN.md
+Last session: 2026-04-12T05:29:37.880Z
+Stopped at: Completed 06-02-PLAN.md
 Resume file: None
