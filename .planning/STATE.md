@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Mandatory/Choice KPI Model
-status: Ready to execute
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-04-12T04:12:04.342Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-04-12T04:12:42.855Z"
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -43,6 +43,7 @@ Plan: 2 of 2
 | 03-weekly-scorecard | 3/3 | ~15m | ~5m |
 | 04-admin-tools-meeting-mode | 5/5 | ~25m | ~5m |
 | Phase 05 P02 | 2 | 2 tasks | 2 files |
+| Phase 05-schema-evolution-content-seeding P01 | 2 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -57,6 +58,9 @@ Recent decisions affecting current work:
 - kpi_results JSONB shape keyed by kpi_selection_id — must accommodate 7 keys in v1.1
 - 10-stop meeting agenda needs expansion to 12+ stops (7 KPIs + growth stops)
 - [Phase 05]: SEASON_END_DATE='2026-06-30T23:59:59Z' is the single source of truth for the lock deadline; all 90-day copy replaced with CURRENT_SEASON interpolation
+- [Phase 05-schema-evolution-content-seeding]: Clean-slate migration: wipe placeholder data, re-seed 20 real Cardinal KPI templates with partner_scope/mandatory/measure columns
+- [Phase 05-schema-evolution-content-seeding]: Short category names (sales/ops/client/team/finance) in DB; display labels in content.js
+- [Phase 05-schema-evolution-content-seeding]: Pre-expand meeting_notes CHECK to kpi_7 in Phase 5 to avoid extra migration in Phase 6
 
 ### Pending Todos
 
@@ -75,6 +79,6 @@ None — real KPI content provided 2026-04-11, unblocking schema seeding.
 
 ## Session Continuity
 
-Last session: 2026-04-12T04:12:04.339Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-04-12T04:12:42.852Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None

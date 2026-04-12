@@ -113,7 +113,7 @@ Plans:
   5. All UI copy constants referencing "90-day lock" or "90 days" are updated to "Spring Season 2026"
 **Plans:** 2 plans
 Plans:
-- [ ] 05-01-PLAN.md — Migration 006: schema alterations (kpi_templates, growth_priority_templates, scorecards, meeting_notes) + data wipe + 20 KPI template seeds + 8 growth template seeds + mandatory kpi_selections for theo/jerry/test
+- [x] 05-01-PLAN.md — Migration 006: schema alterations (kpi_templates, growth_priority_templates, scorecards, meeting_notes) + data wipe + 20 KPI template seeds + 8 growth template seeds + mandatory kpi_selections for theo/jerry/test
 - [x] 05-02-PLAN.md — content.js CURRENT_SEASON/CATEGORY_LABELS constants + 8 copy replacements + supabase.js lock function and template CRUD updates for v1.1 columns
 
 ### Phase 6: Partner & Meeting Flow Updates
