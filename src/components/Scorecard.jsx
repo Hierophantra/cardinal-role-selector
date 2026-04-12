@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   fetchKpiSelections,
@@ -25,7 +25,7 @@ export default function Scorecard() {
   // Data/loading state
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [lockedKpis, setLockedKpis] = useState([]);         // 5 kpi_selections rows (with label_snapshot)
+  const [lockedKpis, setLockedKpis] = useState([]);         // kpi_selections rows (with label_snapshot)
   const [allScorecards, setAllScorecards] = useState([]);   // from fetchScorecards, newest first
 
   // View state
@@ -42,6 +42,13 @@ export default function Scorecard() {
   const [saveError, setSaveError] = useState(null);
   const [savedVisible, setSavedVisible] = useState(false);  // controls .scorecard-saved.visible class
 
+  // Weekly Reflection state
+  const [tasksCompleted, setTasksCompleted] = useState('');
+  const [tasksCarriedOver, setTasksCarriedOver] = useState('');
+  const [weeklyWin, setWeeklyWin] = useState('');
+  const [weeklyLearning, setWeeklyLearning] = useState('');
+  const [weekRating, setWeekRating] = useState(null); // 1-5 or null
+
   // Submit state
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -57,16 +64,14 @@ export default function Scorecard() {
   const savedTimerRef = useRef(null);
   const savedFadeRef = useRef(null);
 
+  // Ref to skip weekRating auto-save on initial mount
+  const weekRatingInitialized = useRef(false);
+
   // ---- Mount guards + data fetch ----
   useEffect(() => {
     // Guard 1: invalid partner slug
     if (!VALID_PARTNERS.includes(partner)) {
       navigate('/', { replace: true });
-      return;
-    }
-    // Guard 2: 'test' partner cannot write accountability data (DB CHECK constraint)
-    if (partner === 'test') {
-      navigate(`/hub/${partner}`, { replace: true });
       return;
     }
 
@@ -86,6 +91,12 @@ export default function Scorecard() {
           setView('editing');
           setKpiResults(thisWeekRow.kpi_results || {});
           setCommittedAt(thisWeekRow.committed_at);
+          // Hydrate reflection fields
+          setTasksCompleted(thisWeekRow.tasks_completed ?? '');
+          setTasksCarriedOver(thisWeekRow.tasks_carried_over ?? '');
+          setWeeklyWin(thisWeekRow.weekly_win ?? '');
+          setWeeklyLearning(thisWeekRow.weekly_learning ?? '');
+          setWeekRating(thisWeekRow.week_rating ?? null);
         } else {
           setView('precommit');
         }
@@ -102,6 +113,16 @@ export default function Scorecard() {
     };
   }, [partner]);
 
+  // Auto-save when weekRating changes (after initial mount)
+  useEffect(() => {
+    if (!weekRatingInitialized.current) {
+      weekRatingInitialized.current = true;
+      return;
+    }
+    if (weekClosed || !committedAt) return;
+    persist(kpiResults);
+  }, [weekRating]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ---- Derived values ----
   const weekClosed = useMemo(() => isWeekClosed(currentWeekOf), [currentWeekOf]);
 
@@ -114,6 +135,14 @@ export default function Scorecard() {
     [lockedKpis, kpiResults]
   );
 
+  const allKpisAnswered = useMemo(
+    () => lockedKpis.length > 0 && lockedKpis.every(k => {
+      const r = kpiResults[k.id]?.result;
+      return r === 'yes' || r === 'no';
+    }),
+    [lockedKpis, kpiResults]
+  );
+
   const allAnsweredWithReflection = useMemo(
     () =>
       lockedKpis.length > 0 &&
@@ -123,6 +152,8 @@ export default function Scorecard() {
       }),
     [lockedKpis, kpiResults]
   );
+
+  const canSubmit = allAnsweredWithReflection && weeklyWin.trim().length > 0 && weekRating !== null;
 
   const historyRows = useMemo(
     () => allScorecards.filter((s) => s.week_of !== currentWeekOf),
@@ -168,6 +199,11 @@ export default function Scorecard() {
         kpi_results: nextKpiResults,
         committed_at: committedAt,
         submitted_at: new Date().toISOString(),
+        tasks_completed: tasksCompleted,
+        tasks_carried_over: tasksCarriedOver,
+        weekly_win: weeklyWin,
+        weekly_learning: weeklyLearning,
+        week_rating: weekRating,
       });
       // Replace row in allScorecards so history + hub derivations stay consistent
       setAllScorecards((prev) => {
@@ -221,7 +257,7 @@ export default function Scorecard() {
   }
 
   async function handleSubmit() {
-    if (submitting || !allAnsweredWithReflection) return;
+    if (submitting || !canSubmit) return;
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -231,6 +267,11 @@ export default function Scorecard() {
         kpi_results: kpiResults,
         committed_at: committedAt,
         submitted_at: new Date().toISOString(),
+        tasks_completed: tasksCompleted,
+        tasks_carried_over: tasksCarriedOver,
+        weekly_win: weeklyWin,
+        weekly_learning: weeklyLearning,
+        week_rating: weekRating,
       });
       setView('success');
       setTimeout(() => navigate(`/hub/${partner}`), 1800);
@@ -307,6 +348,25 @@ export default function Scorecard() {
                           </div>
                         );
                       })}
+                      {/* Reflection fields from history */}
+                      {row.weekly_win && (
+                        <div className="scorecard-history-kpi-detail">
+                          <div className="scorecard-reflection-label">{SCORECARD_COPY.weeklyWinLabel}</div>
+                          <div className="scorecard-history-kpi-reflection">{row.weekly_win}</div>
+                        </div>
+                      )}
+                      {row.weekly_learning && (
+                        <div className="scorecard-history-kpi-detail">
+                          <div className="scorecard-reflection-label">{SCORECARD_COPY.weeklyLearningLabel}</div>
+                          <div className="scorecard-history-kpi-reflection">{row.weekly_learning}</div>
+                        </div>
+                      )}
+                      {row.week_rating && (
+                        <div className="scorecard-history-kpi-detail">
+                          <div className="scorecard-reflection-label">{SCORECARD_COPY.weekRatingLabel}</div>
+                          <div className="scorecard-history-kpi-reflection">{row.week_rating} / 5</div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -342,6 +402,11 @@ export default function Scorecard() {
         <AnimatePresence mode="wait">
           {view === 'precommit' && (
             <motion.div key="precommit" className="screen" {...motionProps}>
+              <div className="nav-row" style={{ marginBottom: 12 }}>
+                <Link to={`/hub/${partner}`} className="btn-ghost">
+                  {'\u2190'} Back to Hub
+                </Link>
+              </div>
               <div className="eyebrow">{SCORECARD_COPY.eyebrow}</div>
               <div className="screen-header">
                 <h2>{SCORECARD_COPY.headingPreCommit}</h2>
@@ -354,7 +419,10 @@ export default function Scorecard() {
                   style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', display: 'flex', flexDirection: 'column', gap: 8 }}
                 >
                   {lockedKpis.map((k) => (
-                    <li key={k.id} className="scorecard-kpi-preview">{k.label_snapshot}</li>
+                    <li key={k.id} className="scorecard-kpi-preview">
+                      {k.label_snapshot}
+                      {k.kpi_templates?.mandatory && <span className="kpi-core-badge">Core</span>}
+                    </li>
                   ))}
                 </ol>
                 <div className="nav-row">
@@ -378,14 +446,21 @@ export default function Scorecard() {
 
           {view === 'editing' && (
             <motion.div key="editing" className="screen" {...motionProps}>
+              <div className="nav-row" style={{ marginBottom: 12 }}>
+                <Link to={`/hub/${partner}`} className="btn-ghost">
+                  {'\u2190'} Back to Hub
+                </Link>
+              </div>
               <div className="eyebrow">{SCORECARD_COPY.eyebrow}</div>
               <div className="screen-header">
                 <h2>{SCORECARD_COPY.headingEditing}</h2>
               </div>
 
               <div className="scorecard-meta-row">
-                <span className={`scorecard-counter${answeredCount === 5 ? ' complete' : ''}`}>
-                  {answeredCount === 5 ? SCORECARD_COPY.counterComplete : SCORECARD_COPY.counter(answeredCount)}
+                <span className={`scorecard-counter${answeredCount === lockedKpis.length ? ' complete' : ''}`}>
+                  {answeredCount === lockedKpis.length
+                    ? SCORECARD_COPY.counterComplete(lockedKpis.length)
+                    : SCORECARD_COPY.counter(answeredCount, lockedKpis.length)}
                 </span>
                 <span className={`scorecard-saved${savedVisible ? ' visible' : ''}`}>
                   {SCORECARD_COPY.savedIndicator}
@@ -413,7 +488,10 @@ export default function Scorecard() {
                       : null;
                   return (
                     <div key={k.id} className={rowClass}>
-                      <div className="scorecard-kpi-label">{k.label_snapshot}</div>
+                      <div className="scorecard-kpi-label">
+                        {k.label_snapshot}
+                        {k.kpi_templates?.mandatory && <span className="kpi-core-badge">Core</span>}
+                      </div>
                       <div className="scorecard-yn-row">
                         <button
                           type="button"
@@ -449,19 +527,107 @@ export default function Scorecard() {
                 })}
               </div>
 
+              {/* Weekly Reflection section — visible after all KPIs answered */}
+              {allKpisAnswered && (
+                <div className="scorecard-reflection-section">
+                  <div className="eyebrow">{SCORECARD_COPY.reflectionEyebrow}</div>
+
+                  {/* Tasks row — side by side */}
+                  <div className="scorecard-tasks-row">
+                    <div>
+                      <label className="scorecard-reflection-label">{SCORECARD_COPY.tasksCompletedLabel}</label>
+                      <textarea
+                        className="textarea"
+                        value={tasksCompleted}
+                        onChange={e => setTasksCompleted(e.target.value)}
+                        onBlur={() => persist(kpiResults)}
+                        placeholder={SCORECARD_COPY.tasksCompletedPlaceholder}
+                        disabled={weekClosed}
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <label className="scorecard-reflection-label">{SCORECARD_COPY.tasksCarriedOverLabel}</label>
+                      <textarea
+                        className="textarea"
+                        value={tasksCarriedOver}
+                        onChange={e => setTasksCarriedOver(e.target.value)}
+                        onBlur={() => persist(kpiResults)}
+                        placeholder={SCORECARD_COPY.tasksCarriedOverPlaceholder}
+                        disabled={weekClosed}
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Weekly Win — required */}
+                  <div>
+                    <label className="scorecard-reflection-label">
+                      {SCORECARD_COPY.weeklyWinLabel}
+                      <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--muted-2)' }}>{SCORECARD_COPY.weeklyWinRequired}</span>
+                    </label>
+                    <textarea
+                      className="textarea"
+                      value={weeklyWin}
+                      onChange={e => setWeeklyWin(e.target.value)}
+                      onBlur={() => persist(kpiResults)}
+                      placeholder={SCORECARD_COPY.weeklyWinPlaceholder}
+                      disabled={weekClosed}
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Weekly Learning — optional */}
+                  <div>
+                    <label className="scorecard-reflection-label">{SCORECARD_COPY.weeklyLearningLabel}</label>
+                    <textarea
+                      className="textarea"
+                      value={weeklyLearning}
+                      onChange={e => setWeeklyLearning(e.target.value)}
+                      onBlur={() => persist(kpiResults)}
+                      placeholder={SCORECARD_COPY.weeklyLearningPlaceholder}
+                      disabled={weekClosed}
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Week Rating — 1-5 buttons */}
+                  <div>
+                    <label className="scorecard-reflection-label">{SCORECARD_COPY.weekRatingLabel}</label>
+                    <div className="scorecard-rating-row">
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <button
+                          key={n}
+                          type="button"
+                          className={`scorecard-rating-btn${weekRating === n ? ' active' : ''}`}
+                          onClick={() => { setWeekRating(n); }}
+                          disabled={weekClosed}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="scorecard-rating-labels">
+                      <span>{SCORECARD_COPY.weekRatingLeft}</span>
+                      <span>{SCORECARD_COPY.weekRatingRight}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {!weekClosed && (
                 <div className="nav-row" style={{ marginTop: 24 }}>
                   <button
                     type="button"
                     className="btn-primary"
                     onClick={handleSubmit}
-                    disabled={!allAnsweredWithReflection || submitting}
+                    disabled={!canSubmit || submitting}
                   >
                     {SCORECARD_COPY.submitCta}
                   </button>
                 </div>
               )}
-              {!weekClosed && !allAnsweredWithReflection && (
+              {!weekClosed && !canSubmit && (
                 <p className="scorecard-submit-note">{SCORECARD_COPY.submitNote}</p>
               )}
               {submitError && (
