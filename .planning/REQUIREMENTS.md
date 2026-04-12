@@ -67,11 +67,11 @@
 - [ ] **SELECT-02**: Partner chooses 2 additional KPIs from their role-specific pool of 6 options
 - [ ] **SELECT-03**: Personal growth: partner sees 1 mandatory priority pre-assigned + enters 1 self-chosen priority (text input with measure)
 - [ ] **SELECT-04**: Business growth: both partners see 6 options + custom entry; 2 are selected jointly and confirmed by Trace
-- [ ] **SELECT-05**: Lock confirmation uses "Spring Season 2026" language instead of "90 days"
+- [x] **SELECT-05**: Lock confirmation uses "Spring Season 2026" language instead of "90 days"
 
 ### Scorecard
 
-- [ ] **SCORE-06**: Weekly scorecard renders 7 KPI rows per partner (5 mandatory + 2 chosen)
+- [x] **SCORE-06**: Weekly scorecard renders 7 KPI rows per partner (5 mandatory + 2 chosen)
 - [ ] **SCORE-07**: Scorecard includes tasks completed, tasks carried over, weekly win, weekly learning, and 1-5 week rating fields
 - [ ] **SCORE-08**: Mandatory KPIs visually distinguished from choice KPIs on the scorecard
 
@@ -154,8 +154,8 @@
 | SELECT-02 | Phase 6 | Pending |
 | SELECT-03 | Phase 6 | Pending |
 | SELECT-04 | Phase 6 | Pending |
-| SELECT-05 | Phase 6 | Pending |
-| SCORE-06 | Phase 6 | Pending |
+| SELECT-05 | Phase 6 | Complete |
+| SCORE-06 | Phase 6 | Complete |
 | SCORE-07 | Phase 6 | Pending |
 | SCORE-08 | Phase 6 | Pending |
 | MEET-05 | Phase 6 | Pending |
