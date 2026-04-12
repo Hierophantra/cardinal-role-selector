@@ -142,7 +142,10 @@ Plans:
   2. Admin template management shows mandatory/choice distinction and prevents deletion of mandatory templates
   3. Admin sees a cumulative count of individual missed KPIs per partner across all submitted weeks, with a PIP flag when count reaches 5
   4. Partners never see missed-KPI counts or PIP status anywhere in their views
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 07-01-PLAN.md — AdminKpi badge row + measure field + label_snapshot cascade + delete suppression for mandatory templates
+- [ ] 07-02-PLAN.md — AdminPartners accountability card with cumulative miss count + PIP flag + human-verify checkpoint
 
 ## Progress
 
@@ -157,4 +160,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. Admin Tools & Meeting Mode | v1.0 | 5/5 | Complete | 2026-04-11 |
 | 5. Schema Evolution & Content Seeding | v1.1 | 0/2 | Not started | - |
 | 6. Partner & Meeting Flow Updates | v1.1 | 3/3 | Complete   | 2026-04-12 |
-| 7. Admin Model Evolution | v1.1 | 0/? | Not started | - |
+| 7. Admin Model Evolution | v1.1 | 0/2 | Not started | - |
