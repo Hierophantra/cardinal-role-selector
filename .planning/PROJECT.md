@@ -34,7 +34,7 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 - [ ] Per-partner mandatory+choice KPI model (7 KPIs each: 2 shared mandatory + 3 role-specific mandatory + 2 chosen from partner-specific pool of 6)
 - [x] Real KPI content seeded — 20 templates replacing 9 placeholders, with actual labels, measures, and categories from Cardinal framework — Validated in Phase 5
 - [ ] Per-partner selection flow — 5 mandatory pre-assigned (non-removable by partner), 2 chosen; replaces "pick 5 from shared 9"
-- [ ] Admin can edit all KPIs (mandatory and choice) — labels, measures, targets always editable by Trace
+- [x] Admin can edit all KPIs (mandatory and choice) — labels, measures, targets always editable by Trace — Validated in Phase 7
 - [ ] Scorecard updated for 7 KPIs per partner instead of 5
 - [ ] Meeting Mode updated for 7 KPI stops instead of 5
 - [ ] Growth priority evolution — 1 mandatory personal (advisor-assigned) + 1 self-chosen personal + 2 business (chosen jointly from 6 options)
@@ -57,6 +57,7 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 - KPI content finalized — real framework doc provided 2026-04-11 with 22 KPI templates, per-partner mandatory/choice structure, and growth priority options
 - Phases 1 (Schema & Hub), 2 (KPI Selection), 3 (Weekly Scorecard), and 4 (Admin Tools & Meeting Mode) complete — v1.0 milestone delivered the core accountability loop
 - Phase 5 (Schema Evolution & Content Seeding) complete — v1.1 schema with 20 real KPI templates, 8 growth priority templates, per-partner mandatory/choice model, and "Spring Season 2026" copy
+- Phase 7 (Admin Model Evolution) complete — AdminKpi shows mandatory/choice badges + scope per template, measure field editable, label edits cascade to kpi_selections.label_snapshot, mandatory templates protected from deletion; AdminPartners shows per-partner accountability card with cumulative miss count and PIP flag at 5+ misses
 - v1.1 evolves the KPI model: per-partner mandatory+choice (7 KPIs each), real content, "Spring Season 2026" lock period, and updated downstream systems
 - The admin facilitator is Trace — use "Trace" in user-facing UI, not "admin"
 - The Friday meeting is the anchor ritual: admin facilitates, both partners present
