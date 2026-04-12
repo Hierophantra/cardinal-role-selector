@@ -95,7 +95,7 @@ Plans:
 
 **Milestone Goal:** Evolve from shared 5-KPI pool to per-partner mandatory+choice structure (7 KPIs each), seed real Cardinal content, replace "90-day" language with "Spring Season 2026", and update all downstream systems.
 
-- [ ] **Phase 5: Schema Evolution & Content Seeding** - Migration adds partner_scope/mandatory columns, seeds 22 real KPI templates + growth options, extends scorecard columns
+- [ ] **Phase 5: Schema Evolution & Content Seeding** - Migration adds partner_scope/mandatory columns, seeds 20 real KPI templates + growth options, extends scorecard columns
 - [ ] **Phase 6: Partner & Meeting Flow Updates** - Selection shows 5 mandatory + 2 choice, scorecard renders 7 rows, meeting mode walks 7 stops, all copy says "Spring Season 2026"
 - [ ] **Phase 7: Admin Model Evolution** - Trace can edit all KPIs, template management enforces mandatory rules, PIP tracking surfaces cumulative misses
 
@@ -107,11 +107,14 @@ Plans:
 **Requirements**: SCHEMA-01, SCHEMA-02, SCHEMA-03, SCHEMA-04, SCHEMA-05
 **Success Criteria** (what must be TRUE):
   1. kpi_templates table has partner_scope and mandatory columns, and querying by partner returns the correct mandatory+choice split (5 mandatory + 6 choice options per partner)
-  2. All 22 KPI templates exist with real labels, measures, and categories — the 9 placeholder templates are replaced
+  2. All 20 KPI templates exist with real labels, measures, and categories — the 9 placeholder templates are replaced
   3. Growth priority templates include mandatory/optional distinction with real Cardinal content (2 mandatory personal + 6 business options)
   4. Scorecards table has columns for tasks_completed, tasks_carried_over, weekly_win, weekly_learning, and week_rating
   5. All UI copy constants referencing "90-day lock" or "90 days" are updated to "Spring Season 2026"
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 05-01-PLAN.md — Migration 006: schema alterations (kpi_templates, growth_priority_templates, scorecards, meeting_notes) + data wipe + 20 KPI template seeds + 8 growth template seeds + mandatory kpi_selections for theo/jerry/test
+- [ ] 05-02-PLAN.md — content.js CURRENT_SEASON/CATEGORY_LABELS constants + 8 copy replacements + supabase.js lock function and template CRUD updates for v1.1 columns
 
 ### Phase 6: Partner & Meeting Flow Updates
 **Goal**: Partners experience the mandatory+choice selection model, see 7 KPIs on their scorecard, and meetings walk through all 7 KPI stops per partner
@@ -148,6 +151,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 2. KPI Selection | v1.0 | 3/3 | Complete | 2026-04-10 |
 | 3. Weekly Scorecard | v1.0 | 3/3 | Complete | 2026-04-10 |
 | 4. Admin Tools & Meeting Mode | v1.0 | 5/5 | Complete | 2026-04-11 |
-| 5. Schema Evolution & Content Seeding | v1.1 | 0/? | Not started | - |
+| 5. Schema Evolution & Content Seeding | v1.1 | 0/2 | Not started | - |
 | 6. Partner & Meeting Flow Updates | v1.1 | 0/? | Not started | - |
 | 7. Admin Model Evolution | v1.1 | 0/? | Not started | - |
