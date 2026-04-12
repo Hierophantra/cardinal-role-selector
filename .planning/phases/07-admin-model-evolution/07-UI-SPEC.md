@@ -41,12 +41,13 @@ Declared values (must be multiples of 4):
 | md | 16px | Card internal row spacing, form field gap |
 | lg | 24px | Section padding, card padding |
 | xl | 32px | Between major sections on AdminKpi and AdminPartners |
-| 2xl | 48px | Page top padding (`.container` uses 40px — nearest on-scale value) |
+| 2xl | 48px | Page top padding |
 | 3xl | 64px | Not used in Phase 7 admin views |
 
-Exceptions:
-- Container padding is 40px vertical (existing `.container` class — do not change)
-- Touch-target minimum: 44px height on all interactive buttons (existing scorecard Y/N pattern — apply to accountability card action buttons)
+### Existing Non-Scale Constraints (Do Not Change)
+
+- `40px` — existing `.container` vertical padding (do not change)
+- `44px` — existing touch-target minimum height for scorecard Y/N buttons (apply to accountability card action buttons — do not change)
 
 > Source: `src/index.css` `.container`, `.btn`, `.scorecard-yn-btn`, `.scorecard-rating-btn`.
 
@@ -58,14 +59,16 @@ Exceptions:
 |------|------|--------|-------------|
 | Body | 15px | 400 | 1.55 |
 | Label / badge / eyebrow | 12px | 700 | 1.0 (single line) |
+| Sub-heading (card h3) | 20px | 700 | 1.3 |
 | Heading (section h2) | 28px | 700 | 1.2 |
-| Sub-heading (card h3) | 17–20px | 700 | 1.3 |
 
 Notes:
 - All h1–h4 use `font-weight: 700; letter-spacing: -0.02em` (existing global rule)
-- Eyebrow text: 11px, weight 700, uppercase, `letter-spacing: 0.18em`, color `var(--red)` — reuse `.eyebrow` class
+- Eyebrow text: 12px, weight 700, uppercase, `letter-spacing: 0.18em`, color `var(--red)` — reuse `.eyebrow` class
 - Badge text: 12px, weight 700, uppercase, `letter-spacing: 0.12em` — reuse `.kpi-core-badge` / `.kpi-category-tag` pattern
-- Muted descriptions: 13px, weight 400, color `var(--muted)`
+- Muted descriptions and footnotes: 12px, weight 400, color `var(--muted)`
+- PIP flag heading: 15px, `#f2c7cf`, weight 700
+- PIP flag body text: 12px, `#f2c7cf`, weight 400
 
 > Source: `src/index.css` global h rules, `.screen-header h2`, `.admin-card h3`, `.eyebrow`, `.kpi-core-badge`.
 
@@ -109,10 +112,12 @@ Components modified in Phase 7 (no new page-level components):
 **Edit form — measure field addition:**
 - Add `<textarea>` for `measure` field after `description` field (D-04)
 - Label: `"MEASURE"` — follows existing form label pattern (12px uppercase, `var(--muted)`, `letter-spacing: 0.12em`)
-- Placeholder: `"How this KPI is tracked (e.g. Weekly pipeline report, CRM updated)"` 
+- Placeholder: `"How this KPI is tracked (e.g. Weekly pipeline report, CRM updated)"`
 - Same `.vision-block` / textarea styling as existing form fields
 
 ### AdminPartners — Accountability Card (per partner)
+
+**Primary visual anchor:** PIP flag panel (when triggered); ACCOUNTABILITY eyebrow label (when not triggered).
 
 **New card: Accountability** — added to each `PartnerSection` below existing data sections.
 
@@ -126,15 +131,15 @@ Structure:
 
 **Miss count display (normal state — fewer than 5 misses):**
 - Container: `var(--surface)` background, `var(--border)` border, `border-radius: 14px`, `padding: 20px 24px`
-- Eyebrow: `.eyebrow` class (`var(--red)`, 11px, uppercase) — text: `ACCOUNTABILITY`
+- Eyebrow: `.eyebrow` class (`var(--red)`, 12px, uppercase) — text: `ACCOUNTABILITY`
 - Miss count line: 15px, `var(--text)`, weight 400 — `"X missed KPIs across Y submitted weeks"`
-- Sub-note: 13px, `var(--muted)` — `"Only explicit 'No' answers are counted"`
+- Sub-note: 12px, `var(--muted)` — `"Only explicit 'No' answers are counted"`
 - Zero-miss state: miss count line text uses `var(--success)` color — `"No missed KPIs this season"`
 
 **PIP flag (triggered at miss count >= 5):**
 - Container: `background: linear-gradient(180deg, rgba(196,30,58,0.12), rgba(196,30,58,0.04))`, `border: 1px solid rgba(196,30,58,0.40)`, `border-left: 3px solid var(--red)`, `border-radius: 10px`, `padding: 16px 18px`, `margin-top: 12px`
-- Flag text: `"⚠ Performance Improvement Plan threshold reached"` — 14px, `#f2c7cf`, weight 700
-- Sub-text: `"X missed KPIs counted this season. Review with partner."` — 13px, `#f2c7cf`, weight 400
+- Flag heading: `"⚠ Performance Improvement Plan threshold reached"` — 15px, `#f2c7cf`, weight 700
+- Flag body: `"X missed KPIs counted this season. Review with partner."` — 12px, `#f2c7cf`, weight 400
 
 **Card visibility:** Always visible (not collapsible) — D-discretion resolved as always-visible; simpler and faster during meetings when Trace needs immediate access.
 
@@ -150,10 +155,10 @@ Structure:
 ### Label snapshot cascade — save button
 - When Trace saves a template edit, the save button shows `"Saving..."` text during async operation (existing `saving` state pattern)
 - On success: flash message — `"Template updated"` (existing `flash` state pattern)
-- On cascade failure: error message — `"Template saved, but KPI selection labels could not be updated. Refresh and try again."` — 13px, `var(--red)`
+- On cascade failure: error message — `"Template saved, but KPI selection labels could not be updated. Refresh and try again."` — 12px, `var(--red)`
 
 ### Accountability card — loading state
-- While scorecards are fetching: show `"Loading accountability data..."` in muted text (13px, `var(--muted-2)`)
+- While scorecards are fetching: show `"Loading accountability data..."` in muted text (12px, `var(--muted-2)`)
 - Error state: `"Could not load scorecard data."` with a retry link
 
 ### PIP flag — no interaction
@@ -206,11 +211,11 @@ The following classes do not yet exist and must be added to `src/index.css` in a
 | `.kpi-mandatory-badge` | Mandatory/Choice badge — identical visual to `.kpi-core-badge`. Reuse rule or alias. |
 | `.admin-accountability-card` | Container for accountability section — `var(--surface)` bg, `var(--border)` border, `border-radius: 14px`, `padding: 20px 24px`, `display: flex`, `flex-direction: column`, `gap: 12px` |
 | `.admin-pip-flag` | PIP alert panel — red gradient bg tint, `border-left: 3px solid var(--red)`, `border-radius: 10px`, `padding: 16px 18px`, `margin-top: 12px` |
-| `.admin-pip-flag-heading` | Flag heading — 14px, `#f2c7cf`, weight 700 |
-| `.admin-pip-flag-body` | Flag sub-text — 13px, `#f2c7cf`, weight 400 |
+| `.admin-pip-flag-heading` | Flag heading — 15px, `#f2c7cf`, weight 700 |
+| `.admin-pip-flag-body` | Flag sub-text — 12px, `#f2c7cf`, weight 400 |
 | `.admin-miss-count` | Miss count line — 15px, `var(--text)`, weight 400 |
 | `.admin-miss-count--zero` | Miss count line zero state — color: `var(--success)` |
-| `.admin-miss-footnote` | Footnote below miss count — 13px, `var(--muted-2)`, style italic |
+| `.admin-miss-footnote` | Footnote below miss count — 12px, `var(--muted-2)`, style italic |
 | `.kpi-template-tag-row` | Horizontal flex row for scope + mandatory badges — `display: flex`, `gap: 8px`, `align-items: center`, `flex-wrap: wrap`, `margin-top: 8px` |
 | `.kpi-template-no-delete-note` | "Cannot be deleted" inline note — 12px, `var(--muted-2)`, `font-style: italic` |
 
