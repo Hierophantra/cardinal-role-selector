@@ -32,13 +32,13 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 ### Active
 
 - [ ] Per-partner mandatory+choice KPI model (7 KPIs each: 2 shared mandatory + 3 role-specific mandatory + 2 chosen from partner-specific pool of 6)
-- [ ] Real KPI content seeded — 22 templates replacing 9 placeholders, with actual labels, measures, and categories from Cardinal framework
+- [x] Real KPI content seeded — 20 templates replacing 9 placeholders, with actual labels, measures, and categories from Cardinal framework — Validated in Phase 5
 - [ ] Per-partner selection flow — 5 mandatory pre-assigned (non-removable by partner), 2 chosen; replaces "pick 5 from shared 9"
 - [ ] Admin can edit all KPIs (mandatory and choice) — labels, measures, targets always editable by Trace
 - [ ] Scorecard updated for 7 KPIs per partner instead of 5
 - [ ] Meeting Mode updated for 7 KPI stops instead of 5
 - [ ] Growth priority evolution — 1 mandatory personal (advisor-assigned) + 1 self-chosen personal + 2 business (chosen jointly from 6 options)
-- [ ] Lock period language updated — "90-day lock" → "Spring Season 2026" throughout copy and UI
+- [x] Lock period language updated — "90-day lock" → "Spring Season 2026" throughout copy and data layer — Validated in Phase 5
 - [ ] Partner progress view: partners see their own KPI and growth status when logged in (partial — KpiSelectionView surfaces growth status + admin note as of Phase 4; full progress dashboard still open)
 
 ### Out of Scope
@@ -56,6 +56,7 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 - Partners have already completed the role questionnaire — their data exists in Supabase
 - KPI content finalized — real framework doc provided 2026-04-11 with 22 KPI templates, per-partner mandatory/choice structure, and growth priority options
 - Phases 1 (Schema & Hub), 2 (KPI Selection), 3 (Weekly Scorecard), and 4 (Admin Tools & Meeting Mode) complete — v1.0 milestone delivered the core accountability loop
+- Phase 5 (Schema Evolution & Content Seeding) complete — v1.1 schema with 20 real KPI templates, 8 growth priority templates, per-partner mandatory/choice model, and "Spring Season 2026" copy
 - v1.1 evolves the KPI model: per-partner mandatory+choice (7 KPIs each), real content, "Spring Season 2026" lock period, and updated downstream systems
 - The admin facilitator is Trace — use "Trace" in user-facing UI, not "admin"
 - The Friday meeting is the anchor ritual: admin facilitates, both partners present
@@ -88,13 +89,13 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 **Goal:** Evolve from shared 5-KPI pool to per-partner mandatory+choice structure (7 KPIs each), seed real Cardinal content, replace "90-day" language with "Spring Season 2026", and update all downstream systems.
 
 **Target features:**
-- Schema evolution — `kpi_templates` gains `partner_scope` and `mandatory` flag; seed 22 real KPI templates + growth options
+- ~~Schema evolution~~ ✓ — `kpi_templates` has `partner_scope`, `mandatory`, and `measure`; 20 real KPI templates + 8 growth options seeded
 - Per-partner selection flow — 5 mandatory KPIs pre-assigned (non-removable by partner), 2 chosen from partner-specific pool of 6
 - Admin (Trace) can edit all KPIs including mandatory — labels, measures, targets always editable
 - Scorecard updated for 7 KPI rows per partner
 - Meeting Mode updated for 7 KPI stops
 - Growth priority evolution — 1 mandatory personal + 1 self-chosen personal + 2 business (chosen jointly)
-- Lock period copy — "90-day lock" → "Spring Season 2026" throughout
+- ~~Lock period copy~~ ✓ — "Spring Season 2026" in all content.js copy and supabase.js lock function
 
 ## Evolution
 
@@ -114,4 +115,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-11 — Milestone v1.1 started (Mandatory/Choice KPI Model)*
+*Last updated: 2026-04-12 — Phase 5 complete (Schema Evolution & Content Seeding)*
