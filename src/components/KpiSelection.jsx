@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   supabase,
@@ -12,7 +12,7 @@ import {
   fetchGrowthPriorityTemplates,
   lockKpiSelections,
 } from '../lib/supabase.js';
-import { VALID_PARTNERS, PARTNER_DISPLAY, KPI_COPY } from '../data/content.js';
+import { VALID_PARTNERS, PARTNER_DISPLAY, KPI_COPY, CATEGORY_LABELS } from '../data/content.js';
 
 // Motion props shared by all three views — matches questionnaire pattern
 const motionProps = {
@@ -21,9 +21,6 @@ const motionProps = {
   exit: { opacity: 0, y: -8 },
   transition: { duration: 0.28, ease: 'easeOut' },
 };
-
-// Initial per-slot growth priority state shape
-const emptySlot = { kind: null, templateId: null, customText: '' };
 
 export default function KpiSelection() {
   const { partner } = useParams();
@@ -35,10 +32,17 @@ export default function KpiSelection() {
   const [priorityTemplates, setPriorityTemplates] = useState([]);
   const [existingSelections, setExistingSelections] = useState([]);
   const [existingPriorities, setExistingPriorities] = useState([]);
-  const [selectedTemplateIds, setSelectedTemplateIds] = useState([]);
-  const [personal, setPersonal] = useState(emptySlot);
-  const [business1, setBusiness1] = useState(emptySlot);
-  const [business2, setBusiness2] = useState(emptySlot);
+
+  // Mandatory+choice model state
+  const [mandatoryTemplates, setMandatoryTemplates] = useState([]);
+  const [choiceTemplates, setChoiceTemplates] = useState([]);
+  const [mandatorySelections, setMandatorySelections] = useState([]);
+  const [selectedChoiceIds, setSelectedChoiceIds] = useState([]);
+  const [selfChosenTitle, setSelfChosenTitle] = useState('');
+  const [selfChosenMeasure, setSelfChosenMeasure] = useState('');
+  const [mandatoryPersonalTemplate, setMandatoryPersonalTemplate] = useState(null);
+  const [businessPriorities, setBusinessPriorities] = useState([]);
+
   const [view, setView] = useState('selection'); // 'selection' | 'confirmation' | 'success'
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -51,11 +55,6 @@ export default function KpiSelection() {
       navigate('/', { replace: true });
       return;
     }
-    // Guard 2: test partner cannot write accountability data (DB CHECK, Pitfall 3)
-    if (partner === 'test') {
-      navigate(`/hub/${partner}`, { replace: true });
-      return;
-    }
 
     Promise.all([
       fetchKpiTemplates(),
@@ -64,44 +63,57 @@ export default function KpiSelection() {
       fetchGrowthPriorityTemplates(),
     ])
       .then(([tpls, sels, prios, priorityTpls]) => {
-        // Guard 3: already locked -> redirect to read-only view (KPI-06)
+        // Guard: already locked -> redirect to read-only view
         if (sels.length > 0 && sels[0].locked_until) {
           navigate(`/kpi-view/${partner}`, { replace: true });
           return;
         }
+
         setTemplates(tpls);
         setPriorityTemplates(priorityTpls);
         setExistingSelections(sels);
         setExistingPriorities(prios);
-        setSelectedTemplateIds(sels.map((s) => s.template_id).filter(Boolean));
 
-        // Map existing growth priorities back to per-slot state (D-08)
-        const personalRow = prios.find((p) => p.type === 'personal');
-        const businessRows = prios.filter((p) => p.type === 'business');
-        if (personalRow) {
-          const matchTpl = priorityTpls.find((t) => t.description === personalRow.description);
-          setPersonal(
-            matchTpl
-              ? { kind: 'template', templateId: matchTpl.id, customText: '' }
-              : { kind: 'custom', templateId: null, customText: personalRow.description }
-          );
+        // Split templates by partner scope then mandatory flag
+        const partnerTpls = tpls.filter(
+          (t) => t.partner_scope === 'shared' || t.partner_scope === partner
+        );
+        const mandatory = partnerTpls.filter((t) => t.mandatory);
+        const choices = partnerTpls.filter((t) => !t.mandatory);
+        setMandatoryTemplates(mandatory);
+        setChoiceTemplates(choices);
+
+        // Separate existing selections into mandatory vs choice
+        const mandatoryTplIds = new Set(mandatory.map((t) => t.id));
+        setMandatorySelections(sels.filter((s) => mandatoryTplIds.has(s.template_id)));
+        const existingChoiceIds = sels
+          .filter((s) => !mandatoryTplIds.has(s.template_id))
+          .map((s) => s.template_id);
+        setSelectedChoiceIds(existingChoiceIds);
+
+        // Find the mandatory personal growth priority template
+        const mandatoryPersonal = priorityTpls.find(
+          (t) =>
+            t.type === 'personal' &&
+            t.mandatory &&
+            (t.partner_scope === 'shared' || t.partner_scope === partner)
+        );
+        setMandatoryPersonalTemplate(mandatoryPersonal || null);
+
+        // Hydrate self-chosen personal from existing priorities
+        const personalRows = prios.filter((p) => p.type === 'personal');
+        const selfChosen = mandatoryPersonal
+          ? personalRows.find((p) => p.description !== mandatoryPersonal.description)
+          : personalRows[0];
+        if (selfChosen && selfChosen.description) {
+          // Description stored as "Title — Measure" format
+          const parts = selfChosen.description.split(' \u2014 ');
+          setSelfChosenTitle(parts[0] || '');
+          setSelfChosenMeasure(parts[1] || '');
         }
-        if (businessRows[0]) {
-          const matchTpl = priorityTpls.find((t) => t.description === businessRows[0].description);
-          setBusiness1(
-            matchTpl
-              ? { kind: 'template', templateId: matchTpl.id, customText: '' }
-              : { kind: 'custom', templateId: null, customText: businessRows[0].description }
-          );
-        }
-        if (businessRows[1]) {
-          const matchTpl = priorityTpls.find((t) => t.description === businessRows[1].description);
-          setBusiness2(
-            matchTpl
-              ? { kind: 'template', templateId: matchTpl.id, customText: '' }
-              : { kind: 'custom', templateId: null, customText: businessRows[1].description }
-          );
-        }
+
+        // Load business priorities (read-only)
+        setBusinessPriorities(prios.filter((p) => p.type === 'business'));
       })
       .catch((err) => {
         console.error(err);
@@ -110,90 +122,40 @@ export default function KpiSelection() {
       .finally(() => setLoading(false));
   }, [partner]);
 
-  // D-03: soft cap at 5. Tapping a capped card is a no-op.
+  // Cap at 2 choice KPIs
   function toggleKpi(templateId) {
-    setSelectedTemplateIds((prev) => {
+    setSelectedChoiceIds((prev) => {
       if (prev.includes(templateId)) return prev.filter((id) => id !== templateId);
-      if (prev.length >= 5) return prev; // soft cap
+      if (prev.length >= 2) return prev; // cap at 2
       return [...prev, templateId];
     });
   }
 
-  // Slot setters — map slot key to its state setter
-  function slotSetter(slot) {
-    if (slot === 'personal') return setPersonal;
-    if (slot === 'business1') return setBusiness1;
-    if (slot === 'business2') return setBusiness2;
-    return () => {};
-  }
+  const atCap = selectedChoiceIds.length >= 2;
+  const selfChosenValid =
+    selfChosenTitle.trim().length > 0 && selfChosenMeasure.trim().length > 0;
+  const canContinue = selectedChoiceIds.length === 2 && selfChosenValid && !saving;
 
-  // D-10: mutually exclusive. Selecting a template clears custom.
-  function selectPriorityTemplate(slot, templateId) {
-    const setter = slotSetter(slot);
-    setter({ kind: 'template', templateId, customText: '' });
-  }
-
-  // D-10: enabling custom clears any template selection.
-  function enableCustom(slot) {
-    const setter = slotSetter(slot);
-    setter({ kind: 'custom', templateId: null, customText: '' });
-  }
-
-  function updateCustomText(slot, text) {
-    const setter = slotSetter(slot);
-    setter((prev) => ({ ...prev, kind: 'custom', templateId: null, customText: text }));
-  }
-
-  // Resolve a slot's final description text (either chosen template's text or typed custom)
-  function resolveSlotDescription(slot) {
-    if (slot.kind === 'template' && slot.templateId) {
-      const tpl = priorityTemplates.find((t) => t.id === slot.templateId);
-      return tpl ? tpl.description : '';
-    }
-    if (slot.kind === 'custom') return slot.customText.trim();
-    return '';
-  }
-
-  const personalValid = useMemo(
-    () =>
-      (personal.kind === 'template' && !!personal.templateId) ||
-      (personal.kind === 'custom' && personal.customText.trim().length > 0),
-    [personal]
-  );
-  const biz1Valid = useMemo(
-    () =>
-      (business1.kind === 'template' && !!business1.templateId) ||
-      (business1.kind === 'custom' && business1.customText.trim().length > 0),
-    [business1]
-  );
-  const biz2Valid = useMemo(
-    () =>
-      (business2.kind === 'template' && !!business2.templateId) ||
-      (business2.kind === 'custom' && business2.customText.trim().length > 0),
-    [business2]
-  );
-  const allPrioritiesValid = personalValid && biz1Valid && biz2Valid;
-  const atCap = selectedTemplateIds.length >= 5;
-  const canContinue = selectedTemplateIds.length === 5 && allPrioritiesValid && !saving;
-
-  // Continue: replace-all persistence (Pattern 1 / Pitfall 2)
+  // Continue: persist choice KPIs + self-chosen personal growth
   async function continueToConfirmation() {
-    if (selectedTemplateIds.length !== 5) return;
-    if (!allPrioritiesValid) return;
+    if (selectedChoiceIds.length !== 2) return;
+    if (!selfChosenValid) return;
 
     setSaving(true);
     setSubmitError(null);
     try {
-      // Replace-all kpi_selections: delete any existing non-locked rows first
+      // Only delete non-mandatory, non-locked rows
+      const mandatoryTplIds = new Set(mandatoryTemplates.map((t) => t.id));
       for (const row of existingSelections) {
-        if (!row.locked_until) {
+        if (!row.locked_until && !mandatoryTplIds.has(row.template_id)) {
           // eslint-disable-next-line no-await-in-loop
           await deleteKpiSelection(row.id);
         }
       }
-      // Write the 5 new kpi_selections (KPI-05: snapshot label + category)
-      for (const tid of selectedTemplateIds) {
-        const tpl = templates.find((t) => t.id === tid);
+
+      // Insert the 2 choice kpi_selections with label/category snapshot
+      for (const tid of selectedChoiceIds) {
+        const tpl = choiceTemplates.find((t) => t.id === tid);
         if (!tpl) continue;
         // eslint-disable-next-line no-await-in-loop
         await upsertKpiSelection({
@@ -204,41 +166,32 @@ export default function KpiSelection() {
           locked_until: null,
         });
       }
-      // Replace-all growth_priorities: delete existing non-locked rows
+
+      // Delete existing non-locked personal rows that are not the mandatory personal
       for (const row of existingPriorities) {
-        if (!row.locked_until) {
+        if (!row.locked_until && row.type === 'personal') {
+          if (
+            mandatoryPersonalTemplate &&
+            row.description === mandatoryPersonalTemplate.description
+          ) {
+            continue;
+          }
           // eslint-disable-next-line no-await-in-loop
           await supabase.from('growth_priorities').delete().eq('id', row.id);
         }
       }
-      // Insert the 3 new growth_priorities (1 personal + 2 business)
-      const pDesc = resolveSlotDescription(personal);
-      const b1Desc = resolveSlotDescription(business1);
-      const b2Desc = resolveSlotDescription(business2);
 
+      // Insert self-chosen personal growth priority
+      const selfDesc = `${selfChosenTitle.trim()} \u2014 ${selfChosenMeasure.trim()}`;
       await upsertGrowthPriority({
         partner,
         type: 'personal',
-        description: pDesc,
-        status: 'active',
-        locked_until: null,
-      });
-      await upsertGrowthPriority({
-        partner,
-        type: 'business',
-        description: b1Desc,
-        status: 'active',
-        locked_until: null,
-      });
-      await upsertGrowthPriority({
-        partner,
-        type: 'business',
-        description: b2Desc,
+        description: selfDesc,
         status: 'active',
         locked_until: null,
       });
 
-      // Refresh rows so Back -> Continue works cleanly (no duplicate inserts)
+      // Refresh rows so Back -> Continue works cleanly
       const [freshSels, freshPrios] = await Promise.all([
         fetchKpiSelections(partner),
         fetchGrowthPriorities(partner),
@@ -255,11 +208,27 @@ export default function KpiSelection() {
     }
   }
 
-  // D-07: lock in, show success, auto-redirect
+  // Lock in: insert mandatory personal growth if not present, then lock
   async function lockIn() {
     setSaving(true);
     setSubmitError(null);
     try {
+      if (mandatoryPersonalTemplate) {
+        const existingMandatoryPersonal = existingPriorities.find(
+          (p) =>
+            p.type === 'personal' &&
+            p.description === mandatoryPersonalTemplate.description
+        );
+        if (!existingMandatoryPersonal) {
+          await upsertGrowthPriority({
+            partner,
+            type: 'personal',
+            description: mandatoryPersonalTemplate.description,
+            status: 'active',
+            locked_until: null,
+          });
+        }
+      }
       const iso = await lockKpiSelections(partner);
       setLockedUntil(iso);
       setView('success');
@@ -272,7 +241,7 @@ export default function KpiSelection() {
     }
   }
 
-  // D-06: Back preserves state (it lives in component state, unchanged)
+  // Back preserves state (lives in component state, unchanged)
   function backToSelection() {
     setView('selection');
   }
@@ -280,7 +249,7 @@ export default function KpiSelection() {
   if (loading) return null;
 
   // Load-error / empty-template state
-  if (loadError || templates.length === 0) {
+  if (loadError || (templates.length === 0 && !loading)) {
     return (
       <div className="app-shell">
         <div className="container">
@@ -302,47 +271,7 @@ export default function KpiSelection() {
   const counterClass = `kpi-counter${atCap ? ' at-cap' : ''}`;
   const counterText = atCap
     ? KPI_COPY.selection.counterAtCap
-    : KPI_COPY.selection.counterLabel(selectedTemplateIds.length);
-
-  const personalTemplates = priorityTemplates.filter((t) => t.type === 'personal');
-  const businessTemplates = priorityTemplates.filter((t) => t.type === 'business');
-
-  // Helper to render a single growth priority slot (D-08 / D-10)
-  function renderSlot(slot, slotKey, label, templatesList, placeholder) {
-    return (
-      <div className="growth-priority-group">
-        <span className="growth-priority-group-label">{label}</span>
-        {templatesList.map((tpl) => {
-          const isSel = slot.kind === 'template' && slot.templateId === tpl.id;
-          return (
-            <button
-              key={tpl.id}
-              type="button"
-              className={`growth-priority-option${isSel ? ' selected' : ''}`}
-              onClick={() => selectPriorityTemplate(slotKey, tpl.id)}
-            >
-              {tpl.description}
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          className={`growth-priority-option${slot.kind === 'custom' ? ' selected' : ''}`}
-          onClick={() => enableCustom(slotKey)}
-        >
-          {KPI_COPY.selection.growth.customToggle}
-        </button>
-        {slot.kind === 'custom' && (
-          <textarea
-            value={slot.customText}
-            placeholder={placeholder}
-            onChange={(e) => updateCustomText(slotKey, e.target.value)}
-            rows={3}
-          />
-        )}
-      </div>
-    );
-  }
+    : KPI_COPY.selection.counterLabel(selectedChoiceIds.length);
 
   return (
     <div className="app-shell">
@@ -350,19 +279,42 @@ export default function KpiSelection() {
         <AnimatePresence mode="wait">
           {view === 'selection' && (
             <motion.div key="selection" className="screen" {...motionProps}>
+              <div className="nav-row" style={{ marginBottom: 12 }}>
+                <Link to={`/hub/${partner}`} className="btn-ghost">
+                  {'\u2190'} Back to Hub
+                </Link>
+              </div>
               <div className="eyebrow">{KPI_COPY.selection.eyebrow}</div>
               <div className="screen-header">
                 <h2>{KPI_COPY.selection.heading}</h2>
               </div>
               <p>{KPI_COPY.selection.subtext}</p>
 
+              {/* Mandatory KPIs — non-interactive */}
+              <div className="eyebrow" style={{ marginTop: 24 }}>{KPI_COPY.selection.mandatoryEyebrow}</div>
+              <p className="muted" style={{ marginBottom: 16 }}>{KPI_COPY.selection.mandatorySublabel}</p>
+              <div className="kpi-mandatory-section">
+                {mandatoryTemplates.map((tpl) => (
+                  <div key={tpl.id} className="kpi-mandatory-item">
+                    <div className="kpi-mandatory-item-label">
+                      {tpl.label}
+                      <span className="kpi-core-badge">Core</span>
+                    </div>
+                    {tpl.measure && (
+                      <div className="kpi-mandatory-item-measure">{tpl.measure}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Choice KPIs — interactive, cap 2 */}
+              <div className="eyebrow" style={{ marginTop: 32 }}>{KPI_COPY.selection.choiceEyebrow}</div>
               <div className={counterClass}>
                 <span>{counterText}</span>
               </div>
-
               <div className="kpi-list">
-                {templates.map((tpl) => {
-                  const isSelected = selectedTemplateIds.includes(tpl.id);
+                {choiceTemplates.map((tpl) => {
+                  const isSelected = selectedChoiceIds.includes(tpl.id);
                   const isCapped = atCap && !isSelected;
                   const cardClass =
                     'kpi-card' +
@@ -375,44 +327,89 @@ export default function KpiSelection() {
                       className={cardClass}
                       onClick={() => toggleKpi(tpl.id)}
                     >
-                      <span className="kpi-category-tag">{tpl.category}</span>
+                      <span className="kpi-category-tag">
+                        {CATEGORY_LABELS[tpl.category] || tpl.category}
+                      </span>
                       <span className="kpi-card-label">{tpl.label}</span>
-                      {tpl.description && (
-                        <span className="kpi-card-description">{tpl.description}</span>
+                      {tpl.measure && (
+                        <span className="kpi-card-description">{tpl.measure}</span>
                       )}
                     </button>
                   );
                 })}
               </div>
 
+              {/* Growth Priorities */}
               <div className="growth-priority-section">
                 <div className="eyebrow">{KPI_COPY.selection.growth.eyebrow}</div>
                 <div className="screen-header">
                   <h2>{KPI_COPY.selection.growth.heading}</h2>
                 </div>
-                <p>{KPI_COPY.selection.growth.subtext}</p>
 
-                {renderSlot(
-                  personal,
-                  'personal',
-                  KPI_COPY.selection.growth.personalLabel,
-                  personalTemplates,
-                  KPI_COPY.selection.growth.customPlaceholderPersonal
+                {/* Mandatory personal — read-only */}
+                {mandatoryPersonalTemplate && (
+                  <div className="growth-priority-group">
+                    <span className="growth-priority-group-label">
+                      {KPI_COPY.selection.growth.mandatoryPersonalLabel}
+                    </span>
+                    <div className="kpi-mandatory-item">
+                      <div className="kpi-mandatory-item-label">
+                        {mandatoryPersonalTemplate.description}
+                        <span className="kpi-core-badge">Core</span>
+                      </div>
+                      {mandatoryPersonalTemplate.measure && (
+                        <div className="kpi-mandatory-item-measure">
+                          {mandatoryPersonalTemplate.measure}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
-                {renderSlot(
-                  business1,
-                  'business1',
-                  KPI_COPY.selection.growth.businessLabel1,
-                  businessTemplates,
-                  KPI_COPY.selection.growth.customPlaceholderBusiness
-                )}
-                {renderSlot(
-                  business2,
-                  'business2',
-                  KPI_COPY.selection.growth.businessLabel2,
-                  businessTemplates,
-                  KPI_COPY.selection.growth.customPlaceholderBusiness
-                )}
+
+                {/* Self-chosen personal — two text inputs */}
+                <div className="growth-priority-group">
+                  <span className="growth-priority-group-label">
+                    {KPI_COPY.selection.growth.selfChosenHeading}
+                  </span>
+                  <div className="growth-self-chosen-group">
+                    <label className="scorecard-reflection-label">Title</label>
+                    <input
+                      type="text"
+                      className="textarea"
+                      value={selfChosenTitle}
+                      onChange={(e) => setSelfChosenTitle(e.target.value)}
+                      placeholder={KPI_COPY.selection.growth.selfChosenTitlePlaceholder}
+                    />
+                    <label className="scorecard-reflection-label">Measure</label>
+                    <input
+                      type="text"
+                      className="textarea"
+                      value={selfChosenMeasure}
+                      onChange={(e) => setSelfChosenMeasure(e.target.value)}
+                      placeholder={KPI_COPY.selection.growth.selfChosenMeasurePlaceholder}
+                    />
+                  </div>
+                </div>
+
+                {/* Business growth — read-only display */}
+                <div className="growth-priority-group">
+                  <span className="growth-priority-group-label">
+                    {KPI_COPY.selection.growth.businessLabel1}
+                  </span>
+                  {businessPriorities.length === 0 ? (
+                    <p className="muted">{KPI_COPY.selection.growth.businessEmptyState}</p>
+                  ) : (
+                    businessPriorities.map((p) => (
+                      <div
+                        key={p.id}
+                        className="kpi-mandatory-item"
+                        style={{ borderLeftColor: 'var(--border)' }}
+                      >
+                        <div className="kpi-mandatory-item-label">{p.description}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
 
               <div className="nav-row">
@@ -444,15 +441,29 @@ export default function KpiSelection() {
                 {KPI_COPY.confirmation.commitmentStatement}
               </div>
 
+              {/* All 7 KPIs: mandatory first, then choices */}
               <div className="summary-section">
                 <h4>{KPI_COPY.confirmation.kpiSectionLabel}</h4>
                 <div className="kpi-list">
-                  {selectedTemplateIds.map((tid) => {
-                    const tpl = templates.find((t) => t.id === tid);
+                  {mandatoryTemplates.map((tpl) => (
+                    <div key={tpl.id} className="kpi-card">
+                      <span className="kpi-category-tag">
+                        {CATEGORY_LABELS[tpl.category] || tpl.category}
+                      </span>
+                      <span className="kpi-card-label">
+                        {tpl.label}
+                        <span className="kpi-core-badge">Core</span>
+                      </span>
+                    </div>
+                  ))}
+                  {selectedChoiceIds.map((tid) => {
+                    const tpl = choiceTemplates.find((t) => t.id === tid);
                     if (!tpl) return null;
                     return (
                       <div key={tpl.id} className="kpi-card">
-                        <span className="kpi-category-tag">{tpl.category}</span>
+                        <span className="kpi-category-tag">
+                          {CATEGORY_LABELS[tpl.category] || tpl.category}
+                        </span>
                         <span className="kpi-card-label">{tpl.label}</span>
                       </div>
                     );
@@ -460,25 +471,36 @@ export default function KpiSelection() {
                 </div>
               </div>
 
+              {/* Growth priorities summary */}
               <div className="summary-section">
                 <h4>{KPI_COPY.confirmation.growthSectionLabel}</h4>
+                {mandatoryPersonalTemplate && (
+                  <div className="growth-priority-group">
+                    <span className="growth-priority-group-label">
+                      {KPI_COPY.selection.growth.mandatoryPersonalLabel}
+                    </span>
+                    <p>{mandatoryPersonalTemplate.description}</p>
+                  </div>
+                )}
                 <div className="growth-priority-group">
                   <span className="growth-priority-group-label">
-                    {KPI_COPY.selection.growth.personalLabel}
+                    {KPI_COPY.selection.growth.selfChosenHeading}
                   </span>
-                  <p>{resolveSlotDescription(personal)}</p>
+                  <p>
+                    {selfChosenTitle.trim()} {'\u2014'} {selfChosenMeasure.trim()}
+                  </p>
                 </div>
                 <div className="growth-priority-group">
                   <span className="growth-priority-group-label">
                     {KPI_COPY.selection.growth.businessLabel1}
                   </span>
-                  <p>{resolveSlotDescription(business1)}</p>
-                </div>
-                <div className="growth-priority-group">
-                  <span className="growth-priority-group-label">
-                    {KPI_COPY.selection.growth.businessLabel2}
-                  </span>
-                  <p>{resolveSlotDescription(business2)}</p>
+                  {businessPriorities.length === 0 ? (
+                    <p className="muted">{KPI_COPY.selection.growth.businessEmptyState}</p>
+                  ) : (
+                    businessPriorities.map((p) => (
+                      <p key={p.id}>{p.description}</p>
+                    ))
+                  )}
                 </div>
               </div>
 
