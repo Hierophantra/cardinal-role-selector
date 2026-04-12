@@ -14,6 +14,7 @@ import {
   adminSwapKpiTemplate,
   adminEditKpiLabel,
   unlockPartnerSelections,
+  cascadeTemplateLabelSnapshot,
 } from '../../lib/supabase.js';
 import { ADMIN_KPI_COPY, PARTNER_DISPLAY } from '../../data/content.js';
 
@@ -29,6 +30,7 @@ const KPI_CATEGORIES = [
 const GROWTH_TYPES = ['personal', 'business'];
 const MANAGED = ['theo', 'jerry'];
 const ARM_DISARM_MS = 3000;
+const SCOPE_DISPLAY = { shared: 'Shared', theo: 'Theo', jerry: 'Jerry' };
 
 export default function AdminKpi() {
   return (
@@ -69,7 +71,7 @@ function KpiTemplateLibrary() {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null); // null | uuid | 'new'
-  const [editDraft, setEditDraft] = useState({ label: '', category: KPI_CATEGORIES[0], description: '' });
+  const [editDraft, setEditDraft] = useState({ label: '', category: KPI_CATEGORIES[0], description: '', measure: '' });
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -102,19 +104,20 @@ function KpiTemplateLibrary() {
       label: t.label ?? '',
       category: t.category ?? KPI_CATEGORIES[0],
       description: t.description ?? '',
+      measure: t.measure ?? '',
     });
     setError('');
   }
 
   function beginAdd() {
     setEditingId('new');
-    setEditDraft({ label: '', category: KPI_CATEGORIES[0], description: '' });
+    setEditDraft({ label: '', category: KPI_CATEGORIES[0], description: '', measure: '' });
     setError('');
   }
 
   function cancelEdit() {
     setEditingId(null);
-    setEditDraft({ label: '', category: KPI_CATEGORIES[0], description: '' });
+    setEditDraft({ label: '', category: KPI_CATEGORIES[0], description: '', measure: '' });
     setError('');
   }
 
@@ -137,15 +140,27 @@ function KpiTemplateLibrary() {
         label: editDraft.label.trim(),
         category: editDraft.category,
         description: editDraft.description?.trim() || null,
+        measure: editDraft.measure?.trim() || null,
       };
       if (editingId === 'new') {
         await createKpiTemplate(payload);
       } else {
         await updateKpiTemplate(editingId, payload);
+        // Cascade label_snapshot to kpi_selections (D-05)
+        try {
+          await cascadeTemplateLabelSnapshot(editingId, payload.label);
+        } catch (cascadeErr) {
+          console.error(cascadeErr);
+          setError(ADMIN_KPI_COPY.errors.cascadeFail);
+          await loadTemplates();
+          cancelEdit();
+          setSaving(false);
+          return; // Template saved but cascade failed — show specific error, don't show success flash
+        }
       }
       await loadTemplates();
       cancelEdit();
-      showFlash('Saved');
+      showFlash(ADMIN_KPI_COPY.savedFlash);
     } catch (err2) {
       console.error(err2);
       setError(ADMIN_KPI_COPY.errors.saveFail);
@@ -228,11 +243,19 @@ function KpiTemplateLibrary() {
                       {t.label}
                     </h4>
                     <span className="kpi-category-tag">{t.category}</span>
+                    <div className="kpi-template-tag-row">
+                      <span className="kpi-scope-tag">
+                        {SCOPE_DISPLAY[t.partner_scope] ?? t.partner_scope}
+                      </span>
+                      <span className="kpi-mandatory-badge">
+                        {t.mandatory ? 'Mandatory' : 'Choice'}
+                      </span>
+                    </div>
                     {t.description && (
                       <p className="kpi-card-description">{t.description}</p>
                     )}
                     <div className="kpi-template-editor-actions">
-                      {isPendingDelete ? (
+                      {isPendingDelete && !t.mandatory ? (
                         <>
                           <button
                             type="button"
@@ -257,7 +280,7 @@ function KpiTemplateLibrary() {
                           </button>
                         </>
                       ) : (
-                        <>
+                        <div className="kpi-template-editor-actions">
                           <button
                             type="button"
                             className="btn btn-ghost"
@@ -266,18 +289,25 @@ function KpiTemplateLibrary() {
                           >
                             {ADMIN_KPI_COPY.editBtn}
                           </button>
-                          <button
-                            type="button"
-                            className="btn btn-ghost"
-                            onClick={() => armDelete(t.id)}
-                            disabled={saving || editingId !== null}
-                          >
-                            {ADMIN_KPI_COPY.deleteBtn}
-                          </button>
-                        </>
+                          {!t.mandatory && (
+                            <button
+                              type="button"
+                              className="btn btn-ghost"
+                              onClick={() => armDelete(t.id)}
+                              disabled={saving || editingId !== null}
+                            >
+                              {ADMIN_KPI_COPY.deleteBtn}
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
-                    {isPendingDelete && (
+                    {t.mandatory && (
+                      <p className="kpi-template-no-delete-note">
+                        {ADMIN_KPI_COPY.mandatoryNoDeleteNote}
+                      </p>
+                    )}
+                    {isPendingDelete && !t.mandatory && (
                       <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
                         {ADMIN_KPI_COPY.deleteWarning}
                       </p>
@@ -353,6 +383,13 @@ function EditForm({ draft, setDraft, onSave, onCancel, saving, error }) {
         value={draft.description}
         onChange={(e) => setDraft({ ...draft, description: e.target.value })}
         rows={3}
+      />
+      <textarea
+        className="input"
+        placeholder="How this KPI is tracked (e.g. Weekly pipeline report, CRM updated)"
+        value={draft.measure}
+        onChange={(e) => setDraft({ ...draft, measure: e.target.value })}
+        rows={2}
       />
       {error && (
         <p className="muted" style={{ color: 'var(--miss)', margin: 0 }}>
