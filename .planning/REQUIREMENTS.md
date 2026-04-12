@@ -145,12 +145,31 @@
 | MEET-02 | Phase 4 | Complete |
 | MEET-03 | Phase 4 | Complete |
 | MEET-04 | Phase 4 | Complete |
+| SCHEMA-01 | Phase 5 | Pending |
+| SCHEMA-02 | Phase 5 | Pending |
+| SCHEMA-03 | Phase 5 | Pending |
+| SCHEMA-04 | Phase 5 | Pending |
+| SCHEMA-05 | Phase 5 | Pending |
+| SELECT-01 | Phase 6 | Pending |
+| SELECT-02 | Phase 6 | Pending |
+| SELECT-03 | Phase 6 | Pending |
+| SELECT-04 | Phase 6 | Pending |
+| SELECT-05 | Phase 6 | Pending |
+| SCORE-06 | Phase 6 | Pending |
+| SCORE-07 | Phase 6 | Pending |
+| SCORE-08 | Phase 6 | Pending |
+| MEET-05 | Phase 6 | Pending |
+| MEET-06 | Phase 6 | Pending |
+| ADMIN-07 | Phase 7 | Pending |
+| ADMIN-08 | Phase 7 | Pending |
+| ADMIN-09 | Phase 7 | Pending |
+| ADMIN-10 | Phase 7 | Pending |
 
 **Coverage:**
 - v1 requirements: 28 total — all mapped and complete
-- v1.1 requirements: 16 total — pending phase mapping
-- Unmapped: 16
+- v1.1 requirements: 16 total — all mapped (Phase 5: 5, Phase 6: 10, Phase 7: 4)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-09*
-*Last updated: 2026-04-11 — v1.1 requirements added (Mandatory/Choice KPI Model)*
+*Last updated: 2026-04-11 — v1.1 requirements mapped to Phases 5-7*

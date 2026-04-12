@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: mandatory-choice-kpi-model
-status: Defining requirements
-stopped_at: Milestone v1.1 started — defining requirements
-last_updated: "2026-04-11T08:30:00.000Z"
+status: Ready to plan
+stopped_at: Roadmap created for v1.1 — 3 phases (5-7), 16 requirements mapped
+last_updated: "2026-04-11T09:00:00.000Z"
 progress:
-  total_phases: 4
+  total_phases: 7
   completed_phases: 4
   total_plans: 13
   completed_plans: 13
@@ -16,49 +16,35 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-09)
+See: .planning/PROJECT.md (updated 2026-04-11)
 
 **Core value:** Partners have clear, locked-in accountability commitments they check in on weekly, with an admin who can track progress and facilitate structured conversations.
-**Current focus:** Milestone v1.1 — Mandatory/Choice KPI Model
+**Current focus:** Milestone v1.1 — Phase 5: Schema Evolution & Content Seeding
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-11 — Milestone v1.1 started
+Phase: 5 of 7 (Schema Evolution & Content Seeding)
+Plan: Not yet planned
+Status: Ready to plan
+Last activity: 2026-04-11 — v1.1 roadmap created (Phases 5-7)
+
+Progress: [==========..........] 59% (13/~22 plans est.)
 
 ## Performance Metrics
 
 **Velocity:**
-
-- Total plans completed: 2
-- Average duration: ~1.5 minutes
-- Total execution time: ~3 minutes
+- Total plans completed: 13
+- Average duration: ~5 min
+- Total execution time: ~65 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-schema-hub | 2/2 | ~3m | ~1.5m |
-
-**Recent Trend:**
-
-- Last 5 plans: P01-01 (~1m), P01-02 (~2m)
-- Trend: stable
-
-*Updated after each plan completion*
-| Phase 02-kpi-selection P01 | 3m | 4 tasks | 4 files |
-| Phase 02-kpi-selection P02 | ~3m | 3 tasks | 3 files |
-| Phase 02-kpi-selection P03 | ~45m | 1 tasks | 1 files |
-| Phase 03-weekly-scorecard P01 | 4min | 5 tasks | 5 files |
-| Phase 03 P02 | 3min | 3 tasks | 2 files |
-| Phase 03-weekly-scorecard P03 | 8min | 2 tasks | 3 files |
-| Phase 04-admin-tools-meeting-mode P01 | 4m | 4 tasks | 4 files |
-| Phase 04-admin-tools-meeting-mode P02 | 8m | 2 tasks | 2 files |
-| Phase 04-admin-tools-meeting-mode P03 | 8m | 3 tasks | 3 files |
-| Phase 04-admin-tools-meeting-mode P04 | 3m | 2 tasks | 2 files |
-| Phase 04-admin-tools-meeting-mode P05 | 1.5m | 3 tasks | 3 files |
+| 02-kpi-selection | 3/3 | ~50m | ~17m |
+| 03-weekly-scorecard | 3/3 | ~15m | ~5m |
+| 04-admin-tools-meeting-mode | 5/5 | ~25m | ~5m |
 
 ## Accumulated Context
 
@@ -67,50 +53,11 @@ Last activity: 2026-04-11 — Milestone v1.1 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- Binary KPI check-in (yes/no) with reflection prompts — keeps accountability simple
-- 90-day lock on KPIs and growth priorities — enforces consistency, requires admin to unlock
-- Admin-controlled growth tracking — admin retains narrative control
-- Placeholder KPI content for now — content refined after upcoming partner meeting
-- [Phase 01-schema-hub]: kpi_templates category enforced via CHECK constraint (not separate enum type) for easier migration
-- [Phase 01-schema-hub]: scorecards composite PK (partner, week_of) — natural identity, no UUID needed
-- [Phase 01-schema-hub]: kpi_results as JSONB with GIN index — avoids fifth scorecard_entries table
-- [Phase 01-schema-hub]: Partner hub shows only Role Definition card (D-01) — future cards added per phase
-- [Phase 01-schema-hub]: Admin hub shows all tools including disabled future ones (D-02)
-- [Phase 01-schema-hub]: Hub-first navigation — login redirects to hub, not direct to features
-- [Phase 02-kpi-selection]: No strict unique index on growth_priorities(partner,type) - would break 1 personal + 2 business rule; upsert by id instead
-- [Phase 02-kpi-selection]: HUB_COPY.partner.status.roleCompleteKpisLocked converted from string to (date) => string per UI-SPEC D-14
-- [Phase 02-kpi-selection]: lockKpiSelections returns ISO lock date so confirmation screen can render without recompute
-- [Phase 02-kpi-selection]: Single view-state in KpiSelection drives AnimatePresence swap (selection/confirmation/success) — keeps state co-located without URL churn; satisfies D-06 Back-preserves-state contract
-- [Phase 02-kpi-selection]: Replace-all persistence on Continue: delete non-locked rows, re-insert fresh — prevents stale-row accumulation (Pattern 1 / Pitfall 2)
-- [Phase 02-kpi-selection]: Growth priority slots store {kind, templateId, customText} so DB round-trip preserves template-vs-custom distinction
-- [Phase 02-kpi-selection]: PartnerHub locked KPI card uses button+navigate() (not Link) to avoid /kpi->/kpi-view double-redirect flash (Pitfall 5)
-- [Phase 02-kpi-selection]: PartnerHub status line is a four-branch inline ternary (error > locked > in-progress > submitted-no-kpis > not-submitted) matching existing local style
-- [Phase 02-kpi-selection]: Plan 02-03 human-verify checkpoint partially approved; 6-step E2E walkthrough deferred to 02-HUMAN-UAT.md until real KPI content is designated
-- [Phase 03-weekly-scorecard]: submitted_at reinterpreted as 'last updated' (not renamed) to preserve Phase 1/2 compatibility; additive-only migration 003 adds nullable committed_at
-- [Phase 03-weekly-scorecard]: kpi_results JSONB shape { [kpi_selection_id]: { result: 'yes'|'no'|null, reflection: '' } } — commitScorecardWeek pre-populates all 5 keys so textareas stay controlled
-- [Phase 03-weekly-scorecard]: Week math is strictly local-time in src/lib/week.js; toISOString is forbidden to avoid Sunday-night UTC drift west of UTC
-- [Phase 03]: Stable currentWeekOfRef via useRef(getMondayOf()) captured at mount — persist payload never recomputes week_of, fortifying SCORE-04 against midnight-boundary drift
-- [Phase 03]: Auto-save routes every mutation (yes/no tap, reflection blur) through a single persist() upsert — blur-only for reflections avoids per-keystroke network churn
-- [Phase 03-weekly-scorecard]: Plan 03-03 human-verify checkpoint conditionally approved; 16-step walkthrough deferred to 03-HUMAN-UAT.md (migration 003 unapplied + no locked KPIs)
-- [Phase 04-admin-tools-meeting-mode]: Phase 4 broken into 5 vertical plans (P04-01 foundation → P04-02 KPI admin → P04-03 growth+scorecard admin → P04-04 meeting mode → P04-05 routes & hub wiring) to maximize parallelism in Wave 2
-- [Phase 04]: Migration 005 is additive — creates meetings + meeting_notes tables with UNIQUE(meeting_id, agenda_stop_key) and CHECK on agenda_stop_key; adds admin_reopened_at to scorecards and admin_note to growth_priorities; does NOT touch growth_priorities.status (already exists in migration 001)
-- [Phase 04]: isAdminClosed() admin-side wrapper lives in AdminScorecards.jsx only — src/lib/week.js.isWeekClosed() must not be modified (Pitfall 5, used by partner Scorecard.jsx)
-- [Phase 04]: adminSwapKpiTemplate UPDATEs kpi_selections row in place by id to preserve locked_until timestamp (D-05); no insert/delete dance
-- [Phase 04]: kpi_results JSONB label snapshot shape { [id]: { label, result, reflection } } with render-time label fallback lookup against kpi_selections.label when snapshot missing (D-06)
-- [Phase 04]: Meeting Mode scope locked — agenda stops mutate meeting_notes + scorecards/growth_priorities only; cannot call adminSwapKpiTemplate/adminEditKpiLabel/reopenScorecardWeek (D-15, D-21)
-- [Phase 04]: AdminHub hero Meeting Mode card placed outside .hub-grid between screen-header and first hub-section (Pitfall 6); old ACCOUNTABILITY section gets two enabled cards (KPI Management, Scorecard Oversight), Meeting Mode lives only at hero
-- [Phase 04]: 10-stop agenda fixed in STOPS array — intro, kpi_1..kpi_5, growth_personal, growth_business_1, growth_business_2, wrap — enforced by DB CHECK constraint on meeting_notes.agenda_stop_key (D-14)
-- [Phase 04-admin-tools-meeting-mode]: Migration 005 does NOT re-add growth_priorities.status (already present in migration 001); adds meetings + meeting_notes tables with UNIQUE(meeting_id,agenda_stop_key) + 10-value CHECK constraint
-- [Phase 04-admin-tools-meeting-mode]: adminSwapKpiTemplate UPDATEs kpi_selections row in place by id — never DELETE+INSERT — to preserve kpi_results JSONB keys and the 90-day locked_until clock (D-05)
-- [Phase 04-admin-tools-meeting-mode]: Phase 4 CSS section upshifts all 14px typography to 15px to conform with the strict 4-multiple spacing scale enforced by the UI-SPEC checker
-- [Phase 04-admin-tools-meeting-mode]: AdminKpi SlotEditor exposes both Edit Label and Swap Template modes in a single inline editor, keeping D-05 (90-day preservation) and D-07 (free-edit) paths in one component
-- [Phase 04-admin-tools-meeting-mode]: Meeting Mode wizard ships as two files — AdminMeeting.jsx (landing) + AdminMeetingSession.jsx (10-stop wizard); route wiring deferred to P04-05
-- [Phase 04-admin-tools-meeting-mode]: Meeting Mode reflection debounce keyed per-cell `${partner}:${kpiId}` so typing in one KPI cell cannot cancel a pending save for another cell
-- [Phase 04-admin-tools-meeting-mode]: Meeting Mode routes reflection edits through adminOverrideScorecardEntry (not a separate write path) to keep admin_override_at + label-snapshot contract consistent across yes/no flips and reflection edits
-- [Phase 04-admin-tools-meeting-mode]: P04-03 AdminPartners growth-editor edits live BELOW the partner-card nav-row so P04-02's "Manage KPIs" link and P04-03's "View Scorecard History" link never overlap during parallel Wave-2 execution
-- [Phase 04-admin-tools-meeting-mode]: AdminScorecards isAdminClosed() wrapper treats admin_reopened_at as an override to isWeekClosed, but partner-facing Scorecard.jsx still calls isWeekClosed directly so partners never bypass the lock via admin reopen
-- [Phase 04-admin-tools-meeting-mode]: KpiSelectionView renders .growth-status-badge + .growth-admin-note per growth row using row.status || 'active' fallback — no route change, no fetch change (fetchGrowthPriorities already selects *)
-- [Phase 04-admin-tools-meeting-mode]: P04-05 wires four new routes in App.jsx and promotes Meeting Mode to a full-width hero card in AdminHub placed between status-summary and the first hub-section (outside .hub-grid, Pitfall 6); ACCOUNTABILITY grid now has exactly two enabled cards (KPI Management, Scorecard Oversight) with no Meeting Mode duplicate
+- Per-partner mandatory+choice KPI model (7 per partner) — v1.1 key decision
+- "Spring Season 2026" replaces "90-day lock" — season-based, not fixed day count
+- Mandatory KPIs editable by Trace, just not removable by partner
+- kpi_results JSONB shape keyed by kpi_selection_id — must accommodate 7 keys in v1.1
+- 10-stop meeting agenda needs expansion to 12+ stops (7 KPIs + growth stops)
 
 ### Pending Todos
 
@@ -118,7 +65,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- KPI template content is placeholder — do not block Phase 2 on this; use dummy data and refine after partner meeting
+None — real KPI content provided 2026-04-11, unblocking schema seeding.
 
 ### Quick Tasks Completed
 
@@ -129,6 +76,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-11T06:50:00.000Z
-Stopped at: Completed quick task 260411-3uw — mock Meeting Mode session
+Last session: 2026-04-11T09:00:00.000Z
+Stopped at: v1.1 roadmap created — ready to plan Phase 5
 Resume file: None

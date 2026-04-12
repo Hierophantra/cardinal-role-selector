@@ -1,8 +1,9 @@
 # Roadmap: Cardinal Partner Accountability System
 
-## Overview
+## Milestones
 
-The existing role definition tool is complete. This roadmap builds the accountability layer on top of it: a schema foundation and navigation hub, a KPI selection and lock-in flow, a weekly scorecard check-in, and admin tools with guided meeting facilitation. Each phase delivers a coherent, testable capability before the next begins.
+- v1.0 MVP - Phases 1-4 (shipped 2026-04-11)
+- v1.1 Mandatory/Choice KPI Model - Phases 5-7 (in progress)
 
 ## Phases
 
@@ -12,12 +13,13 @@ The existing role definition tool is complete. This roadmap builds the accountab
 
 Decimal phases appear between their surrounding integers in numeric order.
 
+<details>
+<summary>v1.0 MVP (Phases 1-4) - SHIPPED 2026-04-11</summary>
+
 - [x] **Phase 1: Schema & Hub** - Data tables created and both partner and admin hub screens are live
 - [x] **Phase 2: KPI Selection** - Partners can select, confirm, and lock in their 5 KPIs and growth priorities
 - [x] **Phase 3: Weekly Scorecard** - Partners can submit and review weekly binary check-ins with reflection prompts
 - [x] **Phase 4: Admin Tools & Meeting Mode** - Admin can manage all KPI data and facilitate structured Friday meetings
-
-## Phase Details
 
 ### Phase 1: Schema & Hub
 **Goal**: The data foundation exists and every user lands on a functional hub after login
@@ -48,7 +50,7 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md — SQL migration 002 (growth_priority_templates + seed data) + 2 new supabase.js functions + KPI_COPY in content.js + Phase 2 CSS
 - [x] 02-02-PLAN.md — KpiSelection.jsx (selection + confirmation + lock-in) + KpiSelectionView.jsx (read-only) + App.jsx routes
-- [x] 02-03-PLAN.md — PartnerHub.jsx three-state KPI card + status line + human-verify checkpoint
+- [x] 02-03-PLAN.md — PartnerHub three-state KPI card + status line + human-verify checkpoint
 **UI hint**: yes
 
 ### Phase 3: Weekly Scorecard
@@ -87,14 +89,65 @@ Plans:
 - [x] 04-05-PLAN.md — App.jsx routes + AdminHub hero card & enabled accountability cards + ROADMAP finalization
 **UI hint**: yes
 
+</details>
+
+### v1.1 Mandatory/Choice KPI Model (In Progress)
+
+**Milestone Goal:** Evolve from shared 5-KPI pool to per-partner mandatory+choice structure (7 KPIs each), seed real Cardinal content, replace "90-day" language with "Spring Season 2026", and update all downstream systems.
+
+- [ ] **Phase 5: Schema Evolution & Content Seeding** - Migration adds partner_scope/mandatory columns, seeds 22 real KPI templates + growth options, extends scorecard columns
+- [ ] **Phase 6: Partner & Meeting Flow Updates** - Selection shows 5 mandatory + 2 choice, scorecard renders 7 rows, meeting mode walks 7 stops, all copy says "Spring Season 2026"
+- [ ] **Phase 7: Admin Model Evolution** - Trace can edit all KPIs, template management enforces mandatory rules, PIP tracking surfaces cumulative misses
+
+## Phase Details
+
+### Phase 5: Schema Evolution & Content Seeding
+**Goal**: The database reflects the mandatory/choice KPI model with real Cardinal content and extended scorecard structure
+**Depends on**: Phase 4
+**Requirements**: SCHEMA-01, SCHEMA-02, SCHEMA-03, SCHEMA-04, SCHEMA-05
+**Success Criteria** (what must be TRUE):
+  1. kpi_templates table has partner_scope and mandatory columns, and querying by partner returns the correct mandatory+choice split (5 mandatory + 6 choice options per partner)
+  2. All 22 KPI templates exist with real labels, measures, and categories — the 9 placeholder templates are replaced
+  3. Growth priority templates include mandatory/optional distinction with real Cardinal content (2 mandatory personal + 6 business options)
+  4. Scorecards table has columns for tasks_completed, tasks_carried_over, weekly_win, weekly_learning, and week_rating
+  5. All UI copy constants referencing "90-day lock" or "90 days" are updated to "Spring Season 2026"
+**Plans**: TBD
+
+### Phase 6: Partner & Meeting Flow Updates
+**Goal**: Partners experience the mandatory+choice selection model, see 7 KPIs on their scorecard, and meetings walk through all 7 KPI stops per partner
+**Depends on**: Phase 5
+**Requirements**: SELECT-01, SELECT-02, SELECT-03, SELECT-04, SELECT-05, SCORE-06, SCORE-07, SCORE-08, MEET-05, MEET-06
+**Success Criteria** (what must be TRUE):
+  1. Partner sees 5 mandatory KPIs pre-assigned and visually locked on the selection screen, with 2 slots to fill from their role-specific pool of 6
+  2. Partner's growth selection shows 1 mandatory personal priority pre-assigned, 1 self-chosen personal priority (text input), and 2 business priorities chosen from 6 options
+  3. Lock confirmation screen uses "Spring Season 2026" language and summarizes all 7 KPIs + growth priorities
+  4. Weekly scorecard renders 7 KPI rows with mandatory KPIs visually distinguished from choice KPIs, plus fields for tasks completed, tasks carried over, weekly win, weekly learning, and week rating
+  5. Meeting Mode walks 7 KPI stops per partner with mandatory vs choice distinction visible in stop headers
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 7: Admin Model Evolution
+**Goal**: Trace has full editing power over all KPIs including mandatory ones, template management respects the mandatory/choice model, and cumulative miss tracking enables PIP conversations
+**Depends on**: Phase 6
+**Requirements**: ADMIN-07, ADMIN-08, ADMIN-09, ADMIN-10
+**Success Criteria** (what must be TRUE):
+  1. Trace can edit labels, measures, and targets on all KPIs (both mandatory and choice) for both partners
+  2. Admin template management shows mandatory/choice distinction and prevents deletion of mandatory templates
+  3. Admin sees a cumulative count of individual missed KPIs per partner across all submitted weeks, with a PIP flag when count reaches 5
+  4. Partners never see missed-KPI counts or PIP status anywhere in their views
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Schema & Hub | 2/2 | Complete | 2026-04-10 |
-| 2. KPI Selection | 3/3 | Complete | 2026-04-10 |
-| 3. Weekly Scorecard | 3/3 | Complete | 2026-04-10 |
-| 4. Admin Tools & Meeting Mode | 5/5 | Complete | 2026-04-11 |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Schema & Hub | v1.0 | 2/2 | Complete | 2026-04-10 |
+| 2. KPI Selection | v1.0 | 3/3 | Complete | 2026-04-10 |
+| 3. Weekly Scorecard | v1.0 | 3/3 | Complete | 2026-04-10 |
+| 4. Admin Tools & Meeting Mode | v1.0 | 5/5 | Complete | 2026-04-11 |
+| 5. Schema Evolution & Content Seeding | v1.1 | 0/? | Not started | - |
+| 6. Partner & Meeting Flow Updates | v1.1 | 0/? | Not started | - |
+| 7. Admin Model Evolution | v1.1 | 0/? | Not started | - |
