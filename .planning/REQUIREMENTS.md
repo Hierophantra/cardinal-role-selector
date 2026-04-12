@@ -51,6 +51,42 @@
 - [x] **MEET-03**: Meeting mode includes growth priority review as agenda steps
 - [x] **MEET-04**: Admin can add inline notes/annotations at each agenda stop during the meeting
 
+## v1.1 Requirements — Mandatory/Choice KPI Model
+
+### Schema & Content
+
+- [ ] **SCHEMA-01**: `kpi_templates` table gains `partner_scope` (shared/theo/jerry) and `mandatory` (boolean) columns
+- [ ] **SCHEMA-02**: All 22 KPI templates seeded with real labels, measures, categories, partner_scope, and mandatory flag (replacing 9 placeholders)
+- [ ] **SCHEMA-03**: Growth priority templates updated with mandatory/optional distinction and real content (2 mandatory personal + 6 business options)
+- [ ] **SCHEMA-04**: "90-day lock" copy replaced with "Spring Season 2026" in all UI text and content constants
+- [ ] **SCHEMA-05**: Scorecard table gains columns for tasks_completed, tasks_carried_over, weekly_win, weekly_learning, and week_rating (1-5 scale)
+
+### Selection Flow
+
+- [ ] **SELECT-01**: Partner sees 5 mandatory KPIs pre-assigned and non-removable on the selection screen
+- [ ] **SELECT-02**: Partner chooses 2 additional KPIs from their role-specific pool of 6 options
+- [ ] **SELECT-03**: Personal growth: partner sees 1 mandatory priority pre-assigned + enters 1 self-chosen priority (text input with measure)
+- [ ] **SELECT-04**: Business growth: both partners see 6 options + custom entry; 2 are selected jointly and confirmed by Trace
+- [ ] **SELECT-05**: Lock confirmation uses "Spring Season 2026" language instead of "90 days"
+
+### Scorecard
+
+- [ ] **SCORE-06**: Weekly scorecard renders 7 KPI rows per partner (5 mandatory + 2 chosen)
+- [ ] **SCORE-07**: Scorecard includes tasks completed, tasks carried over, weekly win, weekly learning, and 1-5 week rating fields
+- [ ] **SCORE-08**: Mandatory KPIs visually distinguished from choice KPIs on the scorecard
+
+### Meeting Mode
+
+- [ ] **MEET-05**: Meeting Mode walks 7 KPI stops per partner instead of 5
+- [ ] **MEET-06**: Meeting Mode displays mandatory vs choice distinction in KPI stop headers
+
+### Admin
+
+- [ ] **ADMIN-07**: Trace can edit all KPIs (mandatory and choice) — labels, measures, targets always editable
+- [ ] **ADMIN-08**: Admin template management reflects mandatory/choice distinction; mandatory templates cannot be deleted
+- [ ] **ADMIN-09**: Admin sees cumulative missed-KPI count per partner (count of individual "not met" KPIs across all weeks, PIP flag at 5)
+- [ ] **ADMIN-10**: PIP tracking is admin-only — partners never see missed-KPI counts or PIP status
+
 ## v2 Requirements
 
 ### Partner Experience
@@ -111,10 +147,10 @@
 | MEET-04 | Phase 4 | Complete |
 
 **Coverage:**
-- v1 requirements: 28 total
-- Mapped to phases: 28
-- Unmapped: 0
+- v1 requirements: 28 total — all mapped and complete
+- v1.1 requirements: 16 total — pending phase mapping
+- Unmapped: 16
 
 ---
 *Requirements defined: 2026-04-09*
-*Last updated: 2026-04-10 — HUB-01 updated to align with D-01 (partner hub shows only functional options, growing organically)*
+*Last updated: 2026-04-11 — v1.1 requirements added (Mandatory/Choice KPI Model)*
