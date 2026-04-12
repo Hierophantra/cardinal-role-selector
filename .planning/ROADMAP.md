@@ -145,7 +145,7 @@ Plans:
 **Plans:** 1/2 plans executed
 Plans:
 - [x] 07-01-PLAN.md — AdminKpi badge row + measure field + label_snapshot cascade + delete suppression for mandatory templates
-- [ ] 07-02-PLAN.md — AdminPartners accountability card with cumulative miss count + PIP flag + human-verify checkpoint
+- [x] 07-02-PLAN.md — AdminPartners accountability card with cumulative miss count + PIP flag + human-verify checkpoint
 
 ## Progress
 
