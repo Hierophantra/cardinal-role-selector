@@ -68,7 +68,6 @@ export default function KpiSelectionView() {
       })
     : '';
 
-  const personalPriority = priorities.find((p) => p.type === 'personal');
   const businessPriorities = priorities.filter((p) => p.type === 'business');
 
   return (
@@ -89,7 +88,12 @@ export default function KpiSelectionView() {
               {selections.map((sel) => (
                 <div key={sel.id} className="kpi-card">
                   <span className="kpi-category-tag">{sel.category_snapshot}</span>
-                  <span className="kpi-card-label">{sel.label_snapshot}</span>
+                  <span className="kpi-card-label">
+                    {sel.label_snapshot}
+                    {sel.kpi_templates?.mandatory && (
+                      <span className="kpi-core-badge">Core</span>
+                    )}
+                  </span>
                 </div>
               ))}
             </div>
@@ -97,25 +101,28 @@ export default function KpiSelectionView() {
 
           <div className="summary-section">
             <h4>{KPI_COPY.readOnly.growthSectionLabel}</h4>
-            {personalPriority && (
-              <div className="growth-priority-group">
+            {/* Show all personal priorities: mandatory first, then self-chosen */}
+            {priorities.filter((p) => p.type === 'personal').map((p, i) => (
+              <div key={p.id} className="growth-priority-group">
                 <span className="growth-priority-group-label">
-                  {KPI_COPY.selection.growth.personalLabel}
+                  {i === 0
+                    ? KPI_COPY.selection.growth.mandatoryPersonalLabel
+                    : KPI_COPY.selection.growth.selfChosenHeading}
                 </span>
-                <p>{personalPriority.description}</p>
-                <span className={`growth-status-badge ${personalPriority.status || 'active'}`}>
-                  {GROWTH_STATUS_COPY[personalPriority.status || 'active']}
+                <p>{p.description}</p>
+                <span className={`growth-status-badge ${p.status || 'active'}`}>
+                  {GROWTH_STATUS_COPY[p.status || 'active']}
                 </span>
-                {personalPriority.admin_note && personalPriority.admin_note.trim() ? (
+                {p.admin_note && p.admin_note.trim() ? (
                   <div className="growth-admin-note">
                     <div className="eyebrow" style={{ marginBottom: 4 }}>
                       {GROWTH_STATUS_COPY.adminNoteLabel}
                     </div>
-                    {personalPriority.admin_note}
+                    {p.admin_note}
                   </div>
                 ) : null}
               </div>
-            )}
+            ))}
             {businessPriorities[0] && (
               <div className="growth-priority-group">
                 <span className="growth-priority-group-label">
