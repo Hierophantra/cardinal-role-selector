@@ -58,7 +58,7 @@
 - [ ] **SCHEMA-01**: `kpi_templates` table gains `partner_scope` (shared/theo/jerry) and `mandatory` (boolean) columns
 - [ ] **SCHEMA-02**: All 22 KPI templates seeded with real labels, measures, categories, partner_scope, and mandatory flag (replacing 9 placeholders)
 - [ ] **SCHEMA-03**: Growth priority templates updated with mandatory/optional distinction and real content (2 mandatory personal + 6 business options)
-- [ ] **SCHEMA-04**: "90-day lock" copy replaced with "Spring Season 2026" in all UI text and content constants
+- [x] **SCHEMA-04**: "90-day lock" copy replaced with "Spring Season 2026" in all UI text and content constants
 - [ ] **SCHEMA-05**: Scorecard table gains columns for tasks_completed, tasks_carried_over, weekly_win, weekly_learning, and week_rating (1-5 scale)
 
 ### Selection Flow
@@ -148,7 +148,7 @@
 | SCHEMA-01 | Phase 5 | Pending |
 | SCHEMA-02 | Phase 5 | Pending |
 | SCHEMA-03 | Phase 5 | Pending |
-| SCHEMA-04 | Phase 5 | Pending |
+| SCHEMA-04 | Phase 5 | Complete |
 | SCHEMA-05 | Phase 5 | Pending |
 | SELECT-01 | Phase 6 | Pending |
 | SELECT-02 | Phase 6 | Pending |

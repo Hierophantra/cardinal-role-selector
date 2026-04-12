@@ -114,7 +114,7 @@ Plans:
 **Plans:** 2 plans
 Plans:
 - [ ] 05-01-PLAN.md — Migration 006: schema alterations (kpi_templates, growth_priority_templates, scorecards, meeting_notes) + data wipe + 20 KPI template seeds + 8 growth template seeds + mandatory kpi_selections for theo/jerry/test
-- [ ] 05-02-PLAN.md — content.js CURRENT_SEASON/CATEGORY_LABELS constants + 8 copy replacements + supabase.js lock function and template CRUD updates for v1.1 columns
+- [x] 05-02-PLAN.md — content.js CURRENT_SEASON/CATEGORY_LABELS constants + 8 copy replacements + supabase.js lock function and template CRUD updates for v1.1 columns
 
 ### Phase 6: Partner & Meeting Flow Updates
 **Goal**: Partners experience the mandatory+choice selection model, see 7 KPIs on their scorecard, and meetings walk through all 7 KPI stops per partner
