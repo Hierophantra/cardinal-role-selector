@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { SEASON_END_DATE } from '../data/content.js';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -127,7 +128,7 @@ export async function fetchGrowthPriorityTemplates() {
 }
 
 export async function lockKpiSelections(partner) {
-  const lockedUntil = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+  const lockedUntil = SEASON_END_DATE;
   const { error: e1 } = await supabase
     .from('kpi_selections')
     .update({ locked_until: lockedUntil })
@@ -231,20 +232,20 @@ export async function commitScorecardWeek(partner, weekOf, kpiSelectionIds) {
 
 // --- Admin: KPI Template CRUD (ADMIN-04) — Phase 4 ---
 
-export async function createKpiTemplate({ label, category, description }) {
+export async function createKpiTemplate({ label, category, description, measure, partner_scope, mandatory }) {
   const { data, error } = await supabase
     .from('kpi_templates')
-    .insert({ label, category, description })
+    .insert({ label, category, description, measure, partner_scope, mandatory })
     .select()
     .single();
   if (error) throw error;
   return data;
 }
 
-export async function updateKpiTemplate(id, { label, category, description }) {
+export async function updateKpiTemplate(id, { label, category, description, measure, partner_scope, mandatory }) {
   const { data, error } = await supabase
     .from('kpi_templates')
-    .update({ label, category, description, updated_at: new Date().toISOString() })
+    .update({ label, category, description, measure, partner_scope, mandatory, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single();
@@ -259,20 +260,20 @@ export async function deleteKpiTemplate(id) {
 
 // --- Admin: Growth Priority Template CRUD (ADMIN-04) — Phase 4 ---
 
-export async function createGrowthPriorityTemplate({ type, description, sort_order }) {
+export async function createGrowthPriorityTemplate({ type, description, sort_order, mandatory, partner_scope, measure }) {
   const { data, error } = await supabase
     .from('growth_priority_templates')
-    .insert({ type, description, sort_order })
+    .insert({ type, description, sort_order, mandatory, partner_scope, measure })
     .select()
     .single();
   if (error) throw error;
   return data;
 }
 
-export async function updateGrowthPriorityTemplate(id, { type, description, sort_order }) {
+export async function updateGrowthPriorityTemplate(id, { type, description, sort_order, mandatory, partner_scope, measure }) {
   const { data, error } = await supabase
     .from('growth_priority_templates')
-    .update({ type, description, sort_order })
+    .update({ type, description, sort_order, mandatory, partner_scope, measure })
     .eq('id', id)
     .select()
     .single();
