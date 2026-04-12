@@ -82,8 +82,8 @@
 
 ### Admin
 
-- [ ] **ADMIN-07**: Trace can edit all KPIs (mandatory and choice) — labels, measures, targets always editable
-- [ ] **ADMIN-08**: Admin template management reflects mandatory/choice distinction; mandatory templates cannot be deleted
+- [x] **ADMIN-07**: Trace can edit all KPIs (mandatory and choice) — labels, measures, targets always editable
+- [x] **ADMIN-08**: Admin template management reflects mandatory/choice distinction; mandatory templates cannot be deleted
 - [ ] **ADMIN-09**: Admin sees cumulative missed-KPI count per partner (count of individual "not met" KPIs across all weeks, PIP flag at 5)
 - [ ] **ADMIN-10**: PIP tracking is admin-only — partners never see missed-KPI counts or PIP status
 
@@ -160,8 +160,8 @@
 | SCORE-08 | Phase 6 | Complete |
 | MEET-05 | Phase 6 | Complete |
 | MEET-06 | Phase 6 | Complete |
-| ADMIN-07 | Phase 7 | Pending |
-| ADMIN-08 | Phase 7 | Pending |
+| ADMIN-07 | Phase 7 | Complete |
+| ADMIN-08 | Phase 7 | Complete |
 | ADMIN-09 | Phase 7 | Pending |
 | ADMIN-10 | Phase 7 | Pending |
 
