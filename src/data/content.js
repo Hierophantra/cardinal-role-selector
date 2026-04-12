@@ -566,6 +566,17 @@ export const ADMIN_SCORECARD_COPY = {
   },
 };
 
+export const ADMIN_ACCOUNTABILITY_COPY = {
+  eyebrow: 'ACCOUNTABILITY',
+  zeroMisses: 'No missed KPIs this season',
+  missCount: (count, weeks) => `${count} missed KPIs across ${weeks} submitted weeks`,
+  footnote: "Only explicit 'No' answers are counted.",
+  pipHeading: '\u26A0 Performance Improvement Plan threshold reached',
+  pipBody: (count) => `${count} missed KPIs counted this season. Review with partner.`,
+  loading: 'Loading accountability data...',
+  loadError: 'Could not load scorecard data.',
+};
+
 export const MEETING_COPY = {
   landingEyebrow: 'MEETING MODE',
   startCta: 'Start Meeting',

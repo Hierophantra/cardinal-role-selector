@@ -1651,3 +1651,55 @@ textarea { resize: vertical; min-height: 120px; }
   font-style: italic;
   margin: 8px 0 0;
 }
+
+.admin-accountability-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.admin-miss-count {
+  font-size: 15px;
+  color: var(--text);
+  font-weight: 400;
+  margin: 0;
+}
+
+.admin-miss-count--zero {
+  color: var(--success);
+}
+
+.admin-miss-footnote {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  margin: 0;
+}
+
+.admin-pip-flag {
+  background: linear-gradient(180deg, rgba(196, 30, 58, 0.12), rgba(196, 30, 58, 0.04));
+  border: 1px solid rgba(196, 30, 58, 0.40);
+  border-left: 3px solid var(--red);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-top: 12px;
+}
+
+.admin-pip-flag-heading {
+  font-size: 15px;
+  color: #f2c7cf;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.admin-pip-flag-body {
+  font-size: 12px;
+  color: #f2c7cf;
+  font-weight: 400;
+  margin: 0;
+}
