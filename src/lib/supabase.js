@@ -49,7 +49,7 @@ export async function fetchKpiTemplates() {
 export async function fetchKpiSelections(partner) {
   const { data, error } = await supabase
     .from('kpi_selections')
-    .select('*')
+    .select('*, kpi_templates(mandatory, measure)')
     .eq('partner', partner)
     .order('selected_at', { ascending: true });
   if (error) throw error;
