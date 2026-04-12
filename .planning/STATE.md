@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: Milestone complete
-stopped_at: Completed quick task 260411-47z — per-cell override fix + MeetingSummary views
-last_updated: "2026-04-11T08:00:00.000Z"
+milestone: v1.1
+milestone_name: mandatory-choice-kpi-model
+status: Defining requirements
+stopped_at: Milestone v1.1 started — defining requirements
+last_updated: "2026-04-11T08:30:00.000Z"
 progress:
   total_phases: 4
   completed_phases: 4
@@ -19,12 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-09)
 
 **Core value:** Partners have clear, locked-in accountability commitments they check in on weekly, with an admin who can track progress and facilitate structured conversations.
-**Current focus:** Phase 04 — admin-tools-meeting-mode
+**Current focus:** Milestone v1.1 — Mandatory/Choice KPI Model
 
 ## Current Position
 
-Phase: 04
-Plan: Not started
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-11 — Milestone v1.1 started
 
 ## Performance Metrics
 
