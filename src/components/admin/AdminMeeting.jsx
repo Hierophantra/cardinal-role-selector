@@ -2,20 +2,22 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createMeeting, fetchMeetings } from '../../lib/supabase.js';
 import { getMondayOf, formatWeekRange } from '../../lib/week.js';
-import { MEETING_COPY } from '../../data/content.js';
+import { MEETING_COPY, SEASON_START_DATE, SEASON_END_DATE } from '../../data/content.js';
 
-// Build 9 week options: current Monday plus the 8 previous Mondays, newest first.
+// Build all week options from SEASON_START_DATE through SEASON_END_DATE, newest first.
 // Each option value is a 'YYYY-MM-DD' Monday local-time string from getMondayOf.
-function buildWeekOptions(count = 9) {
+function buildWeekOptions() {
   const options = [];
-  const today = new Date();
-  for (let i = 0; i < count; i += 1) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i * 7);
+  const end = new Date(SEASON_END_DATE);
+  const start = new Date(SEASON_START_DATE + 'T00:00:00');
+  // Walk from end back to start in 7-day steps
+  let d = new Date(end);
+  while (d >= start) {
     const monday = getMondayOf(d);
     if (!options.includes(monday)) {
       options.push(monday);
     }
+    d.setDate(d.getDate() - 7);
   }
   return options;
 }
@@ -28,7 +30,7 @@ export default function AdminMeeting() {
   const [weekOf, setWeekOf] = useState(() => getMondayOf());
   const [starting, setStarting] = useState(false);
 
-  const weekOptions = useMemo(() => buildWeekOptions(9), []);
+  const weekOptions = useMemo(() => buildWeekOptions(), []);
 
   useEffect(() => {
     let alive = true;

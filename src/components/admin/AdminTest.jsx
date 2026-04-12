@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   fetchSubmission,
@@ -8,7 +8,23 @@ import {
   resetTestSubmission,
   resetTestKpis,
   resetTestScorecards,
+  reopenScorecardWeek,
 } from '../../lib/supabase.js';
+import { isWeekClosed, formatWeekRange } from '../../lib/week.js';
+
+const ARM_TIMEOUT_MS = 3000;
+
+function isAdminClosed(row) {
+  if (!row) return false;
+  if (row.admin_reopened_at) return false;
+  return isWeekClosed(row.week_of);
+}
+
+function getLabelForEntry(kpiId, entry, lockedKpis) {
+  if (entry && entry.label) return entry.label;
+  const match = lockedKpis.find((k) => k.id === kpiId);
+  return match?.label_snapshot ?? '(unknown KPI)';
+}
 
 export default function AdminTest() {
   const [loading, setLoading] = useState(true);
@@ -20,6 +36,9 @@ export default function AdminTest() {
   const [pendingReset, setPendingReset] = useState(null);
   const [resetting, setResetting] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  const [pendingReopen, setPendingReopen] = useState({});
+  const [reopeningKey, setReopeningKey] = useState(null);
+  const disarmTimerRef = useRef(null);
 
   const loadState = useCallback(async () => {
     setLoading(true);
@@ -77,6 +96,41 @@ export default function AdminTest() {
     } else {
       setPendingReset(kind);
       setStatusMsg('');
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (disarmTimerRef.current) clearTimeout(disarmTimerRef.current);
+    };
+  }, []);
+
+  function armReopen(weekOf) {
+    if (disarmTimerRef.current) clearTimeout(disarmTimerRef.current);
+    setPendingReopen({ [weekOf]: true });
+    disarmTimerRef.current = setTimeout(() => setPendingReopen({}), ARM_TIMEOUT_MS);
+  }
+
+  async function confirmReopen(weekOf) {
+    setReopeningKey(weekOf);
+    if (disarmTimerRef.current) clearTimeout(disarmTimerRef.current);
+    try {
+      await reopenScorecardWeek('test', weekOf);
+      await loadState();
+      setPendingReopen({});
+    } catch (err) {
+      console.error(err);
+      setStatusMsg('Reopen failed. Check console.');
+    } finally {
+      setReopeningKey(null);
+    }
+  }
+
+  function handleReopenClick(weekOf) {
+    if (pendingReopen[weekOf]) {
+      confirmReopen(weekOf);
+    } else {
+      armReopen(weekOf);
     }
   }
 
@@ -166,6 +220,122 @@ export default function AdminTest() {
                     View Mock Meeting Summary
                   </Link>
                 </div>
+              </div>
+
+              {/* Scorecard Oversight */}
+              <div className="summary-section">
+                <h4>Scorecard Oversight</h4>
+                {scorecards.length === 0 ? (
+                  <p className="muted" style={{ fontSize: 13 }}>No scorecards yet. Submit a week from the test partner hub first.</p>
+                ) : (
+                  <div className="scorecard-oversight-grid">
+                    {scorecards.map((row) => {
+                      const closed = isAdminClosed(row);
+                      const reopened = Boolean(row.admin_reopened_at);
+                      const results = row.kpi_results || {};
+                      const entries = Object.entries(results);
+                      const isArmed = Boolean(pendingReopen[row.week_of]);
+                      const isReopening = reopeningKey === row.week_of;
+
+                      return (
+                        <div key={row.week_of} className="scorecard-oversight-row">
+                          <div className="scorecard-oversight-header" style={{ gridTemplateColumns: '200px 1fr 200px' }}>
+                            <div className="scorecard-oversight-cell week">
+                              {formatWeekRange(row.week_of)}
+                              {reopened && <span className="scorecard-reopened-badge"> Reopened</span>}
+                            </div>
+                            <div className="scorecard-oversight-cell">
+                              {closed ? 'Closed' : 'Active'}
+                            </div>
+                            <div className="scorecard-oversight-cell" style={{ textAlign: 'right' }}>
+                              {closed && !reopened ? (
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost"
+                                  onClick={() => handleReopenClick(row.week_of)}
+                                  disabled={isReopening}
+                                  style={isArmed ? { borderColor: 'var(--red)', color: 'var(--text)', background: 'rgba(196,30,58,0.14)' } : undefined}
+                                >
+                                  {isArmed ? 'Confirm Reopen' : 'Reopen'}
+                                </button>
+                              ) : (
+                                <span className="muted" style={{ fontSize: 13 }}>Editable</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {isArmed && (
+                            <div className="muted" style={{ padding: '0 16px 12px', color: 'var(--red)', fontSize: 13 }}>
+                              This will reopen the week for the test account. Click Confirm to proceed.
+                            </div>
+                          )}
+
+                          {/* KPI results */}
+                          <div style={{ padding: 16, borderTop: '1px solid var(--border)' }}>
+                            {entries.length === 0 ? (
+                              <p className="muted" style={{ fontSize: 13 }}>No KPI results recorded.</p>
+                            ) : (
+                              entries.map(([kpiId, entry]) => {
+                                const label = getLabelForEntry(kpiId, entry, kpis);
+                                const r = entry?.result;
+                                const dot = r === 'yes' ? '✓' : r === 'no' ? '✗' : '—';
+                                const dotColor = r === 'yes' ? 'var(--success)' : r === 'no' ? 'var(--miss)' : 'var(--muted-2)';
+                                return (
+                                  <div key={kpiId} style={{ marginBottom: 8, paddingBottom: 8, borderBottom: '1px dashed var(--border)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                      <span style={{ color: dotColor, fontWeight: 700, minWidth: 16 }}>{dot}</span>
+                                      <span style={{ fontWeight: 600 }}>{label}</span>
+                                    </div>
+                                    {entry?.reflection && (
+                                      <div className="muted" style={{ marginTop: 4, fontSize: 13, paddingLeft: 24 }}>{entry.reflection}</div>
+                                    )}
+                                  </div>
+                                );
+                              })
+                            )}
+
+                            {/* Weekly reflection fields */}
+                            {(row.weekly_win || row.weekly_learning || row.week_rating || row.tasks_completed || row.tasks_carried_over) && (
+                              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                                <div className="eyebrow" style={{ fontSize: 11, marginBottom: 8 }}>Weekly Reflection</div>
+                                {row.tasks_completed && (
+                                  <div style={{ marginBottom: 6 }}>
+                                    <span className="muted" style={{ fontSize: 12 }}>Tasks Completed: </span>
+                                    <span style={{ fontSize: 13 }}>{row.tasks_completed}</span>
+                                  </div>
+                                )}
+                                {row.tasks_carried_over && (
+                                  <div style={{ marginBottom: 6 }}>
+                                    <span className="muted" style={{ fontSize: 12 }}>Carried Over: </span>
+                                    <span style={{ fontSize: 13 }}>{row.tasks_carried_over}</span>
+                                  </div>
+                                )}
+                                {row.weekly_win && (
+                                  <div style={{ marginBottom: 6 }}>
+                                    <span className="muted" style={{ fontSize: 12 }}>Weekly Win: </span>
+                                    <span style={{ fontSize: 13 }}>{row.weekly_win}</span>
+                                  </div>
+                                )}
+                                {row.weekly_learning && (
+                                  <div style={{ marginBottom: 6 }}>
+                                    <span className="muted" style={{ fontSize: 12 }}>Learning: </span>
+                                    <span style={{ fontSize: 13 }}>{row.weekly_learning}</span>
+                                  </div>
+                                )}
+                                {row.week_rating && (
+                                  <div>
+                                    <span className="muted" style={{ fontSize: 12 }}>Week Rating: </span>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--gold)' }}>{row.week_rating} / 5</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="summary-section">

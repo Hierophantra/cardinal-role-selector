@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { fetchSubmissions } from '../../lib/supabase.js';
 import {
   purposeOptions,
@@ -25,6 +25,13 @@ function lbl(arr, id) {
 export default function AdminComparison() {
   const [subs, setSubs] = useState(null);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
+
+  // Smart back target: prefer location.state.from (set by PartnerHub/AdminHub links),
+  // else default to /admin/hub. Partners get routed back to their own hub, admins to theirs.
+  const backTo = location.state?.from || '/admin/hub';
+  const backLabel = backTo.startsWith('/hub/') ? '\u2190 Back to Hub' : '\u2190 Back to Admin Hub';
+  const tag = backTo.startsWith('/hub/') ? 'Comparison' : 'Admin';
 
   useEffect(() => {
     fetchSubmissions()
@@ -43,12 +50,38 @@ export default function AdminComparison() {
   const theo = subs?.find((s) => s.partner === 'theo');
   const jerry = subs?.find((s) => s.partner === 'jerry');
 
-  if (!theo || !jerry)
+  if (!theo || !jerry) {
+    const missing = [];
+    if (!theo) missing.push('Theo');
+    if (!jerry) missing.push('Jerry');
     return (
-      <div className="container">
-        <p className="muted">Both submissions are required for comparison.</p>
+      <div className="app-shell">
+        <div className="app-header">
+          <div className="brand">
+            <img src="/logo.png" alt="Cardinal" />
+            <span>Role Definition Tool</span>
+          </div>
+          <div className="partner-tag">{tag}</div>
+        </div>
+        <div className="container wide">
+          <div className="screen fade-in">
+            <div style={{ marginBottom: 16 }}>
+              <Link to={backTo} className="btn btn-ghost" style={{ textDecoration: 'none' }}>
+                {backLabel}
+              </Link>
+            </div>
+            <div className="screen-header">
+              <div className="eyebrow">Comparison View</div>
+              <h2>Both submissions required</h2>
+              <p className="muted" style={{ fontSize: 14, marginTop: 8 }}>
+                Waiting on {missing.join(' and ')} to submit. The comparison view unlocks once both Theo and Jerry have completed the role questionnaire.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     );
+  }
 
   // Compute gap analysis
   const gaps = computeGaps(theo, jerry);
@@ -60,13 +93,13 @@ export default function AdminComparison() {
           <img src="/logo.png" alt="Cardinal" />
           <span>Role Definition Tool</span>
         </div>
-        <div className="partner-tag">Admin</div>
+        <div className="partner-tag">{tag}</div>
       </div>
       <div className="container wide">
         <div className="screen fade-in">
           <div style={{ marginBottom: 16 }}>
-            <Link to="/admin" className="btn btn-ghost" style={{ textDecoration: 'none' }}>
-              &larr; Back to Dashboard
+            <Link to={backTo} className="btn btn-ghost" style={{ textDecoration: 'none' }}>
+              {backLabel}
             </Link>
           </div>
 

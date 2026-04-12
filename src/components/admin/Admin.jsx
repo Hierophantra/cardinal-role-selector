@@ -15,6 +15,7 @@ export default function Admin() {
 
   const theo = subs?.find((s) => s.partner === 'theo');
   const jerry = subs?.find((s) => s.partner === 'jerry');
+  const test = subs?.find((s) => s.partner === 'test');
   const bothDone = !!theo && !!jerry;
 
   return (
@@ -47,6 +48,11 @@ export default function Admin() {
                   name="Jerry Vera"
                   partner="jerry"
                   sub={jerry}
+                />
+                <PartnerCard
+                  name="Test Account"
+                  partner="test"
+                  sub={test}
                 />
               </div>
 

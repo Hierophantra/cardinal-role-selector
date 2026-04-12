@@ -19,7 +19,7 @@ import {
   researchSummary,
 } from '../../data/content.js';
 
-const NAMES = { theo: 'Theo Dorian', jerry: 'Jerry Vera' };
+const NAMES = { theo: 'Theo Dorian', jerry: 'Jerry Vera', test: 'Test Account' };
 
 function lbl(arr, id) {
   return arr.find((o) => o.id === id)?.label ?? id ?? '—';
@@ -38,7 +38,40 @@ export default function AdminProfile() {
   }, [partner]);
 
   if (loading) return <div className="container"><p className="muted">Loading...</p></div>;
-  if (!sub) return <div className="container"><p className="muted">No submission found.</p></div>;
+
+  if (!sub) {
+    return (
+      <div className="app-shell">
+        <div className="app-header">
+          <div className="brand">
+            <img src="/logo.png" alt="Cardinal" />
+            <span>Role Definition Tool</span>
+          </div>
+          <div className="partner-tag">Admin</div>
+        </div>
+        <div className="container">
+          <div className="screen fade-in">
+            <div className="nav-row" style={{ marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+              <Link to="/admin/hub" className="btn btn-ghost" style={{ textDecoration: 'none' }}>
+                &larr; Back to Admin Hub
+              </Link>
+              <Link to="/admin/partners" className="btn btn-ghost" style={{ textDecoration: 'none' }}>
+                Partner Management
+              </Link>
+              <Link to={`/hub/${partner}?admin=1`} className="btn btn-ghost" style={{ textDecoration: 'none' }}>
+                Open Partner Hub
+              </Link>
+            </div>
+            <div className="screen-header">
+              <div className="eyebrow">Profile</div>
+              <h2>{NAMES[partner] ?? partner}</h2>
+              <p className="muted" style={{ fontSize: 13 }}>No submission yet for this partner.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -51,9 +84,15 @@ export default function AdminProfile() {
       </div>
       <div className="container">
         <div className="screen fade-in">
-          <div style={{ marginBottom: 16 }}>
-            <Link to="/admin" className="btn btn-ghost" style={{ textDecoration: 'none' }}>
-              &larr; Back to Dashboard
+          <div className="nav-row" style={{ marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+            <Link to="/admin/hub" className="btn btn-ghost" style={{ textDecoration: 'none' }}>
+              &larr; Back to Admin Hub
+            </Link>
+            <Link to="/admin/partners" className="btn btn-ghost" style={{ textDecoration: 'none' }}>
+              Partner Management
+            </Link>
+            <Link to={`/hub/${partner}?admin=1`} className="btn btn-ghost" style={{ textDecoration: 'none' }}>
+              Open Partner Hub
             </Link>
           </div>
 

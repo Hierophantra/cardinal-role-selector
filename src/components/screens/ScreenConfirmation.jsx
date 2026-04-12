@@ -22,9 +22,21 @@ function lookup(arr, id) {
   return arr.find((o) => o.id === id)?.label ?? id;
 }
 
-export default function ScreenConfirmation({ partnerName, answers }) {
+export default function ScreenConfirmation({ partnerName, answers, goToHub, startOver }) {
   return (
     <div className="screen">
+      {goToHub && (
+        <div className="nav-row" style={{ marginBottom: 16 }}>
+          <button type="button" className="btn-ghost" onClick={goToHub}>
+            {'\u2190'} Back to Hub
+          </button>
+          {startOver && (
+            <button type="button" className="btn-ghost" onClick={startOver}>
+              Start Over
+            </button>
+          )}
+        </div>
+      )}
       <div className="screen-header center">
         <div className="eyebrow">Submitted</div>
         <h2>Your profile has been submitted.</h2>
