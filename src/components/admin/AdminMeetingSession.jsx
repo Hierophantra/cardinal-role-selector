@@ -18,9 +18,9 @@ import {
   PARTNER_DISPLAY,
 } from '../../data/content.js';
 
-// --- Fixed 10-stop agenda (D-14) ---
-// Enforced at DB layer via meeting_notes.agenda_stop_key CHECK constraint (migration 005).
-// Order is canonical: intro → kpi_1..5 → personal growth → business growth 1..2 → wrap.
+// --- Fixed 12-stop agenda (D-14, updated Phase 6) ---
+// Enforced at DB layer via meeting_notes.agenda_stop_key CHECK constraint (migration 005, pre-expanded to kpi_7).
+// Order is canonical: intro → kpi_1..7 → personal growth → business growth 1..2 → wrap.
 const STOPS = [
   'intro',
   'kpi_1',
@@ -28,11 +28,15 @@ const STOPS = [
   'kpi_3',
   'kpi_4',
   'kpi_5',
+  'kpi_6',
+  'kpi_7',
   'growth_personal',
   'growth_business_1',
   'growth_business_2',
   'wrap',
 ];
+
+const KPI_STOP_COUNT = STOPS.filter(s => s.startsWith('kpi_')).length;
 
 const PARTNERS = ['theo', 'jerry'];
 const DEBOUNCE_MS = 400;
@@ -458,7 +462,7 @@ function StopRenderer({
   }
 
   if (stopKey.startsWith('kpi_')) {
-    // stopIndex 1..5 maps to KPI index 0..4
+    // stopIndex 1..7 maps to KPI index 0..6
     const kpiIndex = stopIndex - 1;
     return (
       <KpiStop
@@ -557,7 +561,7 @@ function IntroStop({ meeting, data, notes, savedFlash, onNoteChange }) {
         {PARTNERS.map((p) => {
           const results = data[p].scorecard?.kpi_results ?? {};
           const hit = Object.values(results).filter((e) => e?.result === 'yes').length;
-          const total = 5;
+          const total = data[p].kpis.length;
           return (
             <div key={p} className="meeting-kpi-cell">
               <div className="meeting-partner-name">{PARTNER_DISPLAY[p]}</div>
@@ -604,7 +608,7 @@ function KpiStop({
   return (
     <>
       <div className="eyebrow meeting-stop-eyebrow">
-        {MEETING_COPY.stops.kpiEyebrow(n)}
+        {MEETING_COPY.stops.kpiEyebrow(n, KPI_STOP_COUNT)}
       </div>
       <h3 className="meeting-stop-heading">KPI Review</h3>
       <p className="meeting-stop-subtext">
@@ -641,6 +645,7 @@ function KpiStop({
               <div className="meeting-partner-name">{PARTNER_DISPLAY[p]}</div>
               <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.4 }}>
                 {label}
+                {locked.kpi_templates?.mandatory && <span className="kpi-core-badge">Core</span>}
               </div>
 
               <div style={{ display: 'flex', gap: 8 }}>
