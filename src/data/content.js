@@ -590,6 +590,9 @@ export const MEETING_COPY = {
   endedNav: 'Back to Meeting History',
   landingEmpty: 'No past meetings yet. Start your first Friday review.',
   stops: {
+    clearTheAirEyebrow: 'CLEAR THE AIR',
+    clearTheAirHeading: 'Clear the Air',
+    clearTheAirSubtext: 'Anything partners need to say before diving into the numbers.',
     introEyebrow: 'FRIDAY REVIEW',
     introHeading: (weekLabel) => `Week of ${weekLabel}`,
     kpiEyebrow: (n, total) => `KPI ${n} of ${total}`,
@@ -606,3 +609,67 @@ export const MEETING_COPY = {
     noteSaveFail: "Note didn't save \u2014 check your connection.",
   },
 };
+
+export const MONDAY_PREP_COPY = {
+  landingEyebrow: 'MONDAY PREP',
+  heroCardTitle: 'Monday Prep',
+  heroCardDescription:
+    "Set intentions for the week \u2014 priorities, blockers, and commitments before the week begins.",
+  stops: {
+    clearTheAirEyebrow: 'CLEAR THE AIR',
+    clearTheAirHeading: 'Clear the Air',
+    clearTheAirSubtext: "Anything partners need to get off their chest before the week begins.",
+    weekPreviewEyebrow: 'WEEK PREVIEW',
+    weekPreviewHeading: "What's Coming This Week",
+    weekPreviewSubtext: "Upcoming travel, deadlines, and anything unusual on the calendar.",
+    prioritiesFocusEyebrow: 'PRIORITIES & FOCUS',
+    prioritiesFocusHeading: 'Top 2-3 Priorities',
+    prioritiesFocusSubtext: "The 2-3 most important things each partner will accomplish this week.",
+    risksBlockersEyebrow: 'RISKS & BLOCKERS',
+    risksBlockersHeading: 'Risks & Blockers',
+    risksBlockersSubtext: "What could get in the way and where do you need help?",
+    growthCheckinEyebrow: 'GROWTH CHECK-IN',
+    growthCheckinHeading: 'Growth Priority Pulse',
+    growthCheckinSubtext: "Quick status on each partner's growth priorities.",
+    commitmentsEyebrow: 'COMMITMENTS',
+    commitmentsHeading: 'Walk-Away Commitments',
+    commitmentsSubtext: "What each partner commits to by end of week.",
+    introEyebrow: 'MONDAY PREP',
+    introHeading: (weekLabel) => `Week of ${weekLabel}`,
+    kpiEyebrow: (n, total) => `KPI ${n} of ${total}`,
+    growthPersonalEyebrow: 'PERSONAL GROWTH',
+    growthBusinessEyebrow: (n) => `BUSINESS GROWTH ${n} of 2`,
+    wrapHeading: 'Action Items & Commitments',
+    wrapSubtext: 'Capture commitments and action items before starting the week.',
+  },
+  notesPlaceholder: 'Add notes for this stop...',
+  savedFlash: 'Saved',
+  errors: {
+    loadFail: "Couldn't load meeting data. Check your connection and refresh.",
+    noteSaveFail: "Note didn't save \u2014 check your connection.",
+  },
+};
+
+// --- Dual stop arrays for meeting type selection (Phase 13) ---
+// Friday Review: 13 stops — clear_the_air added as stop 1, then original 12 stops.
+// Monday Prep: 6 intention-focused stops.
+// KPI_STOP_COUNT is derived from FRIDAY_STOPS so it stays in sync.
+
+export const FRIDAY_STOPS = [
+  'clear_the_air',
+  'intro',
+  'kpi_1', 'kpi_2', 'kpi_3', 'kpi_4', 'kpi_5', 'kpi_6', 'kpi_7',
+  'growth_personal', 'growth_business_1', 'growth_business_2',
+  'wrap',
+];
+
+export const MONDAY_STOPS = [
+  'clear_the_air',
+  'week_preview',
+  'priorities_focus',
+  'risks_blockers',
+  'growth_checkin',
+  'commitments',
+];
+
+export const KPI_STOP_COUNT = FRIDAY_STOPS.filter(s => s.startsWith('kpi_')).length;
