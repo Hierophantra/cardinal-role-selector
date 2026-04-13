@@ -411,6 +411,7 @@ export default function AdminMeetingSession() {
             onOverrideResult={handleOverrideResult}
             onReflectionChange={handleReflectionChange}
             copy={copy}
+            isEnded={isEnded}
           />
         </motion.div>
       </AnimatePresence>
@@ -459,6 +460,7 @@ function StopRenderer({
   onOverrideResult,
   onReflectionChange,
   copy,
+  isEnded,
 }) {
   if (stopKey === 'clear_the_air') {
     return (
