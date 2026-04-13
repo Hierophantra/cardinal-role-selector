@@ -2,16 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Meeting & Insights Expansion
-status: planning
-stopped_at: Phase 8 context gathered
-last_updated: "2026-04-13T03:20:54.312Z"
-last_activity: 2026-04-13 — v1.2 roadmap created, Phase 8 ready to plan
+status: Ready to execute
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-04-13T03:42:25.307Z"
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 2
+  completed_plans: 1
 ---
 
 # Project State
@@ -21,16 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-13)
 
 **Core value:** Partners have clear, locked-in accountability commitments they check in on weekly, with an admin who can track progress and facilitate structured conversations.
-**Current focus:** Phase 8 — Schema Foundation & STOPS Consolidation
+**Current focus:** Phase 08 — schema-foundation-stops-consolidation
 
 ## Current Position
 
-Phase: 8 of 12 (Schema Foundation & STOPS Consolidation)
-Plan: — (not yet planned)
-Status: Ready to plan
-Last activity: 2026-04-13 — v1.2 roadmap created, Phase 8 ready to plan
-
-Progress: [░░░░░░░░░░] 0% (v1.2)
+Phase: 08 (schema-foundation-stops-consolidation) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -47,6 +41,7 @@ Progress: [░░░░░░░░░░] 0% (v1.2)
 | - | - | - | - |
 
 *Updated after each plan completion*
+| Phase 08 P02 | 1 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -60,6 +55,8 @@ Recent decisions affecting current work:
 - `recharts` 3.8.1 is the only new npm package for v1.2
 - Export via `window.print()` + print CSS — no PDF library
 - Season hit-rate excludes `result === null` from both numerator and denominator (avoid false miss count)
+- [Phase 08]: ADD COLUMN IF NOT EXISTS + DROP CONSTRAINT IF EXISTS pattern for idempotent migrations (PostgreSQL lacks IF NOT EXISTS on ADD CONSTRAINT)
+- [Phase 08]: meeting_notes stop_key CHECK from migration 006 covers all 12 stops for both friday_review and monday_prep — no expansion needed (D-05, D-10)
 
 ### Pending Todos
 
@@ -79,6 +76,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T03:20:54.309Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-schema-foundation-stops-consolidation/08-CONTEXT.md
+Last session: 2026-04-13T03:42:25.304Z
+Stopped at: Completed 08-02-PLAN.md
+Resume file: None
