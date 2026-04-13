@@ -52,13 +52,25 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (populated by roadmapper) | | |
+| SCHM-01 | Phase 12 | Pending |
+| SCHM-02 | Phase 12 | Pending |
+| MPREP-01 | Phase 13 | Pending |
+| MPREP-02 | Phase 13 | Pending |
+| MPREP-03 | Phase 13 | Pending |
+| MPREP-04 | Phase 13 | Pending |
+| MPREP-05 | Phase 13 | Pending |
+| MPREP-06 | Phase 13 | Pending |
+| MPREP-07 | Phase 13 | Pending |
+| MPREP-08 | Phase 13 | Pending |
+| FREV-01 | Phase 13 | Pending |
+| FREV-02 | Phase 13 | Pending |
+| TEST-01 | Phase 14 | Pending |
 
 **Coverage:**
 - v1.3 requirements: 13 total
-- Mapped to phases: 0
-- Unmapped: 13
+- Mapped to phases: 13
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-13*
-*Last updated: 2026-04-13 after initial definition*
+*Last updated: 2026-04-13 after roadmap creation*
