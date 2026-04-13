@@ -1,54 +1,32 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Mandatory/Choice KPI Model
-status: v1.1 milestone complete
-stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-04-13T02:43:20.558Z"
+milestone: v1.2
+milestone_name: Meeting & Insights Expansion
+status: Defining requirements
+stopped_at: null
+last_updated: "2026-04-13"
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-11)
+See: .planning/PROJECT.md (updated 2026-04-13)
 
 **Core value:** Partners have clear, locked-in accountability commitments they check in on weekly, with an admin who can track progress and facilitate structured conversations.
-**Current focus:** Phase 07 — admin-model-evolution
+**Current focus:** Defining v1.2 requirements
 
 ## Current Position
 
-Phase: 07
-Plan: Not started
-
-## Performance Metrics
-
-**Velocity:**
-
-- Total plans completed: 13
-- Average duration: ~5 min
-- Total execution time: ~65 min
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 01-schema-hub | 2/2 | ~3m | ~1.5m |
-| 02-kpi-selection | 3/3 | ~50m | ~17m |
-| 03-weekly-scorecard | 3/3 | ~15m | ~5m |
-| 04-admin-tools-meeting-mode | 5/5 | ~25m | ~5m |
-| Phase 05 P02 | 2 | 2 tasks | 2 files |
-| Phase 05-schema-evolution-content-seeding P01 | 2 | 1 tasks | 1 files |
-| Phase 06-partner-meeting-flow-updates P01 | 8 | 3 tasks | 3 files |
-| Phase 06-partner-meeting-flow-updates P02 | 7 | 2 tasks | 2 files |
-| Phase 06 P03 | 5 | 2 tasks | 2 files |
-| Phase 07-admin-model-evolution P01 | 12 | 2 tasks | 4 files |
-| Phase 07-admin-model-evolution P02 | 20 | 2 tasks | 3 files |
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-13 — Milestone v1.2 started
 
 ## Accumulated Context
 
@@ -60,20 +38,12 @@ Recent decisions affecting current work:
 - Per-partner mandatory+choice KPI model (7 per partner) — v1.1 key decision
 - "Spring Season 2026" replaces "90-day lock" — season-based, not fixed day count
 - Mandatory KPIs editable by Trace, just not removable by partner
-- kpi_results JSONB shape keyed by kpi_selection_id — must accommodate 7 keys in v1.1
-- 10-stop meeting agenda needs expansion to 12+ stops (7 KPIs + growth stops)
-- [Phase 05]: SEASON_END_DATE='2026-06-30T23:59:59Z' is the single source of truth for the lock deadline; all 90-day copy replaced with CURRENT_SEASON interpolation
-- [Phase 05-schema-evolution-content-seeding]: Clean-slate migration: wipe placeholder data, re-seed 20 real Cardinal KPI templates with partner_scope/mandatory/measure columns
-- [Phase 05-schema-evolution-content-seeding]: Short category names (sales/ops/client/team/finance) in DB; display labels in content.js
-- [Phase 05-schema-evolution-content-seeding]: Pre-expand meeting_notes CHECK to kpi_7 in Phase 5 to avoid extra migration in Phase 6
-- [Phase 06-partner-meeting-flow-updates]: SCORECARD_COPY counter/counterComplete and MEETING_COPY kpiEyebrow now accept total parameter — downstream components must pass KPI count dynamically
-- [Phase 06-partner-meeting-flow-updates]: fetchKpiSelections joins kpi_templates(mandatory, measure) — consumers access via sel.kpi_templates?.mandatory; zero-migration approach
-- [Phase 06-partner-meeting-flow-updates]: Self-chosen personal growth stored as 'Title — Measure' single string — split on em-dash for hydration
-- [Phase 06-partner-meeting-flow-updates]: Mandatory personal growth priority inserted at lockIn time, not continueToConfirmation — avoids duplicate rows if partner navigates back
-- [Phase 06]: canSubmit gates submit button — requires weekly_win + week_rating in addition to all KPI reflections
-- [Phase 06]: KPI_STOP_COUNT constant derived from STOPS.filter — stays in sync dynamically
-- [Phase 07-admin-model-evolution]: cascadeTemplateLabelSnapshot uses template_id FK; cascade failure shows cascadeFail error without rolling back template save
-- [Phase 07-admin-model-evolution]: Accountability card inside !loading && !error gate — ADMIN-10 satisfied by placement; strict === 'no' filter prevents null results counting as misses
+- kpi_results JSONB shape keyed by kpi_selection_id — must accommodate 7 keys
+- 12-stop meeting agenda (intro → 7 KPIs → 3 growth → wrap)
+- KPI labels embedded in scorecard JSONB for history resilience
+- Reflections optional on hit KPIs, required on misses
+- Emoji icons removed from hub cards for cleaner appearance
+- Dual meeting mode: session-based model with meeting_type column, same 12-stop structure, different framing per type
 
 ### Pending Todos
 
@@ -81,7 +51,7 @@ None yet.
 
 ### Blockers/Concerns
 
-None — real KPI content provided 2026-04-11, unblocking schema seeding.
+None.
 
 ### Quick Tasks Completed
 
@@ -92,6 +62,6 @@ None — real KPI content provided 2026-04-11, unblocking schema seeding.
 
 ## Session Continuity
 
-Last session: 2026-04-12T08:18:02.884Z
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-04-13
+Stopped at: Milestone v1.2 started — defining requirements
 Resume file: None

@@ -35,13 +35,12 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 - ✓ Accountability tracking: cumulative missed-KPI count + PIP flag at 5 (admin-only) — v1.1
 - ✓ Mandatory template delete suppression — v1.1
 
-### Active
+### Active — v1.2 Meeting & Insights Expansion
 
 - [ ] Season overview: partners see KPI hit-rate trends and season progress on their hub
 - [ ] Meeting history: past meetings visible to both admin and partners (not just latest)
 - [ ] Export capability: meeting notes and scorecard data exportable
 - [ ] Dual meeting mode: Friday Review + Monday Prep sessions with different framing
-- [ ] Scorecard history resilience across KPI resets (labels embedded in JSONB)
 - [ ] Partner progress view: dedicated progress dashboard beyond the hub status line
 
 ### Out of Scope
@@ -52,6 +51,17 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 - Role re-selection — the questionnaire is a one-time exercise, already completed
 - OAuth/SSO authentication — access codes sufficient for 3 users
 - Real-time collaboration — partners and admin are co-located during meetings
+
+## Current Milestone: v1.2 Meeting & Insights Expansion
+
+**Goal:** Give partners visibility into their season progress and add dual meeting modes (Friday Review + Monday Prep) with meeting history and data export.
+
+**Target features:**
+- Season overview on partner hub (KPI hit-rate trends and season progress)
+- Meeting history visible to both admin and partners (not just latest)
+- Export capability for meeting notes and scorecard data
+- Dual meeting mode (Friday Review + Monday Prep with different framing)
+- Partner progress view (dedicated progress dashboard)
 
 ## Context
 
@@ -93,4 +103,4 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-04-13 after v1.1 milestone*
+*Last updated: 2026-04-13 after v1.2 milestone started*
