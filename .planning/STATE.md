@@ -2,16 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Monday Prep Redesign
-status: planning
-stopped_at: Phase 12 context gathered
-last_updated: "2026-04-13T08:04:34.209Z"
-last_activity: 2026-04-13 — Roadmap created for v1.3
+status: Phase complete — ready for verification
+stopped_at: Completed 12-schema-migration 12-01-PLAN.md
+last_updated: "2026-04-13T08:14:54.148Z"
 progress:
   total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
 ---
 
 # Project State
@@ -21,16 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-13)
 
 **Core value:** Partners have clear, locked-in accountability commitments they check in on weekly, with an admin who can track progress and facilitate structured conversations.
-**Current focus:** Phase 12 — Schema Migration
+**Current focus:** Phase 12 — schema-migration
 
 ## Current Position
 
-Phase: 12 of 14 (Schema Migration)
-Plan: —
-Status: Ready to plan
-Last activity: 2026-04-13 — Roadmap created for v1.3
-
-Progress: [░░░░░░░░░░] 0%
+Phase: 12 (schema-migration) — EXECUTING
+Plan: 1 of 1
 
 ## Performance Metrics
 
@@ -47,6 +41,7 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 *Updated after each plan completion*
+| Phase 12-schema-migration P01 | 1 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -58,6 +53,8 @@ Recent decisions affecting current work:
 - Monday Prep gets its own 6-stop structure (intention-focused), not the shared 12-stop Friday structure
 - Clear the Air goes first in both meeting types — emotional stuff out before tactical
 - Friday Review expands from 12 to 13 stops (Clear the Air added as stop 1)
+- [Phase 12-schema-migration]: All 17 meeting_notes stop keys in one flat CHECK — DB prevents typos, app layer (content.js) controls per-type stop visibility
+- [Phase 12-schema-migration]: clear_the_air is a shared key used by both Friday Review and Monday Prep — meeting_type column distinguishes context
 
 ### Pending Todos
 
@@ -69,6 +66,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T08:04:34.207Z
-Stopped at: Phase 12 context gathered
-Resume file: .planning/phases/12-schema-migration/12-CONTEXT.md
+Last session: 2026-04-13T08:14:54.145Z
+Stopped at: Completed 12-schema-migration 12-01-PLAN.md
+Resume file: None

@@ -25,8 +25,8 @@ Requirements for Monday Prep Redesign milestone. Each maps to roadmap phases.
 
 ### Schema
 
-- [ ] **SCHM-01**: Database CHECK constraint updated to accept new Monday stop keys and Friday's clear_the_air key
-- [ ] **SCHM-02**: Migration is idempotent and backward-compatible with existing meeting data
+- [x] **SCHM-01**: Database CHECK constraint updated to accept new Monday stop keys and Friday's clear_the_air key
+- [x] **SCHM-02**: Migration is idempotent and backward-compatible with existing meeting data
 
 ### Testing
 
@@ -52,8 +52,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SCHM-01 | Phase 12 | Pending |
-| SCHM-02 | Phase 12 | Pending |
+| SCHM-01 | Phase 12 | Complete |
+| SCHM-02 | Phase 12 | Complete |
 | MPREP-01 | Phase 13 | Pending |
 | MPREP-02 | Phase 13 | Pending |
 | MPREP-03 | Phase 13 | Pending |

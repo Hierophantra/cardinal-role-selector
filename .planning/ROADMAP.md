@@ -42,7 +42,7 @@
 
 **Milestone Goal:** Give Monday Prep its own intention-focused structure and add Clear the Air to both meeting types.
 
-- [ ] **Phase 12: Schema Migration** - CHECK constraint updated to accept new Monday Prep stop keys and Friday's clear_the_air key
+- [x] **Phase 12: Schema Migration** - CHECK constraint updated to accept new Monday Prep stop keys and Friday's clear_the_air key (completed 2026-04-13)
 - [ ] **Phase 13: Meeting Stop Redesign** - Monday Prep runs on 6 intention-focused stops; Friday Review gains Clear the Air as stop 1
 - [ ] **Phase 14: Monday Prep Mock** - Admin test account includes a realistic Monday Prep session for all 6 stops
 
@@ -57,9 +57,9 @@
   2. Friday Review's clear_the_air key is accepted by the CHECK constraint without error
   3. Existing meeting records and note data are unaffected after migration runs
   4. Migration can run on a database that has already run it without error (idempotent)
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 12-01-PLAN.md — Expand meeting_notes CHECK constraint with 17 stop keys
+- [x] 12-01-PLAN.md — Expand meeting_notes CHECK constraint with 17 stop keys
 
 ### Phase 13: Meeting Stop Redesign
 **Goal**: Both meeting types deliver their correct stop structures with appropriate framing and note persistence
@@ -87,6 +87,6 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 12. Schema Migration | 0/1 | Not started | - |
+| 12. Schema Migration | 1/1 | Complete   | 2026-04-13 |
 | 13. Meeting Stop Redesign | 0/TBD | Not started | - |
 | 14. Monday Prep Mock | 0/TBD | Not started | - |
