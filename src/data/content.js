@@ -369,7 +369,7 @@ export const HUB_COPY = {
       meetingMode: {
         title: 'Meeting Mode',
         description:
-          "Run Friday's accountability review \u2014 step through each KPI and growth priority with both partners.",
+          'Run a Friday Review or Monday Prep \u2014 step through each KPI and growth priority with both partners.',
       },
       scorecardOversight: {
         title: 'Scorecard Oversight',
@@ -588,7 +588,7 @@ export const MEETING_COPY = {
   endBtn: 'End Meeting',
   endConfirmBtn: 'Confirm End',
   endedNav: 'Back to Meeting History',
-  landingEmpty: 'No past meetings yet. Start your first Friday review.',
+  landingEmpty: 'No past meetings yet. Start your first Friday Review or Monday Prep.',
   stops: {
     introEyebrow: 'FRIDAY REVIEW',
     introHeading: (weekLabel) => `Week of ${weekLabel}`,

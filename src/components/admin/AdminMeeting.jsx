@@ -4,15 +4,15 @@ import { createMeeting, fetchMeetings } from '../../lib/supabase.js';
 import { getMondayOf, formatWeekRange } from '../../lib/week.js';
 import { MEETING_COPY, MONDAY_PREP_COPY, SEASON_START_DATE, SEASON_END_DATE } from '../../data/content.js';
 
-// Build all week options from SEASON_START_DATE through SEASON_END_DATE, newest first.
+// Build week options from the current week through SEASON_END_DATE, newest first.
 // Each option value is a 'YYYY-MM-DD' Monday local-time string from getMondayOf.
 function buildWeekOptions() {
   const options = [];
   const end = new Date(SEASON_END_DATE);
-  const start = new Date(SEASON_START_DATE + 'T00:00:00');
-  // Walk from end back to start in 7-day steps
+  const start = getMondayOf(); // current week — never show weeks in the past
+  // Walk from end back to current week in 7-day steps
   let d = new Date(end);
-  while (d >= start) {
+  while (getMondayOf(d) >= start) {
     const monday = getMondayOf(d);
     if (!options.includes(monday)) {
       options.push(monday);
