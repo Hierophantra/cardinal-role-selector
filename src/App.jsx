@@ -21,6 +21,7 @@ import MeetingHistory from './components/MeetingHistory.jsx';
 import MeetingSummaryMock from './components/admin/MeetingSummaryMock.jsx';
 import MeetingHistoryMock from './components/admin/MeetingHistoryMock.jsx';
 import PartnerProgressMock from './components/admin/PartnerProgressMock.jsx';
+import PartnerProgress from './components/PartnerProgress.jsx';
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
       <Route path="/kpi/:partner" element={<KpiSelection />} />
       <Route path="/kpi-view/:partner" element={<KpiSelectionView />} />
       <Route path="/scorecard/:partner" element={<Scorecard />} />
+      <Route path="/progress/:partner" element={<PartnerProgress />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/admin/hub" element={<AdminHub />} />
       <Route path="/admin/partners" element={<AdminPartners />} />
