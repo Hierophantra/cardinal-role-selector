@@ -6,7 +6,7 @@ import {
   MEETING_COPY,
   GROWTH_STATUS_COPY,
   PARTNER_DISPLAY,
-  AGENDA_STOPS,
+  FRIDAY_STOPS,
 } from '../../data/content.js';
 
 const PARTNERS = ['theo', 'jerry'];
@@ -214,7 +214,7 @@ export default function AdminMeetingSessionMock() {
   // --- Navigation ---
   const goNext = useCallback(() => {
     setDirection(1);
-    setStopIndex((i) => Math.min(i + 1, AGENDA_STOPS.length - 1));
+    setStopIndex((i) => Math.min(i + 1, FRIDAY_STOPS.length - 1));
   }, []);
 
   const goPrev = useCallback(() => {
@@ -291,7 +291,7 @@ export default function AdminMeetingSessionMock() {
     navigate('/admin/test');
   }, [endPending, navigate]);
 
-  const currentStopKey = AGENDA_STOPS[stopIndex];
+  const currentStopKey = FRIDAY_STOPS[stopIndex];
   const weekLabel = formatWeekRange(meeting.week_of);
 
   return (
@@ -299,7 +299,7 @@ export default function AdminMeetingSessionMock() {
       {/* === Header === */}
       <div className="meeting-shell-header">
         <div className="meeting-progress-pill">
-          {MEETING_COPY.progressPill(stopIndex + 1, AGENDA_STOPS.length)}
+          {MEETING_COPY.progressPill(stopIndex + 1, FRIDAY_STOPS.length)}
         </div>
         <span className="eyebrow" style={{ color: 'var(--gold)', fontSize: 11 }}>
           MOCK
@@ -369,7 +369,7 @@ export default function AdminMeetingSessionMock() {
           type="button"
           className="btn btn-primary"
           onClick={goNext}
-          disabled={stopIndex === AGENDA_STOPS.length - 1}
+          disabled={stopIndex === FRIDAY_STOPS.length - 1}
         >
           Next {'\u2192'}
         </button>
@@ -393,6 +393,26 @@ function StopRenderer({
   onOverrideResult,
   onReflectionChange,
 }) {
+  if (stopKey === 'clear_the_air') {
+    return (
+      <>
+        <div className="eyebrow meeting-stop-eyebrow">CLEAR THE AIR</div>
+        <h2 className="meeting-stop-heading" style={{ fontSize: 28, lineHeight: 1.2 }}>
+          Clear the Air
+        </h2>
+        <p className="meeting-stop-subtext">
+          Anything partners need to say before diving into the numbers.
+        </p>
+        <StopNotesArea
+          stopKey="clear_the_air"
+          notes={notes}
+          savedFlash={savedFlash}
+          onNoteChange={onNoteChange}
+        />
+      </>
+    );
+  }
+
   if (stopKey === 'intro') {
     return (
       <IntroStop
@@ -406,7 +426,8 @@ function StopRenderer({
   }
 
   if (stopKey.startsWith('kpi_')) {
-    const kpiIndex = stopIndex - 1;
+    // clear_the_air is at index 0, intro at index 1, kpi_1 at index 2
+    const kpiIndex = stopIndex - 2;
     return (
       <KpiStop
         kpiIndex={kpiIndex}
