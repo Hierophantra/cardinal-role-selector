@@ -37,11 +37,11 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 
 ### Active — v1.2 Meeting & Insights Expansion
 
-- [ ] Season overview: partners see KPI hit-rate trends and season progress on their hub
+- ✓ Season overview: partners see KPI hit-rate trends and season progress on their hub — v1.2 (Validated in Phase 11)
 - ✓ Meeting history: past meetings visible to both admin and partners (not just latest) — v1.2 (Validated in Phase 10)
 - [ ] Export capability: meeting notes and scorecard data exportable
 - ✓ Dual meeting mode: Friday Review + Monday Prep sessions with different framing — v1.2 (Validated in Phase 09)
-- [ ] Partner progress view: dedicated progress dashboard beyond the hub status line
+- ✓ Partner progress view: dedicated progress dashboard beyond the hub status line — v1.2 (Validated in Phase 11)
 
 ### Out of Scope
 
@@ -102,11 +102,11 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 
 ## Current State
 
-Phase 10 complete — Meeting history list and ID-based summary view shipped. Partners can browse all ended meetings from their hub with type badges and week ranges, click through to any specific meeting's stop-by-stop notes. Admin read-only for ended meetings confirmed. Dual meeting mode (Phase 9) and meeting history (Phase 10) both validated.
+Phase 11 complete — Season Overview hub card and dedicated progress page shipped. Partners see cumulative KPI hit-rate %, per-KPI bar chart (recharts), miss streak alerts, and growth priority status cards at /progress/:partner. Hub card shows sparkline bars and worst-streak callout. Mock page at /admin/test/progress-mock exercises all color thresholds.
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-04-13 after Phase 10 completion*
+*Last updated: 2026-04-13 after Phase 11 completion*
