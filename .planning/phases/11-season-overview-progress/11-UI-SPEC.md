@@ -35,9 +35,9 @@ Declared values (multiples of 4, sourced from index.css patterns):
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px | Icon gaps, dot spacing, badge internal padding |
-| sm | 8px | Gap between hub card elements (gap: 12px in .hub-card is exception, noted below) |
+| sm | 8px | Gap between hub card elements; sparkline bar height |
 | md | 16px | Hub grid gap, section padding, chart bar vertical gap |
-| lg | 24px | Hub grid margin-top, card padding (hub-card: 24px) |
+| lg | 24px | Hub grid margin-top, card padding (hub-card: 24px), growth card horizontal padding |
 | xl | 32px | Section bottom margin (.hub-section), page-level section breaks |
 | 2xl | 48px | Major section separation on progress page |
 | 3xl | 64px | Not used in this phase |
@@ -46,27 +46,27 @@ Exceptions:
 - `.hub-card` uses `gap: 12px` between internal elements (existing pattern, preserved)
 - `.hub-card--hero` uses `padding: 32px` (existing pattern, not used in this phase)
 - Bar chart row height: 32px per KPI bar (accommodates label + bar in single row)
-- Sparkline mini bars on hub card: 6px tall, 4px gap between bars
 
 ---
 
 ## Typography
 
-Matches existing index.css scale — no new sizes introduced.
+Matches existing index.css scale — no new sizes introduced. Exactly 4 sizes, 2 weights.
 
 | Role | Size | Weight | Line Height | Usage in this phase |
 |------|------|--------|-------------|---------------------|
-| Body | 15px | 400 | 1.55 | Hub card description, growth priority note text, chart tooltip |
-| Label | 12px | 700 | 1.3 | Eyebrow text (uppercase, 0.18em letter-spacing), miss streak badge, sparkline percentage labels, growth priority group label |
+| Body | 15px | 400 | 1.55 | Hub card description, growth priority name text, week indicator, chart tooltip |
+| Label | 12px | 700 | 1.3 | Eyebrow text (uppercase, 0.18em letter-spacing), miss streak badge, sparkline percentage labels, growth priority group label, bar chart Y-axis tick labels, "TRACE'S NOTE" label, bar chart percentage annotations, growth priority status badge |
 | Heading | 20px | 700 | 1.3 | Hub card h3 ("Season Overview"), progress page section headings |
 | Display | 28px | 700 | 1.2 | Season hit-rate percentage shown prominently on progress page overview section |
 
 Additional detail:
 - Hit-rate % on hub card: 15px, weight 700, color `var(--text)` — matches `.scorecard-hit-rate` pattern
 - "Week N of ~26" on hub card: 12px, weight 400, color `var(--muted)`
-- KPI label on bar chart left axis: 14px, weight 400, color `var(--muted)` — truncate at 28ch with ellipsis
+- KPI label on bar chart Y-axis: 12px, weight 400, color `var(--muted)` — truncate at 28ch with ellipsis via recharts `tickFormatter`
 - Bar chart percentage annotations: 12px, weight 700, color `var(--text)`
-- Growth priority card status badge: 12px, weight 700, uppercase
+- "TRACE'S NOTE" label: 12px, weight 700, uppercase, letter-spacing 0.18em, color `var(--gold)`
+- Growth priority note body text: 15px, weight 400, muted, line-height 1.6
 
 ---
 
@@ -106,6 +106,8 @@ No destructive actions exist in this phase.
 
 Class: `.hub-card` (existing) — inserted as first child of `.hub-grid`
 
+Primary visual anchor: the hit-rate percentage line (`[NN]% this season`) — this is the largest and heaviest text in the card. The eye enters there; the sparklines below it serve as a supporting trend summary.
+
 Visibility gate: `kpiLocked && <SeasonOverviewCard />` — consistent with Scorecard and Meeting History cards (D-03)
 
 Internal layout (flex column, gap 12px per `.hub-card`):
@@ -113,8 +115,8 @@ Internal layout (flex column, gap 12px per `.hub-card`):
 - Heading h3: "Season Overview" — 20px, weight 700
 - Hit-rate line: `<span className="progress-hit-rate">[NN]% this season</span>` — 15px, weight 700, color driven by performance threshold
 - Week progress line: `<span className="progress-week-label">Week N of ~26</span>` — 12px, weight 400, muted
-- Worst streak alert (conditional): `<span className="progress-streak-alert">[KPI name]: missed N weeks</span>` — 12px, weight 400, muted-2. Omitted entirely if no active streak.
-- Mini sparklines: `<div className="progress-sparklines">` containing one `<div className="progress-sparkline-bar">` per KPI, width set inline as hit-rate percentage, color set inline per performance threshold, height 6px, border-radius 3px
+- Worst streak alert (conditional): `<span className="progress-streak-alert">[KPI name]: missed N weeks</span>` — 12px, weight 400, muted. Omitted entirely if no active streak.
+- Mini sparklines: `<div className="progress-sparklines">` containing one `<div className="progress-sparkline-bar">` per KPI, width set inline as hit-rate percentage, color set inline per performance threshold, height 8px, border-radius 4px
 - CTA: `<span className="hub-card-cta">View season progress →</span>` — inherits existing hub card CTA styling
 
 ### 2. Partner Progress Page (new component: PartnerProgress.jsx)
@@ -136,6 +138,8 @@ Section order (D-14):
 
 Class: `.progress-overview` — `background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px`
 
+Primary visual anchor: the 28px display hit-rate percentage (`.progress-stat-value`). It is the largest element on the page and draws the eye immediately on load. Season name eyebrow above it establishes context; week indicator below it provides supporting detail.
+
 Elements:
 - Eyebrow: `<span className="eyebrow" style={{ color: 'var(--gold)' }}>SPRING SEASON 2026</span>`
 - Display stat: `<div className="progress-stat-display"><span className="progress-stat-value">[NN]%</span><span className="progress-stat-label">season hit rate</span></div>` — value is 28px weight 700, color driven by threshold; label is 12px weight 400 muted
@@ -147,14 +151,14 @@ Component: recharts `BarChart` with `layout="vertical"` for horizontal bars (D-0
 
 Config:
 - `margin={{ top: 8, right: 48, left: 8, bottom: 8 }}`
-- `YAxis dataKey="label"` — 14px, color muted, max 28 characters, truncated with ellipsis via `tickFormatter`
+- `YAxis dataKey="label"` — 12px, color muted, max 28 characters, truncated with ellipsis via `tickFormatter`
 - `XAxis domain={[0, 100]}` — hidden tick line, shows 0% and 100% only
 - `Bar dataKey="hitRate"` — `Cell` fill driven by performance threshold per bar
 - `Tooltip` — dark surface background (`var(--surface-2)`), 1px border `var(--border)`, 12px text, showing KPI name + "NN% hit rate"
 - No legend (labels are on the Y axis)
 - Right-side percentage annotation: recharts `LabelList` position="right", 12px, weight 700, color `var(--text)`
 
-Miss streak badge (D-10): Rendered as a custom `Bar` label or as an absolutely-positioned element after the chart row for each KPI with 2+ consecutive misses. Text: "missed N weeks" — 12px, weight 400, color `var(--muted-2)`. No additional color escalation.
+Miss streak badge (D-10): Rendered as a custom `Bar` label or as an absolutely-positioned element after the chart row for each KPI with 2+ consecutive misses. Text: "missed N weeks" — 12px, weight 400, color `var(--muted)`. No additional color escalation.
 
 Wrapper class: `.progress-chart` — `background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px`
 
@@ -166,13 +170,13 @@ Section heading: `<h3 className="progress-section-heading">Growth Priorities</h3
 
 Layout: flex column, gap 12px
 
-Each card class: `.progress-growth-card` — `background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px`
+Each card class: `.progress-growth-card` — `background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 24px`
 
 Card internals:
 - Group label (e.g. "PERSONAL GROWTH" or "BUSINESS GROWTH 1 of 2"): 12px, weight 700, uppercase, letter-spacing 0.18em, color `var(--gold)` — reuses existing growth-priority-group-label pattern
 - Priority name: 15px, weight 400, color `var(--text)`
-- Status badge: `<span className="progress-growth-status-badge progress-growth-status--[status]">` — 12px weight 700 uppercase. Status values: active (muted), achieved (success green), stalled (miss red), deferred (muted-2)
-- Trace's note (if any): `<div className="progress-growth-note"><span className="progress-growth-note-label">TRACE'S NOTE</span><p>[note text]</p></div>` — label 11px gold uppercase; note text 14px muted, line-height 1.6
+- Status badge: `<span className="progress-growth-status-badge progress-growth-status--[status]">` — 12px weight 700 uppercase. Status values: active (muted), achieved (success green), stalled (miss red), deferred (muted)
+- Trace's note (if any): `<div className="progress-growth-note"><span className="progress-growth-note-label">TRACE'S NOTE</span><p>[note text]</p></div>` — label 12px gold uppercase letter-spacing 0.18em; note text 15px muted, line-height 1.6
 - "Last updated" timestamp: omitted (per Claude's Discretion — keep it simple for partners)
 - Read-only: no edit controls visible to partners
 
@@ -272,9 +276,9 @@ All new classes follow existing kebab-case convention. Add to `src/index.css` at
 |-------|-------------|
 | `.progress-hit-rate` | Hub card hit-rate span — 15px, weight 700, color driven by JS inline style |
 | `.progress-week-label` | Hub card week indicator — 12px, weight 400, muted |
-| `.progress-streak-alert` | Hub card worst streak line — 12px, weight 400, muted-2 |
+| `.progress-streak-alert` | Hub card worst streak line — 12px, weight 400, muted |
 | `.progress-sparklines` | Hub card sparkline container — flex row, gap 4px, align-items flex-end |
-| `.progress-sparkline-bar` | Individual mini bar — height 6px, border-radius 3px, width and background set inline |
+| `.progress-sparkline-bar` | Individual mini bar — height 8px, border-radius 4px, width and background set inline |
 | `.progress-overview` | Progress page overview card — surface bg, border, border-radius 16px, padding 24px |
 | `.progress-stat-display` | Flex row wrapping the large % + label — align-items baseline, gap 8px |
 | `.progress-stat-value` | 28px weight 700 display number |
@@ -282,14 +286,14 @@ All new classes follow existing kebab-case convention. Add to `src/index.css` at
 | `.progress-week-indicator` | 15px weight 400 week progress string |
 | `.progress-chart` | recharts wrapper card — surface bg, border, border-radius 16px, padding 24px |
 | `.progress-section-heading` | Section h3 — 20px weight 700, margin-bottom 16px |
-| `.progress-growth-card` | Growth priority card — surface bg, border, border-radius 12px, padding 16px 20px |
+| `.progress-growth-card` | Growth priority card — surface bg, border, border-radius 12px, padding 16px 24px |
 | `.progress-growth-status-badge` | Status badge base — 12px weight 700 uppercase |
 | `.progress-growth-status--active` | Color: var(--muted) |
 | `.progress-growth-status--achieved` | Color: var(--success) |
 | `.progress-growth-status--stalled` | Color: var(--miss) |
-| `.progress-growth-status--deferred` | Color: var(--muted-2) |
+| `.progress-growth-status--deferred` | Color: var(--muted) |
 | `.progress-growth-note` | Trace note container — margin-top 8px, border-top 1px solid var(--border), padding-top 8px |
-| `.progress-growth-note-label` | "TRACE'S NOTE" label — 11px gold uppercase letter-spacing 0.18em |
+| `.progress-growth-note-label` | "TRACE'S NOTE" label — 12px gold uppercase letter-spacing 0.18em weight 700 |
 | `.progress-empty` | Empty state container — padding 48px 0, text-align center |
 
 ---
