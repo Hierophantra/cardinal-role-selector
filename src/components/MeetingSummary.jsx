@@ -96,7 +96,7 @@ export default function MeetingSummary() {
         <div className="screen fade-in">
           <div className="nav-row" style={{ marginBottom: 12 }}>
             <Link to={`/meeting-history/${partner}`} className="btn-ghost">
-              {'\u2190'} Back to Meeting History
+              {'\u2190'} Back to History
             </Link>
           </div>
 
@@ -109,7 +109,6 @@ export default function MeetingSummary() {
             </>
           ) : empty ? (
             <>
-              <div className="eyebrow">FRIDAY REVIEW</div>
               <div className="screen-header">
                 <h2>No meeting summaries yet</h2>
               </div>
@@ -117,7 +116,7 @@ export default function MeetingSummary() {
             </>
           ) : (
             <>
-              <div className="eyebrow">FRIDAY REVIEW</div>
+              <div className="eyebrow">{meeting.meeting_type === 'monday_prep' ? 'MONDAY PREP' : 'FRIDAY REVIEW'}</div>
               <div className="screen-header">
                 <h2>Meeting Summary — Week of {formatWeekRange(meeting.week_of)}</h2>
                 <p className="muted" style={{ fontSize: 14 }}>
