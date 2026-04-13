@@ -103,6 +103,8 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 
 v1.2 shipped — Full accountability platform with dual meeting modes (Friday Review + Monday Prep), meeting history, and season progress dashboard. Partners see KPI hit-rate trends, miss streak alerts, and growth priority status. 4 phases, 9 plans, 11,897 LOC.
 
+v1.3 in progress — Phase 12 complete: migration 008_schema_v13.sql ready to deploy. Expands meeting_notes CHECK constraint to 18 stop keys (12 existing + clear_the_air shared + 5 Monday Prep-only). Phases 13-14 unblocked pending migration deployment to Supabase.
+
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
@@ -121,4 +123,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-13 after v1.3 milestone start*
+*Last updated: 2026-04-13 after Phase 12 (schema-migration) complete*
