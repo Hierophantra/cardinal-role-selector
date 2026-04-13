@@ -16,8 +16,8 @@ Requirements for v1.2 Meeting & Insights Expansion. Each maps to roadmap phases.
 - [x] **MEET-05**: Meeting session displays Monday Prep framing copy (different eyebrows, prompts, headings) while using same 12-stop structure
 - [x] **MEET-06**: `MONDAY_PREP_COPY` added to content.js with all 12-stop prompts and framing text
 - [x] **MEET-07**: Admin and partner can browse past meetings (meeting history list with links to specific meetings)
-- [ ] **MEET-08**: MeetingSummary.jsx loads a specific meeting by ID instead of always showing latest
-- [ ] **MEET-09**: Admin meeting session shows read-only mode when viewing ended meetings (no edit, no End button)
+- [x] **MEET-08**: MeetingSummary.jsx loads a specific meeting by ID instead of always showing latest
+- [x] **MEET-09**: Admin meeting session shows read-only mode when viewing ended meetings (no edit, no End button)
 
 ### Season Insights
 
@@ -70,8 +70,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MEET-05 | Phase 9 | Complete |
 | MEET-06 | Phase 8 | Complete |
 | MEET-07 | Phase 10 | Complete |
-| MEET-08 | Phase 10 | Pending |
-| MEET-09 | Phase 10 | Pending |
+| MEET-08 | Phase 10 | Complete |
+| MEET-09 | Phase 10 | Complete |
 | INSGHT-01 | Phase 11 | Pending |
 | INSGHT-02 | Phase 11 | Pending |
 | INSGHT-03 | Phase 11 | Pending |

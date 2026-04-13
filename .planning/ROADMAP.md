@@ -37,7 +37,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 8: Schema Foundation & STOPS Consolidation** - Live defect fixed, DB migration gating all dual meeting work is deployed (completed 2026-04-13)
 - [x] **Phase 9: Dual Meeting Mode** - Admin can start Friday Review or Monday Prep sessions; each uses distinct framing (completed 2026-04-13)
-- [ ] **Phase 10: Meeting History** - Admin and partners can browse and replay any past meeting
+- [x] **Phase 10: Meeting History** - Admin and partners can browse and replay any past meeting (completed 2026-04-13)
 - [ ] **Phase 11: Season Overview & Progress** - Partners see their cumulative KPI hit rate, per-KPI trends, and season progress
 - [ ] **Phase 12: Export** - Meeting notes and scorecard data are exportable from both admin and partner views
 
@@ -81,10 +81,10 @@ Plans:
   2. Clicking any meeting in the list loads that specific meeting's notes (not always the latest)
   3. Trace can open any past meeting from admin and see it in read-only mode
   4. A meeting that ended in a prior week shows its stop-by-stop notes accurately
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 10-01-PLAN.md — Routes + MeetingHistory.jsx + PartnerHub card swap + CSS classes
-- [ ] 10-02-PLAN.md — MeetingSummary.jsx ID-based loading + back-nav + MEET-09 verification
+- [x] 10-02-PLAN.md — MeetingSummary.jsx ID-based loading + back-nav + MEET-09 verification
 **UI hint**: yes
 
 ### Phase 11: Season Overview & Progress
@@ -126,6 +126,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. Admin Model Evolution | v1.1 | 2/2 | Complete | 2026-04-13 |
 | 8. Schema Foundation & STOPS Consolidation | v1.2 | 2/2 | Complete   | 2026-04-13 |
 | 9. Dual Meeting Mode | v1.2 | 2/2 | Complete   | 2026-04-13 |
-| 10. Meeting History | v1.2 | 1/2 | In Progress|  |
+| 10. Meeting History | v1.2 | 2/2 | Complete   | 2026-04-13 |
 | 11. Season Overview & Progress | v1.2 | 0/? | Not started | - |
 | 12. Export | v1.2 | 0/? | Not started | - |
