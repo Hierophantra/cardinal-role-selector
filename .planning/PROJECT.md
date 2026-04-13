@@ -90,6 +90,15 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 | Dual meeting mode: session-based with meeting_type column | Same 12-stop structure, different framing per type; one meeting per type per week enforced at DB level | ✓ Good (Phase 8) |
 | STOPS array single source of truth in content.js | Eliminates copy drift between consumers; fixes kpi_6/kpi_7 defect | ✓ Good (Phase 8) |
 
+## Current Milestone: v1.3 Monday Prep Redesign
+
+**Goal:** Give Monday Prep its own intention-focused structure (6 stops) and add Clear the Air to both meeting types.
+
+**Target features:**
+- Monday Prep restructured to 6 planning-focused stops (Clear the Air, Week Preview, Priorities & Focus, Risks & Blockers, Growth Check-in, Commitments & Action Items)
+- Friday Review gains Clear the Air as new stop 1 (13 stops total)
+- Monday Prep mock in admin test account
+
 ## Current State
 
 v1.2 shipped — Full accountability platform with dual meeting modes (Friday Review + Monday Prep), meeting history, and season progress dashboard. Partners see KPI hit-rate trends, miss streak alerts, and growth priority status. 4 phases, 9 plans, 11,897 LOC.
@@ -98,5 +107,18 @@ v1.2 shipped — Full accountability platform with dual meeting modes (Friday Re
 
 This document evolves at phase transitions and milestone boundaries.
 
+**After each phase transition** (via `/gsd:transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
 ---
-*Last updated: 2026-04-13 after v1.2 milestone*
+*Last updated: 2026-04-13 after v1.3 milestone start*
