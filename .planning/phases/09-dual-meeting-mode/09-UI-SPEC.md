@@ -36,7 +36,7 @@ Declared values (must be multiples of 4). Derived from existing patterns in `src
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px | Badge label padding top/bottom, inline icon gaps |
-| sm | 8px | Button icon gap, option card gap between items |
+| sm | 8px | Button icon gap, option card gap between items, badge label padding left/right |
 | md | 16px | Standard element spacing, card internal padding row gap |
 | lg | 24px | KPI cell padding, grid column gap, card section gap |
 | xl | 32px | Hero panel padding, meeting stop section gap |
@@ -164,7 +164,7 @@ Disabled state (D-02):
 **Past meetings list (modified):** Each meeting card gains a type badge (D-10).
 
 Badge anatomy:
-- Container: `display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em`
+- Container: `display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em`
 - Friday Review badge: `background: rgba(196,30,58,0.15); color: var(--red); border: 1px solid rgba(196,30,58,0.3)`
 - Monday Prep badge: `background: rgba(37,99,235,0.15); color: var(--blue); border: 1px solid rgba(37,99,235,0.3)`
 - No filter UI (D-11) — badges are purely visual
@@ -207,11 +207,12 @@ Badge anatomy:
 | Ended session status label | "Ended [date]" — e.g. "Ended Apr 9, 2026" |
 | Past meeting badge — Friday | "Friday Review" |
 | Past meeting badge — Monday | "Monday Prep" |
-| Error state — meeting load fail | Use existing `MEETING_COPY.errors.loadFail` — no new copy needed |
-| Error state — start failure | Use existing `MEETING_COPY.errors.loadFail` — no new string needed |
+| Error state — meeting load fail (Friday Review) | "Couldn't load meeting data. Check your connection and refresh." (`MEETING_COPY.errors.loadFail`) |
+| Error state — meeting load fail (Monday Prep) | "Couldn't load prep data. Check your connection and refresh." (`MONDAY_PREP_COPY.errors.loadFail`) |
+| Error state — start failure | "Couldn't load meeting data. Check your connection and refresh." (`MEETING_COPY.errors.loadFail`) — reuses existing string |
 | Empty past meetings list | "No past meetings yet." — rendered as `<p className="muted">` |
 
-Source: D-01, D-02, D-06, D-08 from `09-CONTEXT.md`. No new error strings needed — existing copy handles both failure paths.
+Source: D-01, D-02, D-06, D-08 from `09-CONTEXT.md`. Error strings sourced directly from `src/data/content.js` lines 605 and 644.
 
 No destructive actions in this phase. No confirmation dialogs required.
 
@@ -263,6 +264,7 @@ No shadcn, no third-party registries. Gate not required.
 |--------|---------------|
 | `09-CONTEXT.md` | 11 decisions (D-01 through D-11) |
 | `src/index.css` | All color values, typography sizes, spacing values, existing component classes |
+| `src/data/content.js` | Error string literals quoted directly (lines 605, 644) |
 | `REQUIREMENTS.md` | MEET-04, MEET-05 acceptance criteria confirmed |
 | `CLAUDE.md` | Stack constraints (vanilla CSS, no shadcn, React 18 + Vite) |
 | User input this session | 0 — all questions answered by upstream artifacts |
