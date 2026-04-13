@@ -13,7 +13,8 @@ import {
   PARTNER_DISPLAY,
   MEETING_COPY,
   GROWTH_STATUS_COPY,
-  AGENDA_STOPS,
+  FRIDAY_STOPS,
+  MONDAY_STOPS,
 } from '../data/content.js';
 
 export default function MeetingSummary() {
@@ -89,6 +90,8 @@ export default function MeetingSummary() {
   if (loading) return null;
 
   const partnerName = PARTNER_DISPLAY[partner] ?? partner;
+  // Select stop array based on meeting type; meeting may be null when error/empty shown
+  const stops = meeting?.meeting_type === 'monday_prep' ? MONDAY_STOPS : FRIDAY_STOPS;
 
   return (
     <div className="app-shell">
@@ -124,7 +127,7 @@ export default function MeetingSummary() {
                 </p>
               </div>
 
-              {AGENDA_STOPS.map((stopKey, i) => (
+              {stops.map((stopKey, i) => (
                 <StopBlock
                   key={stopKey}
                   stopKey={stopKey}
@@ -134,6 +137,7 @@ export default function MeetingSummary() {
                   kpiSelections={kpiSelections}
                   growth={growth}
                   partnerName={partnerName}
+                  meeting={meeting}
                 />
               ))}
             </>
@@ -148,7 +152,7 @@ export default function MeetingSummary() {
 // StopBlock — renders one agenda stop in read-only summary view
 // --------------------------------------------------------------------------
 
-function StopBlock({ stopKey, stopIndex, notesByStop, scorecard, kpiSelections, growth, partnerName }) {
+function StopBlock({ stopKey, stopIndex, notesByStop, scorecard, kpiSelections, growth, partnerName, meeting }) {
   const note = notesByStop[stopKey];
 
   if (stopKey === 'intro') {
@@ -242,6 +246,96 @@ function StopBlock({ stopKey, stopIndex, notesByStop, scorecard, kpiSelections, 
         <h3 className="meeting-stop-heading">{MEETING_COPY.stops.wrapHeading}</h3>
         {note
           ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{note}</p>
+          : <p className="muted">No notes for this stop.</p>}
+      </div>
+    );
+  }
+
+  if (stopKey === 'clear_the_air') {
+    const ctaNote = notesByStop[stopKey] || '';
+    return (
+      <div className="meeting-stop" style={{ marginBottom: 24 }}>
+        <div className="eyebrow meeting-stop-eyebrow">CLEAR THE AIR</div>
+        <h3 className="meeting-stop-heading">Clear the Air</h3>
+        {ctaNote
+          ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{ctaNote}</p>
+          : <p className="muted">No notes for this stop.</p>}
+      </div>
+    );
+  }
+
+  if (stopKey === 'week_preview') {
+    const wpNote = notesByStop[stopKey] || '';
+    return (
+      <div className="meeting-stop" style={{ marginBottom: 24 }}>
+        <div className="eyebrow meeting-stop-eyebrow">WEEK PREVIEW</div>
+        <h3 className="meeting-stop-heading">What&apos;s Coming This Week</h3>
+        {wpNote
+          ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{wpNote}</p>
+          : <p className="muted">No notes for this stop.</p>}
+      </div>
+    );
+  }
+
+  if (stopKey === 'priorities_focus') {
+    const pfNote = notesByStop[stopKey] || '';
+    return (
+      <div className="meeting-stop" style={{ marginBottom: 24 }}>
+        <div className="eyebrow meeting-stop-eyebrow">PRIORITIES &amp; FOCUS</div>
+        <h3 className="meeting-stop-heading">Top 2-3 Priorities</h3>
+        {pfNote
+          ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{pfNote}</p>
+          : <p className="muted">No notes for this stop.</p>}
+      </div>
+    );
+  }
+
+  if (stopKey === 'risks_blockers') {
+    const rbNote = notesByStop[stopKey] || '';
+    return (
+      <div className="meeting-stop" style={{ marginBottom: 24 }}>
+        <div className="eyebrow meeting-stop-eyebrow">RISKS &amp; BLOCKERS</div>
+        <h3 className="meeting-stop-heading">Risks &amp; Blockers</h3>
+        {rbNote
+          ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{rbNote}</p>
+          : <p className="muted">No notes for this stop.</p>}
+      </div>
+    );
+  }
+
+  if (stopKey === 'growth_checkin') {
+    const gcNote = notesByStop[stopKey] || '';
+    return (
+      <div className="meeting-stop" style={{ marginBottom: 24 }}>
+        <div className="eyebrow meeting-stop-eyebrow">GROWTH CHECK-IN</div>
+        <h3 className="meeting-stop-heading">Growth Priority Pulse</h3>
+        {growth && growth.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            {growth.map((g) => (
+              <div key={g.id} style={{ fontSize: 14, lineHeight: 1.55 }}>
+                <span className={`growth-status-badge ${g.status ?? 'active'}`}>
+                  {GROWTH_STATUS_COPY[g.status ?? 'active']}
+                </span>
+                {' '}{g.description || g.custom_text || '\u2014'}
+              </div>
+            ))}
+          </div>
+        )}
+        {gcNote
+          ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{gcNote}</p>
+          : <p className="muted">No notes for this stop.</p>}
+      </div>
+    );
+  }
+
+  if (stopKey === 'commitments') {
+    const cmNote = notesByStop[stopKey] || '';
+    return (
+      <div className="meeting-stop" style={{ marginBottom: 24 }}>
+        <div className="eyebrow meeting-stop-eyebrow">COMMITMENTS</div>
+        <h3 className="meeting-stop-heading">Walk-Away Commitments</h3>
+        {cmNote
+          ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{cmNote}</p>
           : <p className="muted">No notes for this stop.</p>}
       </div>
     );
