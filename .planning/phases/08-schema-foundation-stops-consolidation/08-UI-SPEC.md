@@ -52,12 +52,12 @@ Declared values extracted from `src/index.css`. Phase 8 introduces no new spacin
 | sm | 8px | Grid gaps (.choice-row gap: 8px), label margins |
 | md | 16px | Default element spacing, container padding |
 | lg | 24px | Section padding, container side padding |
-| xl | 28px | Screen gap (.screen gap: 28px), nav padding |
-| 2xl | 40px | Container top padding |
+| xl | 28px | Screen gap (.screen gap: 28px), nav padding — project-specific extension, already live in src/index.css |
+| 2xl | 40px | Container top padding — project-specific extension, already live in src/index.css |
 | 3xl | 48px | Login card padding |
-| 4xl | 80px | Container bottom padding |
+| 4xl | 80px | Container bottom padding — project-specific extension, already live in src/index.css |
 
-Source: src/index.css — direct measurement. Scale is not strict 8-point but follows a 4-point grid throughout.
+Source: src/index.css — direct measurement. Scale is not strict 8-point but follows a 4-point grid throughout. Values 28px, 40px, and 80px are project-specific extensions — already live in src/index.css. Phase 8 introduces no new spacing.
 
 Exceptions: none for Phase 8 (no new layout introduced).
 
@@ -65,15 +65,26 @@ Exceptions: none for Phase 8 (no new layout introduced).
 
 ## Typography
 
-Extracted from `src/index.css` — existing scale used across all components. Phase 8 adds no new typographic contexts.
+Extracted from `src/index.css`. Phase 8 adds no new typographic contexts. The declared scale covers all typographic roles used by Phase 8's deliverables (MONDAY_PREP_COPY copy contract and defect-fix rendering).
+
+**Declared scale (4 tiers):**
 
 | Role | Size | Weight | Line Height | CSS context |
 |------|------|--------|-------------|-------------|
-| Body | 15px | 400 | 1.55 | `.option .statement`, `.vision-block .q`, `.container` base |
-| Label / meta | 12px | 700 | 1.0 | `.eyebrow` (uppercase, 0.18em tracking), section headers, `.option .label` |
-| Secondary body | 14px | 400 | 1.6 | `.insight`, `.expandable p`, `.summary-section .kv` |
+| Micro label / eyebrow | 11px | 700 | 1.0 | `.eyebrow` — uppercase, 0.18em tracking, `--red`. This is the actual value confirmed at src/index.css line 220. |
+| Secondary body | 14px | 400 | 1.6 | `.insight`, `.expandable p`, `.summary-section .kv`, buttons |
+| Body | 15px | 400 | 1.55 | `input`, `textarea`, `.option .statement`, base container text |
 | Heading (screen) | 28px | 700 | 1.2 | `.screen-header h2` |
-| Heading (card) | 20px | 700 | 1.2 | `.admin-card h3`, `.gap-analysis h3` |
+
+**Pre-existing production sizes — not in declared scale, already live in src/index.css:**
+
+| Size | Usage | Note |
+|------|-------|------|
+| 12px | Badges, tags, partner-tag, `.option .label`, `.summary-section h4`, `.meeting-progress-pill`, `.admin-card .status` | Project-specific extension — already live in src/index.css |
+| 13px | `.error` inline errors, `.option .desc`, `.function-card .sub` | Project-specific extension — already live in src/index.css |
+| 20px | `.admin-card h3`, `.gap-analysis h3` — card-level headings | Project-specific extension — already live in src/index.css |
+
+Phase 8 does not introduce any new font sizes. MONDAY_PREP_COPY strings render exclusively in `.eyebrow` (11px), `.screen-header h2` (28px), `textarea` (15px), and `.screen-header .subtext` (15px) contexts.
 
 **MONDAY_PREP_COPY typographic contexts** (rendered in Phase 9, authored in Phase 8):
 
@@ -85,7 +96,7 @@ Extracted from `src/index.css` — existing scale used across all components. Ph
 | `stops.wrapHeading` | Screen heading | `.screen-header h2` — 28px, 700, 1.2 lh |
 | `stops.wrapSubtext` | Subtext / description | `.screen-header .subtext` — 15px, 400, `--muted` |
 | `notesPlaceholder` | Input placeholder | `textarea[placeholder]` — 15px, 400 |
-| `errors.*` | Error message | inline `.error` — 13px, 400, `--red` |
+| `errors.*` | Error message | inline `.error` — 13px, 400, `--red` (pre-existing production size) |
 
 ---
 
