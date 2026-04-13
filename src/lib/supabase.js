@@ -412,10 +412,10 @@ export async function adminOverrideScorecardEntry(partner, weekOf, kpiId, entry,
 
 // --- Admin: Meetings + Meeting Notes (MEET-01, MEET-04) — Phase 4 ---
 
-export async function createMeeting(weekOf) {
+export async function createMeeting(weekOf, meetingType = 'friday_review') {
   const { data, error } = await supabase
     .from('meetings')
-    .insert({ week_of: weekOf, held_at: new Date().toISOString() })
+    .insert({ week_of: weekOf, meeting_type: meetingType, held_at: new Date().toISOString() })
     .select()
     .single();
   if (error) throw error;

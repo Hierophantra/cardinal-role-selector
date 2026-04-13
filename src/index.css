@@ -11,6 +11,8 @@
   --muted: #AAAAAA;
   --muted-2: #777777;
   --gold: #D4A843;
+  --blue: #2563EB;
+  --blue-dim: #1d4ed8;
   --success: #2D8F5E;
   --warning: #D4A843;
   --miss: #C41E3A;
@@ -409,6 +411,12 @@ textarea { resize: vertical; min-height: 120px; }
 }
 .btn-primary:hover:not(:disabled) { background: #d8223f; transform: translateY(-1px); }
 .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-primary--monday {
+  background: var(--blue);
+  color: #fff;
+}
+.btn-primary--monday:hover:not(:disabled) { background: var(--blue-dim); transform: translateY(-1px); }
+.btn-primary--monday:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .btn-ghost {
   background: transparent;
@@ -1213,6 +1221,12 @@ textarea { resize: vertical; min-height: 120px; }
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 4px 16px;
+}
+.meeting-shell--monday .eyebrow { color: var(--blue); }
+.meeting-shell--monday .meeting-stop-eyebrow { color: var(--blue); }
+.meeting-shell--monday .meeting-progress-pill {
+  color: var(--blue);
+  border-color: rgba(37, 99, 235, 0.4);
 }
 
 .meeting-stop {
