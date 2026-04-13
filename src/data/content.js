@@ -645,3 +645,30 @@ export const MONDAY_PREP_COPY = {
     noteSaveFail: "Plan didn't save \u2014 check your connection.",
   },
 };
+
+// --- Phase 11: Season Overview & Progress ---
+
+export const PROGRESS_COPY = {
+  hubCard: {
+    title: 'Season Overview',
+    description: `Your cumulative KPI hit rate, weekly trends, and growth priority status for ${CURRENT_SEASON}.`,
+    cta: 'View season progress \u2192',
+    hitRateEmpty: '\u2014 this season',
+    hitRateFmt: (pct) => `${pct}% this season`,
+    weekFmt: (n) => `Week ${n} of ~26`,
+    streakFmt: (label, n) => `${label}: missed ${n} weeks`,
+  },
+  progressPage: {
+    eyebrow: 'SPRING SEASON 2026',
+    statLabel: 'season hit rate',
+    chartHeading: 'KPI Performance',
+    growthHeading: 'Growth Priorities',
+    traceNoteLabel: "TRACE'S NOTE",
+    backNav: '\u2190 Back to Hub',
+    streakBadge: (n) => `missed ${n} weeks`,
+    emptyHeading: 'Season tracking starts after your first check-in',
+    emptyBody: 'Complete your first weekly scorecard to see your hit rate and KPI trends here.',
+    loadError: "Couldn't load season data. Refresh and try again.",
+    mockEyebrow: 'MOCK DATA',
+  },
+};
