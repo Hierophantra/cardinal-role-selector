@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Mandatory/Choice KPI Model
-status: Milestone complete
+status: v1.1 milestone complete
 stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-04-12T08:21:00.738Z"
+last_updated: "2026-04-13T02:43:20.558Z"
 progress:
   total_phases: 3
   completed_phases: 3
