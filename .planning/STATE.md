@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Monday Prep Redesign
-status: Ready to execute
-stopped_at: Completed 13-01-PLAN.md
-last_updated: "2026-04-13T08:41:27.215Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 13-02-PLAN.md
+last_updated: "2026-04-13T08:50:00.364Z"
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -43,6 +43,7 @@ Plan: 2 of 2
 *Updated after each plan completion*
 | Phase 12-schema-migration P01 | 1 | 1 tasks | 1 files |
 | Phase 13-meeting-stop-redesign P01 | 20 | 2 tasks | 2 files |
+| Phase 13-meeting-stop-redesign P02 | 8 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -58,6 +59,7 @@ Recent decisions affecting current work:
 - [Phase 12-schema-migration]: clear_the_air is a shared key used by both Friday Review and Monday Prep — meeting_type column distinguishes context
 - [Phase 13-meeting-stop-redesign]: FRIDAY_STOPS(13)/MONDAY_STOPS(6) replace inline STOPS; selected via useMemo from meeting.meeting_type
 - [Phase 13-meeting-stop-redesign]: KPI_START_INDEX=2 replaces hardcoded stopIndex-1 offset for kpi_ stops in Friday stop array
+- [Phase 13-meeting-stop-redesign]: Dual stop array selection via const stops derived from meeting.meeting_type; kpiIndex offset corrected to stopIndex-2 after clear_the_air prepended at FRIDAY_STOPS[0]
 
 ### Pending Todos
 
@@ -69,6 +71,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T08:41:27.212Z
-Stopped at: Completed 13-01-PLAN.md
+Last session: 2026-04-13T08:50:00.361Z
+Stopped at: Completed 13-02-PLAN.md
 Resume file: None

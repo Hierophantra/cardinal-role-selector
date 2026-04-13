@@ -43,7 +43,7 @@
 **Milestone Goal:** Give Monday Prep its own intention-focused structure and add Clear the Air to both meeting types.
 
 - [x] **Phase 12: Schema Migration** - CHECK constraint updated to accept new Monday Prep stop keys and Friday's clear_the_air key (completed 2026-04-13)
-- [ ] **Phase 13: Meeting Stop Redesign** - Monday Prep runs on 6 intention-focused stops; Friday Review gains Clear the Air as stop 1
+- [x] **Phase 13: Meeting Stop Redesign** - Monday Prep runs on 6 intention-focused stops; Friday Review gains Clear the Air as stop 1 (completed 2026-04-13)
 - [ ] **Phase 14: Monday Prep Mock** - Admin test account includes a realistic Monday Prep session for all 6 stops
 
 ## Phase Details
@@ -71,10 +71,10 @@ Plans:
   3. Notes entered at each Monday Prep stop are saved and appear correctly labeled when the meeting is viewed in history
   4. Friday Review notes from existing meetings are unchanged after the Clear the Air stop is added
 **UI hint**: yes
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 13-01-PLAN.md — Dual stop arrays in content.js + Monday stop components in AdminMeetingSession.jsx
-- [ ] 13-02-PLAN.md — Partner summary view dispatch + mock file migration from AGENDA_STOPS
+- [x] 13-02-PLAN.md — Partner summary view dispatch + mock file migration from AGENDA_STOPS
 
 ### Phase 14: Monday Prep Mock
 **Goal**: Admin test account demonstrates a complete Monday Prep session so Trace can preview the flow before using it live
@@ -91,5 +91,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 12. Schema Migration | 1/1 | Complete    | 2026-04-13 |
-| 13. Meeting Stop Redesign | 1/2 | In Progress|  |
+| 13. Meeting Stop Redesign | 2/2 | Complete   | 2026-04-13 |
 | 14. Monday Prep Mock | 0/TBD | Not started | - |
