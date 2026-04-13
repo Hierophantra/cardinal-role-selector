@@ -12,7 +12,7 @@ Requirements for v1.2 Meeting & Insights Expansion. Each maps to roadmap phases.
 - [x] **MEET-01**: AGENDA_STOPS extracted to content.js as single source of truth — all consumer files import from one place (fixes live kpi_6/7 defect)
 - [x] **MEET-02**: Migration 007 adds `meeting_type` column to `meetings` table with `DEFAULT 'friday_review'` and `UNIQUE (week_of, meeting_type)` constraint
 - [x] **MEET-03**: `agenda_stop_key` CHECK constraint expanded to include Monday Prep stop keys in Migration 007
-- [ ] **MEET-04**: Admin can start a Monday Prep meeting (type selector before session start in AdminMeeting.jsx)
+- [x] **MEET-04**: Admin can start a Monday Prep meeting (type selector before session start in AdminMeeting.jsx)
 - [ ] **MEET-05**: Meeting session displays Monday Prep framing copy (different eyebrows, prompts, headings) while using same 12-stop structure
 - [x] **MEET-06**: `MONDAY_PREP_COPY` added to content.js with all 12-stop prompts and framing text
 - [ ] **MEET-07**: Admin and partner can browse past meetings (meeting history list with links to specific meetings)
@@ -66,7 +66,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MEET-01 | Phase 8 | Complete |
 | MEET-02 | Phase 8 | Complete |
 | MEET-03 | Phase 8 | Complete |
-| MEET-04 | Phase 9 | Pending |
+| MEET-04 | Phase 9 | Complete |
 | MEET-05 | Phase 9 | Pending |
 | MEET-06 | Phase 8 | Complete |
 | MEET-07 | Phase 10 | Pending |
