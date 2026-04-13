@@ -606,3 +606,33 @@ export const MEETING_COPY = {
     noteSaveFail: "Note didn't save \u2014 check your connection.",
   },
 };
+
+export const MONDAY_PREP_COPY = {
+  landingEyebrow: 'MEETING MODE',
+  startCta: 'Start Monday Prep',
+  heroCardTitle: 'Monday Prep',
+  heroCardDescription:
+    'Align on the week ahead \u2014 set intentions for each KPI and growth priority before the week begins.',
+  progressPill: (n, total) => `Stop ${n} of ${total}`,
+  weekPickerLabel: 'Week:',
+  endBtn: 'End Meeting',
+  endConfirmBtn: 'Confirm End',
+  endedNav: 'Back to Meeting History',
+  landingEmpty: 'No past meetings yet. Start your first Monday prep.',
+  stops: {
+    introEyebrow: 'MONDAY PREP',
+    introHeading: (weekLabel) => `Prep for ${weekLabel}`,
+    kpiEyebrow: (n, total) => `KPI ${n} of ${total}`,
+    growthPersonalEyebrow: 'PERSONAL GROWTH',
+    growthBusinessEyebrow: (n) => `BUSINESS GROWTH ${n} of 2`,
+    wrapHeading: 'Week Intentions',
+    wrapSubtext:
+      'Capture commitments and focus areas before the week begins.',
+  },
+  notesPlaceholder: 'Add prep notes for this stop...',
+  savedFlash: 'Saved',
+  errors: {
+    loadFail: "Couldn't load meeting data. Check your connection and refresh.",
+    noteSaveFail: "Note didn't save \u2014 check your connection.",
+  },
+};

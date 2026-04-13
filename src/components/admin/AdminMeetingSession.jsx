@@ -14,6 +14,7 @@ import {
 import { formatWeekRange } from '../../lib/week.js';
 import {
   MEETING_COPY,
+  MONDAY_PREP_COPY,
   GROWTH_STATUS_COPY,
   PARTNER_DISPLAY,
 } from '../../data/content.js';
@@ -194,11 +195,11 @@ export default function AdminMeetingSession() {
           savedFlashTimerRef.current = setTimeout(() => setSavedFlash(null), 1500);
         } catch (err) {
           console.error(err);
-          setError(MEETING_COPY.errors.noteSaveFail);
+          setError((meeting?.meeting_type === 'monday_prep' ? MONDAY_PREP_COPY : MEETING_COPY).errors.noteSaveFail);
         }
       }, DEBOUNCE_MS);
     },
-    [id]
+    [id, meeting]
   );
 
   // --- Scorecard override helpers (D-15) ---
@@ -238,7 +239,7 @@ export default function AdminMeetingSession() {
         await refreshPartnerScorecard(partner);
       } catch (err) {
         console.error(err);
-        setError(MEETING_COPY.errors.noteSaveFail);
+        setError((meeting?.meeting_type === 'monday_prep' ? MONDAY_PREP_COPY : MEETING_COPY).errors.noteSaveFail);
       }
     },
     [meeting, data, refreshPartnerScorecard]
@@ -284,7 +285,7 @@ export default function AdminMeetingSession() {
           await refreshPartnerScorecard(partner);
         } catch (err) {
           console.error(err);
-          setError(MEETING_COPY.errors.noteSaveFail);
+          setError((meeting?.meeting_type === 'monday_prep' ? MONDAY_PREP_COPY : MEETING_COPY).errors.noteSaveFail);
         }
       }, DEBOUNCE_MS);
     },
@@ -308,11 +309,11 @@ export default function AdminMeetingSession() {
       navigate('/admin/meeting');
     } catch (err) {
       console.error(err);
-      setError(MEETING_COPY.errors.loadFail);
+      setError((meeting?.meeting_type === 'monday_prep' ? MONDAY_PREP_COPY : MEETING_COPY).errors.loadFail);
       setEnding(false);
       setEndPending(false);
     }
-  }, [ending, endPending, id, navigate]);
+  }, [ending, endPending, id, navigate, meeting]);
 
   // --- Early returns for loading / error ---
   if (loading) {
@@ -345,15 +346,17 @@ export default function AdminMeetingSession() {
     );
   }
 
+  const copy = meeting.meeting_type === 'monday_prep' ? MONDAY_PREP_COPY : MEETING_COPY;
+  const isEnded = Boolean(meeting.ended_at);
   const currentStopKey = STOPS[stopIndex];
   const weekLabel = formatWeekRange(meeting.week_of);
 
   return (
-    <div className="meeting-shell">
+    <div className={`meeting-shell${meeting.meeting_type === 'monday_prep' ? ' meeting-shell--monday' : ''}`}>
       {/* === Header === */}
       <div className="meeting-shell-header">
         <div className="meeting-progress-pill">
-          {MEETING_COPY.progressPill(stopIndex + 1, STOPS.length)}
+          {copy.progressPill(stopIndex + 1, STOPS.length)}
         </div>
         <div
           className="muted"
@@ -361,28 +364,36 @@ export default function AdminMeetingSession() {
         >
           {weekLabel}
         </div>
-        <button
-          type="button"
-          className="btn btn-ghost"
-          onClick={handleEndClick}
-          disabled={ending}
-          style={
-            endPending
-              ? {
-                  background: 'rgba(196,30,58,0.14)',
-                  borderColor: 'var(--red)',
-                  color: 'var(--text)',
-                }
-              : undefined
-          }
-        >
-          {ending
-            ? `Ending${'\u2026'}`
-            : endPending
-              ? MEETING_COPY.endConfirmBtn
-              : MEETING_COPY.endBtn}
-        </button>
+        {!isEnded && (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={handleEndClick}
+            disabled={ending}
+            style={
+              endPending
+                ? {
+                    background: 'rgba(196,30,58,0.14)',
+                    borderColor: 'var(--red)',
+                    color: 'var(--text)',
+                  }
+                : undefined
+            }
+          >
+            {ending
+              ? `Ending${'\u2026'}`
+              : endPending
+                ? copy.endConfirmBtn
+                : copy.endBtn}
+          </button>
+        )}
       </div>
+
+      {isEnded && (
+        <div style={{ textAlign: 'center', padding: '8px 40px', fontSize: 12, color: 'var(--muted)', fontStyle: 'italic' }}>
+          Ended {new Date(meeting.ended_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        </div>
+      )}
 
       {/* === Stop body === */}
       <AnimatePresence mode="wait">
@@ -401,6 +412,8 @@ export default function AdminMeetingSession() {
             onNoteChange={handleNoteChange}
             onOverrideResult={handleOverrideResult}
             onReflectionChange={handleReflectionChange}
+            copy={copy}
+            isEnded={isEnded}
           />
         </motion.div>
       </AnimatePresence>
@@ -448,6 +461,8 @@ function StopRenderer({
   onNoteChange,
   onOverrideResult,
   onReflectionChange,
+  copy,
+  isEnded,
 }) {
   if (stopKey === 'intro') {
     return (
@@ -457,6 +472,8 @@ function StopRenderer({
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     );
   }
@@ -474,6 +491,8 @@ function StopRenderer({
         onNoteChange={onNoteChange}
         onOverrideResult={onOverrideResult}
         onReflectionChange={onReflectionChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     );
   }
@@ -488,6 +507,8 @@ function StopRenderer({
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     );
   }
@@ -502,6 +523,8 @@ function StopRenderer({
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     );
   }
@@ -516,6 +539,8 @@ function StopRenderer({
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     );
   }
@@ -526,6 +551,8 @@ function StopRenderer({
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     );
   }
@@ -537,18 +564,18 @@ function StopRenderer({
 // Intro stop
 // --------------------------------------------------------------------------
 
-function IntroStop({ meeting, data, notes, savedFlash, onNoteChange }) {
+function IntroStop({ meeting, data, notes, savedFlash, onNoteChange, copy, isEnded }) {
   const weekLabel = formatWeekRange(meeting.week_of);
   return (
     <>
       <div className="eyebrow meeting-stop-eyebrow">
-        {MEETING_COPY.stops.introEyebrow}
+        {copy.stops.introEyebrow}
       </div>
       <h2
         className="meeting-stop-heading"
         style={{ fontSize: 28, lineHeight: 1.2 }}
       >
-        {MEETING_COPY.stops.introHeading(weekLabel)}
+        {copy.stops.introHeading(weekLabel)}
       </h2>
       <p className="meeting-stop-subtext">
         Walk through each KPI and growth priority together. Notes auto-save per stop.
@@ -585,6 +612,8 @@ function IntroStop({ meeting, data, notes, savedFlash, onNoteChange }) {
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     </>
   );
@@ -603,12 +632,14 @@ function KpiStop({
   onNoteChange,
   onOverrideResult,
   onReflectionChange,
+  copy,
+  isEnded,
 }) {
   const n = kpiIndex + 1;
   return (
     <>
       <div className="eyebrow meeting-stop-eyebrow">
-        {MEETING_COPY.stops.kpiEyebrow(n, KPI_STOP_COUNT)}
+        {copy.stops.kpiEyebrow(n, KPI_STOP_COUNT)}
       </div>
       <h3 className="meeting-stop-heading">KPI Review</h3>
       <p className="meeting-stop-subtext">
@@ -653,15 +684,17 @@ function KpiStop({
                   type="button"
                   className="meeting-yn-override scorecard-yn-btn"
                   aria-pressed={result === 'yes'}
-                  style={
-                    result === 'yes'
+                  disabled={isEnded}
+                  style={{
+                    ...(result === 'yes'
                       ? {
                           background: 'rgba(45,143,94,0.18)',
                           borderColor: 'var(--success)',
                           color: 'var(--text)',
                         }
-                      : undefined
-                  }
+                      : {}),
+                    ...(isEnded ? { opacity: 0.35 } : {}),
+                  }}
                   onClick={() => onOverrideResult(p, kpiId, 'yes')}
                 >
                   Yes
@@ -670,15 +703,17 @@ function KpiStop({
                   type="button"
                   className="meeting-yn-override scorecard-yn-btn"
                   aria-pressed={result === 'no'}
-                  style={
-                    result === 'no'
+                  disabled={isEnded}
+                  style={{
+                    ...(result === 'no'
                       ? {
                           background: 'rgba(196,30,58,0.18)',
                           borderColor: 'var(--red)',
                           color: 'var(--text)',
                         }
-                      : undefined
-                  }
+                      : {}),
+                    ...(isEnded ? { opacity: 0.35 } : {}),
+                  }}
                   onClick={() => onOverrideResult(p, kpiId, 'no')}
                 >
                   No
@@ -690,7 +725,8 @@ function KpiStop({
                 placeholder="Reflection..."
                 value={reflection}
                 onChange={(e) => onReflectionChange(p, kpiId, e.target.value)}
-                style={{ minHeight: 72 }}
+                readOnly={isEnded}
+                style={{ minHeight: 72, ...(isEnded ? { cursor: 'default', resize: 'none' } : {}) }}
               />
 
               {override && (
@@ -708,6 +744,8 @@ function KpiStop({
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     </>
   );
@@ -725,11 +763,13 @@ function GrowthStop({
   notes,
   savedFlash,
   onNoteChange,
+  copy,
+  isEnded,
 }) {
   const eyebrow =
     kind === 'personal'
-      ? MEETING_COPY.stops.growthPersonalEyebrow
-      : MEETING_COPY.stops.growthBusinessEyebrow(ordinal);
+      ? copy.stops.growthPersonalEyebrow
+      : copy.stops.growthBusinessEyebrow(ordinal);
 
   return (
     <>
@@ -781,6 +821,8 @@ function GrowthStop({
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     </>
   );
@@ -790,7 +832,7 @@ function GrowthStop({
 // Wrap stop
 // --------------------------------------------------------------------------
 
-function WrapStop({ notes, savedFlash, onNoteChange }) {
+function WrapStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
   return (
     <>
       <div className="eyebrow meeting-stop-eyebrow">CLOSING</div>
@@ -798,15 +840,17 @@ function WrapStop({ notes, savedFlash, onNoteChange }) {
         className="meeting-stop-heading"
         style={{ fontSize: 28, lineHeight: 1.2 }}
       >
-        {MEETING_COPY.stops.wrapHeading}
+        {copy.stops.wrapHeading}
       </h2>
-      <p className="meeting-stop-subtext">{MEETING_COPY.stops.wrapSubtext}</p>
+      <p className="meeting-stop-subtext">{copy.stops.wrapSubtext}</p>
 
       <StopNotesArea
         stopKey="wrap"
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     </>
   );
@@ -816,7 +860,7 @@ function WrapStop({ notes, savedFlash, onNoteChange }) {
 // Shared notes textarea
 // --------------------------------------------------------------------------
 
-function StopNotesArea({ stopKey, notes, savedFlash, onNoteChange }) {
+function StopNotesArea({ stopKey, notes, savedFlash, onNoteChange, copy, isEnded }) {
   const value = notes[stopKey] ?? '';
   const flashing = savedFlash === stopKey;
   return (
@@ -838,7 +882,7 @@ function StopNotesArea({ stopKey, notes, savedFlash, onNoteChange }) {
         </label>
         {flashing && (
           <span style={{ color: 'var(--gold)', fontSize: 12 }}>
-            {MEETING_COPY.savedFlash}
+            {copy.savedFlash}
           </span>
         )}
       </div>
@@ -847,7 +891,9 @@ function StopNotesArea({ stopKey, notes, savedFlash, onNoteChange }) {
         className="meeting-notes-area textarea"
         value={value}
         onChange={(e) => onNoteChange(stopKey, e.target.value)}
-        placeholder={MEETING_COPY.notesPlaceholder}
+        placeholder={copy.notesPlaceholder}
+        readOnly={isEnded}
+        style={isEnded ? { cursor: 'default', resize: 'none', opacity: 0.75 } : undefined}
       />
     </div>
   );
