@@ -52,7 +52,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. A new Friday Review meeting can be created and the `meeting_type` column is stored as `'friday_review'` in the database
   3. `MONDAY_PREP_COPY` is importable from `content.js` and contains prompts and framing text for all 12 stops
   4. Attempting to save a meeting note with a Monday Prep stop key does not silently fail (CHECK constraint expanded)
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 08-01-PLAN.md — STOPS extraction to content.js + MONDAY_PREP_COPY + consumer file updates (fixes live defect)
+- [ ] 08-02-PLAN.md — Migration 007: meeting_type column with CHECK and UNIQUE constraints
 
 ### Phase 9: Dual Meeting Mode
 **Goal**: Admin can choose between Friday Review and Monday Prep before starting a session; the session displays the correct framing for the selected type
@@ -115,7 +118,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 5. Schema Evolution & Content Seeding | v1.1 | 2/2 | Complete | 2026-04-12 |
 | 6. Partner & Meeting Flow Updates | v1.1 | 3/3 | Complete | 2026-04-12 |
 | 7. Admin Model Evolution | v1.1 | 2/2 | Complete | 2026-04-13 |
-| 8. Schema Foundation & STOPS Consolidation | v1.2 | 0/? | Not started | - |
+| 8. Schema Foundation & STOPS Consolidation | v1.2 | 0/2 | Planning | - |
 | 9. Dual Meeting Mode | v1.2 | 0/? | Not started | - |
 | 10. Meeting History | v1.2 | 0/? | Not started | - |
 | 11. Season Overview & Progress | v1.2 | 0/? | Not started | - |
