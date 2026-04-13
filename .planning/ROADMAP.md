@@ -38,7 +38,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 8: Schema Foundation & STOPS Consolidation** - Live defect fixed, DB migration gating all dual meeting work is deployed (completed 2026-04-13)
 - [x] **Phase 9: Dual Meeting Mode** - Admin can start Friday Review or Monday Prep sessions; each uses distinct framing (completed 2026-04-13)
 - [x] **Phase 10: Meeting History** - Admin and partners can browse and replay any past meeting (completed 2026-04-13)
-- [ ] **Phase 11: Season Overview & Progress** - Partners see their cumulative KPI hit rate, per-KPI trends, and season progress
+- [x] **Phase 11: Season Overview & Progress** - Partners see their cumulative KPI hit rate, per-KPI trends, and season progress (completed 2026-04-13)
 - [ ] **Phase 12: Export** - Meeting notes and scorecard data are exportable from both admin and partner views
 
 ## Phase Details
@@ -97,10 +97,10 @@ Plans:
   3. A bar chart on the partner hub shows per-KPI hit rate across completed weeks
   4. A KPI that has been missed multiple consecutive weeks shows a streak indicator (e.g. "missed 4 weeks in a row")
   5. A dedicated progress page shows season overview, per-KPI trends, and growth priority status in one view
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [x] 11-01-PLAN.md — Install recharts, create seasonStats.js utility module, PROGRESS_COPY content, Phase 11 CSS
-- [ ] 11-02-PLAN.md — Season Overview hub card + PartnerProgress.jsx page + route wiring
+- [x] 11-02-PLAN.md — Season Overview hub card + PartnerProgress.jsx page + route wiring
 - [x] 11-03-PLAN.md — PartnerProgressMock.jsx mock component + AdminTest link + mock route
 **UI hint**: yes
 
@@ -131,5 +131,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 8. Schema Foundation & STOPS Consolidation | v1.2 | 2/2 | Complete   | 2026-04-13 |
 | 9. Dual Meeting Mode | v1.2 | 2/2 | Complete   | 2026-04-13 |
 | 10. Meeting History | v1.2 | 2/2 | Complete    | 2026-04-13 |
-| 11. Season Overview & Progress | v1.2 | 2/3 | In Progress|  |
+| 11. Season Overview & Progress | v1.2 | 3/3 | Complete   | 2026-04-13 |
 | 12. Export | v1.2 | 0/? | Not started | - |
