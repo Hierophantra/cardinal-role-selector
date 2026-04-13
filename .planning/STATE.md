@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Meeting & Insights Expansion
-status: Ready to execute
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-04-13T03:42:25.307Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-04-13T03:43:27.473Z"
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -42,6 +42,7 @@ Plan: 2 of 2
 
 *Updated after each plan completion*
 | Phase 08 P02 | 1 | 1 tasks | 1 files |
+| Phase 08-schema-foundation-stops-consolidation P01 | 2 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -57,6 +58,8 @@ Recent decisions affecting current work:
 - Season hit-rate excludes `result === null` from both numerator and denominator (avoid false miss count)
 - [Phase 08]: ADD COLUMN IF NOT EXISTS + DROP CONSTRAINT IF EXISTS pattern for idempotent migrations (PostgreSQL lacks IF NOT EXISTS on ADD CONSTRAINT)
 - [Phase 08]: meeting_notes stop_key CHECK from migration 006 covers all 12 stops for both friday_review and monday_prep — no expansion needed (D-05, D-10)
+- [Phase 08]: AGENDA_STOPS in content.js as sole canonical stop-key array — no consumer file holds a local copy
+- [Phase 08]: MONDAY_PREP_COPY mirrors MEETING_COPY shape exactly with Monday-framing text for Phase 9
 
 ### Pending Todos
 
@@ -76,6 +79,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T03:42:25.304Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-04-13T03:43:27.471Z
+Stopped at: Completed 08-01-PLAN.md
 Resume file: None
