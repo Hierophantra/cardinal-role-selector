@@ -19,6 +19,8 @@ import AdminMeetingSessionMock from './components/admin/AdminMeetingSessionMock.
 import MeetingSummary from './components/MeetingSummary.jsx';
 import MeetingHistory from './components/MeetingHistory.jsx';
 import MeetingSummaryMock from './components/admin/MeetingSummaryMock.jsx';
+import MeetingHistoryMock from './components/admin/MeetingHistoryMock.jsx';
+import PartnerProgressMock from './components/admin/PartnerProgressMock.jsx';
 
 export default function App() {
   return (
@@ -40,6 +42,8 @@ export default function App() {
       <Route path="/meeting-history/:partner" element={<MeetingHistory />} />
       <Route path="/meeting-summary/:partner/:id" element={<MeetingSummary />} />
       <Route path="/admin/test/meeting-summary-mock" element={<MeetingSummaryMock />} />
+      <Route path="/admin/test/meeting-history-mock" element={<MeetingHistoryMock />} />
+      <Route path="/admin/test/progress-mock" element={<PartnerProgressMock />} />
       <Route path="/admin/kpi" element={<AdminKpi />} />
       <Route path="/admin/scorecards" element={<AdminScorecards />} />
       <Route path="/admin/meeting" element={<AdminMeeting />} />
