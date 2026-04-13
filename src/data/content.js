@@ -606,3 +606,42 @@ export const MEETING_COPY = {
     noteSaveFail: "Note didn't save \u2014 check your connection.",
   },
 };
+
+export const AGENDA_STOPS = [
+  'intro',
+  'kpi_1', 'kpi_2', 'kpi_3', 'kpi_4', 'kpi_5', 'kpi_6', 'kpi_7',
+  'growth_personal', 'growth_business_1', 'growth_business_2',
+  'wrap',
+];
+
+export const KPI_STOP_COUNT = AGENDA_STOPS.filter(s => s.startsWith('kpi_')).length;
+
+export const MONDAY_PREP_COPY = {
+  landingEyebrow: 'MEETING MODE',
+  startCta: 'Start Monday Prep',
+  heroCardTitle: 'Monday Prep',
+  heroCardDescription:
+    'Set targets and commitments before the week begins.',
+  progressPill: (n, total) => `Stop ${n} of ${total}`,
+  weekPickerLabel: 'Week:',
+  endBtn: 'End Prep',
+  endConfirmBtn: 'Confirm End',
+  endedNav: 'Back to Meeting History',
+  landingEmpty: 'No Monday Prep sessions yet. Start your first prep session.',
+  stops: {
+    introEyebrow: 'MONDAY PREP',
+    introHeading: (weekLabel) => `Week of ${weekLabel}`,
+    kpiEyebrow: (n, total) => `KPI ${n} of ${total}`,
+    growthPersonalEyebrow: 'PERSONAL GROWTH',
+    growthBusinessEyebrow: (n) => `BUSINESS GROWTH ${n} of 2`,
+    wrapHeading: 'Action Items & Commitments',
+    wrapSubtext:
+      'Capture commitments and action items before starting the week.',
+  },
+  notesPlaceholder: 'Add plan for this stop...',
+  savedFlash: 'Saved',
+  errors: {
+    loadFail: "Couldn't load prep data. Check your connection and refresh.",
+    noteSaveFail: "Plan didn't save \u2014 check your connection.",
+  },
+};
