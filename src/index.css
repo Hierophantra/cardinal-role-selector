@@ -1703,3 +1703,58 @@ textarea { resize: vertical; min-height: 120px; }
   font-weight: 400;
   margin: 0;
 }
+
+/* ── Meeting History ── */
+
+.meeting-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meeting-history-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  min-height: 44px;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  padding: 16px 20px;
+  transition: all 0.18s ease;
+  cursor: pointer;
+}
+
+.meeting-history-row:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+  transform: translateY(-1px);
+}
+
+.meeting-history-row:active {
+  transform: translateY(0);
+}
+
+.meeting-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.meeting-type-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.meeting-type-badge.friday .meeting-type-badge-dot {
+  background: var(--red);
+}
+
+.meeting-type-badge.monday .meeting-type-badge-dot {
+  background: var(--blue);
+}
