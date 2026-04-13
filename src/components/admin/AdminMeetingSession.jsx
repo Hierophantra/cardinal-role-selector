@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -14,29 +14,20 @@ import {
 import { formatWeekRange } from '../../lib/week.js';
 import {
   MEETING_COPY,
+  MONDAY_PREP_COPY,
+  FRIDAY_STOPS,
+  MONDAY_STOPS,
+  KPI_STOP_COUNT,
   GROWTH_STATUS_COPY,
   PARTNER_DISPLAY,
 } from '../../data/content.js';
 
-// --- Fixed 12-stop agenda (D-14, updated Phase 6) ---
-// Enforced at DB layer via meeting_notes.agenda_stop_key CHECK constraint (migration 005, pre-expanded to kpi_7).
-// Order is canonical: intro → kpi_1..7 → personal growth → business growth 1..2 → wrap.
-const STOPS = [
-  'intro',
-  'kpi_1',
-  'kpi_2',
-  'kpi_3',
-  'kpi_4',
-  'kpi_5',
-  'kpi_6',
-  'kpi_7',
-  'growth_personal',
-  'growth_business_1',
-  'growth_business_2',
-  'wrap',
-];
+// Stop arrays are now imported from content.js (FRIDAY_STOPS, MONDAY_STOPS).
+// The active stop array is derived from meeting.meeting_type inside the component.
 
-const KPI_STOP_COUNT = STOPS.filter(s => s.startsWith('kpi_')).length;
+// KPI_START_INDEX: position of kpi_1 in FRIDAY_STOPS.
+// clear_the_air=0, intro=1, kpi_1=2. Used to derive kpiIndex from stopIndex.
+const KPI_START_INDEX = 2;
 
 const PARTNERS = ['theo', 'jerry'];
 const DEBOUNCE_MS = 400;
@@ -166,11 +157,22 @@ export default function AdminMeetingSession() {
     };
   }, []);
 
+  // --- Derived meeting state ---
+  // Select stop array and copy object based on meeting type.
+  const stops = useMemo(
+    () => (meeting?.meeting_type === 'monday_prep' ? MONDAY_STOPS : FRIDAY_STOPS),
+    [meeting]
+  );
+  const copy = useMemo(
+    () => (meeting?.meeting_type === 'monday_prep' ? MONDAY_PREP_COPY : MEETING_COPY),
+    [meeting]
+  );
+
   // --- Navigation ---
   const goNext = useCallback(() => {
     setDirection(1);
-    setStopIndex((i) => Math.min(i + 1, STOPS.length - 1));
-  }, []);
+    setStopIndex((i) => Math.min(i + 1, stops.length - 1));
+  }, [stops]);
 
   const goPrev = useCallback(() => {
     setDirection(-1);
@@ -345,7 +347,7 @@ export default function AdminMeetingSession() {
     );
   }
 
-  const currentStopKey = STOPS[stopIndex];
+  const currentStopKey = stops[stopIndex];
   const weekLabel = formatWeekRange(meeting.week_of);
 
   return (
@@ -353,7 +355,7 @@ export default function AdminMeetingSession() {
       {/* === Header === */}
       <div className="meeting-shell-header">
         <div className="meeting-progress-pill">
-          {MEETING_COPY.progressPill(stopIndex + 1, STOPS.length)}
+          {copy.progressPill(stopIndex + 1, stops.length)}
         </div>
         <div
           className="muted"
@@ -379,8 +381,8 @@ export default function AdminMeetingSession() {
           {ending
             ? `Ending${'\u2026'}`
             : endPending
-              ? MEETING_COPY.endConfirmBtn
-              : MEETING_COPY.endBtn}
+              ? copy.endConfirmBtn
+              : copy.endBtn}
         </button>
       </div>
 
@@ -401,6 +403,7 @@ export default function AdminMeetingSession() {
             onNoteChange={handleNoteChange}
             onOverrideResult={handleOverrideResult}
             onReflectionChange={handleReflectionChange}
+            copy={copy}
           />
         </motion.div>
       </AnimatePresence>
@@ -425,7 +428,7 @@ export default function AdminMeetingSession() {
           type="button"
           className="btn btn-primary"
           onClick={goNext}
-          disabled={stopIndex === STOPS.length - 1}
+          disabled={stopIndex === stops.length - 1}
         >
           Next {'\u2192'}
         </button>
@@ -448,7 +451,70 @@ function StopRenderer({
   onNoteChange,
   onOverrideResult,
   onReflectionChange,
+  copy,
 }) {
+  if (stopKey === 'clear_the_air') {
+    return (
+      <ClearTheAirStop
+        meeting={meeting}
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+      />
+    );
+  }
+
+  if (stopKey === 'week_preview') {
+    return (
+      <WeekPreviewStop
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+      />
+    );
+  }
+
+  if (stopKey === 'priorities_focus') {
+    return (
+      <PrioritiesFocusStop
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+      />
+    );
+  }
+
+  if (stopKey === 'risks_blockers') {
+    return (
+      <RisksBlockersStop
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+      />
+    );
+  }
+
+  if (stopKey === 'growth_checkin') {
+    return (
+      <GrowthCheckinStop
+        data={data}
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+      />
+    );
+  }
+
+  if (stopKey === 'commitments') {
+    return (
+      <CommitmentsStop
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+      />
+    );
+  }
+
   if (stopKey === 'intro') {
     return (
       <IntroStop
@@ -462,8 +528,8 @@ function StopRenderer({
   }
 
   if (stopKey.startsWith('kpi_')) {
-    // stopIndex 1..7 maps to KPI index 0..6
-    const kpiIndex = stopIndex - 1;
+    // KPI_START_INDEX = 2 (clear_the_air=0, intro=1, kpi_1=2 in FRIDAY_STOPS)
+    const kpiIndex = stopIndex - KPI_START_INDEX;
     return (
       <KpiStop
         kpiIndex={kpiIndex}
@@ -531,6 +597,159 @@ function StopRenderer({
   }
 
   return null;
+}
+
+// --------------------------------------------------------------------------
+// Clear the Air stop — shared by Friday Review and Monday Prep (stop 1 in both)
+// --------------------------------------------------------------------------
+
+function ClearTheAirStop({ meeting, notes, savedFlash, onNoteChange }) {
+  const isMon = meeting.meeting_type === 'monday_prep';
+  return (
+    <>
+      <div className="eyebrow meeting-stop-eyebrow">CLEAR THE AIR</div>
+      <h2 className="meeting-stop-heading" style={{ fontSize: 28, lineHeight: 1.2 }}>
+        Clear the Air
+      </h2>
+      <p className="meeting-stop-subtext">
+        {isMon
+          ? 'Anything partners need to get off their chest before the week begins.'
+          : 'Anything partners need to say before diving into the numbers.'}
+      </p>
+      <StopNotesArea
+        stopKey="clear_the_air"
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+      />
+    </>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Monday Prep stop components
+// --------------------------------------------------------------------------
+
+function WeekPreviewStop({ notes, savedFlash, onNoteChange }) {
+  return (
+    <>
+      <div className="eyebrow meeting-stop-eyebrow">WEEK PREVIEW</div>
+      <h2 className="meeting-stop-heading" style={{ fontSize: 28, lineHeight: 1.2 }}>
+        What&apos;s Coming This Week
+      </h2>
+      <p className="meeting-stop-subtext">
+        Upcoming travel, deadlines, and anything unusual on the calendar.
+      </p>
+      <StopNotesArea
+        stopKey="week_preview"
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+      />
+    </>
+  );
+}
+
+function PrioritiesFocusStop({ notes, savedFlash, onNoteChange }) {
+  return (
+    <>
+      <div className="eyebrow meeting-stop-eyebrow">PRIORITIES &amp; FOCUS</div>
+      <h2 className="meeting-stop-heading" style={{ fontSize: 28, lineHeight: 1.2 }}>
+        Top 2-3 Priorities
+      </h2>
+      <p className="meeting-stop-subtext">
+        The 2-3 most important things each partner will accomplish this week.
+      </p>
+      <StopNotesArea
+        stopKey="priorities_focus"
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+      />
+    </>
+  );
+}
+
+function RisksBlockersStop({ notes, savedFlash, onNoteChange }) {
+  return (
+    <>
+      <div className="eyebrow meeting-stop-eyebrow">RISKS &amp; BLOCKERS</div>
+      <h2 className="meeting-stop-heading" style={{ fontSize: 28, lineHeight: 1.2 }}>
+        Risks &amp; Blockers
+      </h2>
+      <p className="meeting-stop-subtext">
+        What could get in the way and where do you need help?
+      </p>
+      <StopNotesArea
+        stopKey="risks_blockers"
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+      />
+    </>
+  );
+}
+
+function GrowthCheckinStop({ data, notes, savedFlash, onNoteChange }) {
+  return (
+    <>
+      <div className="eyebrow meeting-stop-eyebrow">GROWTH CHECK-IN</div>
+      <h2 className="meeting-stop-heading" style={{ fontSize: 28, lineHeight: 1.2 }}>
+        Growth Priority Pulse
+      </h2>
+      <p className="meeting-stop-subtext">
+        Quick status on each partner&apos;s growth priorities.
+      </p>
+      <div className="meeting-growth-grid">
+        {['theo', 'jerry'].map((p) => {
+          const priorities = data[p].growth;
+          return (
+            <div key={p} className="meeting-growth-cell">
+              <div className="meeting-partner-name">{PARTNER_DISPLAY[p]}</div>
+              {priorities.length === 0 ? (
+                <div className="muted" style={{ fontSize: 14 }}>No growth priorities set.</div>
+              ) : (
+                priorities.map((g) => (
+                  <div key={g.id} style={{ fontSize: 14, lineHeight: 1.55 }}>
+                    <span className={`growth-status-badge ${g.status ?? 'active'}`}>
+                      {GROWTH_STATUS_COPY[g.status ?? 'active']}
+                    </span>
+                    {' '}{g.description || g.custom_text || '\u2014'}
+                  </div>
+                ))
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <StopNotesArea
+        stopKey="growth_checkin"
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+      />
+    </>
+  );
+}
+
+function CommitmentsStop({ notes, savedFlash, onNoteChange }) {
+  return (
+    <>
+      <div className="eyebrow meeting-stop-eyebrow">COMMITMENTS</div>
+      <h2 className="meeting-stop-heading" style={{ fontSize: 28, lineHeight: 1.2 }}>
+        Walk-Away Commitments
+      </h2>
+      <p className="meeting-stop-subtext">
+        What each partner commits to by end of week.
+      </p>
+      <StopNotesArea
+        stopKey="commitments"
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+      />
+    </>
+  );
 }
 
 // --------------------------------------------------------------------------
