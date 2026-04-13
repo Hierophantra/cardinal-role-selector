@@ -97,10 +97,16 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 | Reflections optional on hit KPIs, required on misses | Reduces friction on weekly check-ins without losing accountability | ✓ Good |
 | KPI labels stored in scorecard JSONB | History survives KPI re-selection; orphaned entries show "(Previous KPI)" fallback | ✓ Good |
 | Emoji icons removed from hub cards | Cleaner, more professional appearance | ✓ Good |
+| Dual meeting mode: session-based with meeting_type column | Same 12-stop structure, different framing per type; one meeting per type per week enforced at DB level | ✓ Good (Phase 8) |
+| STOPS array single source of truth in content.js | Eliminates copy drift between consumers; fixes kpi_6/kpi_7 defect | ✓ Good (Phase 8) |
+
+## Current State
+
+Phase 8 complete — AGENDA_STOPS consolidated in content.js (12 stops, single source), migration 007 ready for application (meeting_type column with constraints). Foundation set for dual meeting mode in Phase 9.
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-04-13 after v1.2 milestone started*
+*Last updated: 2026-04-12 after Phase 8 completion*
