@@ -23,9 +23,9 @@ Requirements for v1.2 Meeting & Insights Expansion. Each maps to roadmap phases.
 
 - [x] **INSGHT-01**: Partner hub displays season KPI hit-rate (total hits / total possible across all completed weeks, excluding null results)
 - [x] **INSGHT-02**: Partner hub displays season week progress indicator ("Week N of ~26")
-- [ ] **INSGHT-03**: Per-KPI weekly hit-rate bar chart on partner hub using recharts
+- [x] **INSGHT-03**: Per-KPI weekly hit-rate bar chart on partner hub using recharts
 - [x] **INSGHT-04**: Per-KPI miss streak indicator surfaces recurring misses (e.g. "missed 4 weeks in a row")
-- [ ] **INSGHT-05**: Partner progress view — dedicated page with season overview, per-KPI trends, and growth priority status
+- [x] **INSGHT-05**: Partner progress view — dedicated page with season overview, per-KPI trends, and growth priority status
 
 ### Export
 
@@ -74,9 +74,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MEET-09 | Phase 10 | Complete |
 | INSGHT-01 | Phase 11 | Complete |
 | INSGHT-02 | Phase 11 | Complete |
-| INSGHT-03 | Phase 11 | Pending |
+| INSGHT-03 | Phase 11 | Complete |
 | INSGHT-04 | Phase 11 | Complete |
-| INSGHT-05 | Phase 11 | Pending |
+| INSGHT-05 | Phase 11 | Complete |
 | EXPRT-01 | Phase 12 | Pending |
 | EXPRT-02 | Phase 12 | Pending |
 

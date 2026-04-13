@@ -2,8 +2,8 @@
 
 ## Milestones
 
-- v1.0 MVP - Phases 1-4 (shipped 2026-04-11)
-- v1.1 Mandatory/Choice KPI Model - Phases 5-7 (shipped 2026-04-13)
+- v1.0 MVP - Phases 1-4 (shipped 2012-04-11)
+- v1.1 Mandatory/Choice KPI Model - Phases 5-7 (shipped 2012-04-13)
 - v1.2 Meeting & Insights Expansion - Phases 8-12 (in progress)
 
 ## Phases
@@ -15,7 +15,7 @@
 Decimal phases appear between their surrounding integers in numeric order.
 
 <details>
-<summary>v1.0 MVP (Phases 1-4) - SHIPPED 2026-04-11</summary>
+<summary>v1.0 MVP (Phases 1-4) - SHIPPED 2012-04-11</summary>
 
 - [x] **Phase 1: Schema & Hub** - Data tables created and both partner and admin hub screens are live
 - [x] **Phase 2: KPI Selection** - Partners can select, confirm, and lock in their 5 KPIs and growth priorities
@@ -25,7 +25,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 </details>
 
 <details>
-<summary>v1.1 Mandatory/Choice KPI Model (Phases 5-7) - SHIPPED 2026-04-13</summary>
+<summary>v1.1 Mandatory/Choice KPI Model (Phases 5-7) - SHIPPED 2012-04-13</summary>
 
 - [x] **Phase 5: Schema Evolution & Content Seeding** (2/2 plans) - Migration adds partner_scope/mandatory columns, seeds 20 real KPI templates + growth options, extends scorecard columns
 - [x] **Phase 6: Partner & Meeting Flow Updates** (3/3 plans) - Selection shows 5 mandatory + 2 choice, scorecard renders 7 rows, meeting mode walks 7 stops, all copy says "Spring Season 2026"
@@ -35,11 +35,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 ### v1.2 Meeting & Insights Expansion
 
-- [x] **Phase 8: Schema Foundation & STOPS Consolidation** - Live defect fixed, DB migration gating all dual meeting work is deployed (completed 2026-04-13)
-- [x] **Phase 9: Dual Meeting Mode** - Admin can start Friday Review or Monday Prep sessions; each uses distinct framing (completed 2026-04-13)
-- [x] **Phase 10: Meeting History** - Admin and partners can browse and replay any past meeting (completed 2026-04-13)
-- [x] **Phase 11: Season Overview & Progress** - Partners see their cumulative KPI hit rate, per-KPI trends, and season progress (completed 2026-04-13)
-- [ ] **Phase 12: Export** - Meeting notes and scorecard data are exportable from both admin and partner views
+- [x] **Phase 8: Schema Foundation & STOPS Consolidation** - Live defect fixed, DB migration gating all dual meeting work is deployed (completed 2012-04-13)
+- [x] **Phase 9: Dual Meeting Mode** - Admin can start Friday Review or Monday Prep sessions; each uses distinct framing (completed 2012-04-13)
+- [x] **Phase 10: Meeting History** - Admin and partners can browse and replay any past meeting (completed 2012-04-13)
+- [x] **Phase 11: Season Overview & Progress** - Partners see their cumulative KPI hit rate, per-KPI trends, and season progress (completed 2012-04-13)
 
 ## Phase Details
 
@@ -103,33 +102,3 @@ Plans:
 - [x] 11-02-PLAN.md — Season Overview hub card + PartnerProgress.jsx page + route wiring
 - [x] 11-03-PLAN.md — PartnerProgressMock.jsx mock component + AdminTest link + mock route
 **UI hint**: yes
-
-### Phase 12: Export
-**Goal**: Meeting notes and scorecard data can be taken out of the tool for record-keeping or review outside the app
-**Depends on**: Phase 10
-**Requirements**: EXPRT-01, EXPRT-02
-**Success Criteria** (what must be TRUE):
-  1. Trace can trigger a print-friendly view of meeting notes from the admin meeting session
-  2. A partner can trigger print of their meeting summary from MeetingSummary
-  3. The print output is legible — no nav chrome, no dark background bleed, meeting content clearly structured
-**Plans**: TBD
-
-## Progress
-
-**Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12
-
-| Phase | Milestone | Plans Complete | Status | Completed |
-|-------|-----------|----------------|--------|-----------|
-| 1. Schema & Hub | v1.0 | 2/2 | Complete | 2026-04-10 |
-| 2. KPI Selection | v1.0 | 3/3 | Complete | 2026-04-10 |
-| 3. Weekly Scorecard | v1.0 | 3/3 | Complete | 2026-04-10 |
-| 4. Admin Tools & Meeting Mode | v1.0 | 5/5 | Complete | 2026-04-11 |
-| 5. Schema Evolution & Content Seeding | v1.1 | 2/2 | Complete | 2026-04-12 |
-| 6. Partner & Meeting Flow Updates | v1.1 | 3/3 | Complete | 2026-04-12 |
-| 7. Admin Model Evolution | v1.1 | 2/2 | Complete | 2026-04-13 |
-| 8. Schema Foundation & STOPS Consolidation | v1.2 | 2/2 | Complete   | 2026-04-13 |
-| 9. Dual Meeting Mode | v1.2 | 2/2 | Complete   | 2026-04-13 |
-| 10. Meeting History | v1.2 | 2/2 | Complete    | 2026-04-13 |
-| 11. Season Overview & Progress | v1.2 | 3/3 | Complete    | 2026-04-13 |
-| 12. Export | v1.2 | 0/? | Not started | - |
