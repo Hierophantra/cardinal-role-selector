@@ -469,6 +469,8 @@ function StopRenderer({
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     );
   }
@@ -479,6 +481,8 @@ function StopRenderer({
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     );
   }
@@ -489,6 +493,8 @@ function StopRenderer({
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     );
   }
@@ -499,6 +505,8 @@ function StopRenderer({
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     );
   }
@@ -510,6 +518,8 @@ function StopRenderer({
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     );
   }
@@ -520,6 +530,8 @@ function StopRenderer({
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     );
   }
@@ -624,7 +636,7 @@ function StopRenderer({
 // Clear the Air stop — shared by Friday Review and Monday Prep (stop 1 in both)
 // --------------------------------------------------------------------------
 
-function ClearTheAirStop({ meeting, notes, savedFlash, onNoteChange }) {
+function ClearTheAirStop({ meeting, notes, savedFlash, onNoteChange, copy, isEnded }) {
   const isMon = meeting.meeting_type === 'monday_prep';
   return (
     <>
@@ -642,6 +654,8 @@ function ClearTheAirStop({ meeting, notes, savedFlash, onNoteChange }) {
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     </>
   );
@@ -651,7 +665,7 @@ function ClearTheAirStop({ meeting, notes, savedFlash, onNoteChange }) {
 // Monday Prep stop components
 // --------------------------------------------------------------------------
 
-function WeekPreviewStop({ notes, savedFlash, onNoteChange }) {
+function WeekPreviewStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
   return (
     <>
       <div className="eyebrow meeting-stop-eyebrow">WEEK PREVIEW</div>
@@ -666,12 +680,14 @@ function WeekPreviewStop({ notes, savedFlash, onNoteChange }) {
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     </>
   );
 }
 
-function PrioritiesFocusStop({ notes, savedFlash, onNoteChange }) {
+function PrioritiesFocusStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
   return (
     <>
       <div className="eyebrow meeting-stop-eyebrow">PRIORITIES &amp; FOCUS</div>
@@ -686,12 +702,14 @@ function PrioritiesFocusStop({ notes, savedFlash, onNoteChange }) {
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     </>
   );
 }
 
-function RisksBlockersStop({ notes, savedFlash, onNoteChange }) {
+function RisksBlockersStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
   return (
     <>
       <div className="eyebrow meeting-stop-eyebrow">RISKS &amp; BLOCKERS</div>
@@ -706,12 +724,14 @@ function RisksBlockersStop({ notes, savedFlash, onNoteChange }) {
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     </>
   );
 }
 
-function GrowthCheckinStop({ data, notes, savedFlash, onNoteChange }) {
+function GrowthCheckinStop({ data, notes, savedFlash, onNoteChange, copy, isEnded }) {
   return (
     <>
       <div className="eyebrow meeting-stop-eyebrow">GROWTH CHECK-IN</div>
@@ -748,12 +768,14 @@ function GrowthCheckinStop({ data, notes, savedFlash, onNoteChange }) {
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     </>
   );
 }
 
-function CommitmentsStop({ notes, savedFlash, onNoteChange }) {
+function CommitmentsStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
   return (
     <>
       <div className="eyebrow meeting-stop-eyebrow">COMMITMENTS</div>
@@ -768,6 +790,8 @@ function CommitmentsStop({ notes, savedFlash, onNoteChange }) {
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
       />
     </>
   );
