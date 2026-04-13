@@ -36,7 +36,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 ### v1.2 Meeting & Insights Expansion
 
 - [x] **Phase 8: Schema Foundation & STOPS Consolidation** - Live defect fixed, DB migration gating all dual meeting work is deployed (completed 2026-04-13)
-- [ ] **Phase 9: Dual Meeting Mode** - Admin can start Friday Review or Monday Prep sessions; each uses distinct framing
+- [x] **Phase 9: Dual Meeting Mode** - Admin can start Friday Review or Monday Prep sessions; each uses distinct framing (completed 2026-04-13)
 - [ ] **Phase 10: Meeting History** - Admin and partners can browse and replay any past meeting
 - [ ] **Phase 11: Season Overview & Progress** - Partners see their cumulative KPI hit rate, per-KPI trends, and season progress
 - [ ] **Phase 12: Export** - Meeting notes and scorecard data are exportable from both admin and partner views
@@ -66,10 +66,10 @@ Plans:
   2. A Monday Prep session shows Monday Prep eyebrows, prompts, and headings at each of the 12 stops
   3. A Friday Review session shows the original Friday Review framing (no regression)
   4. Viewing an ended meeting shows a read-only session — no edit fields, no End Meeting button
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 09-01-PLAN.md — createMeeting extension + dual CTA landing + type badges + CSS foundations
-- [ ] 09-02-PLAN.md — Session copy swap + blue accent + read-only ended meetings
+- [x] 09-02-PLAN.md — Session copy swap + blue accent + read-only ended meetings
 **UI hint**: yes
 
 ### Phase 10: Meeting History
@@ -122,7 +122,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. Partner & Meeting Flow Updates | v1.1 | 3/3 | Complete | 2026-04-12 |
 | 7. Admin Model Evolution | v1.1 | 2/2 | Complete | 2026-04-13 |
 | 8. Schema Foundation & STOPS Consolidation | v1.2 | 2/2 | Complete   | 2026-04-13 |
-| 9. Dual Meeting Mode | v1.2 | 1/2 | In Progress|  |
+| 9. Dual Meeting Mode | v1.2 | 2/2 | Complete   | 2026-04-13 |
 | 10. Meeting History | v1.2 | 0/? | Not started | - |
 | 11. Season Overview & Progress | v1.2 | 0/? | Not started | - |
 | 12. Export | v1.2 | 0/? | Not started | - |
