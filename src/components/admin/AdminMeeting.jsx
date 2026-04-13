@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createMeeting, fetchMeetings } from '../../lib/supabase.js';
 import { getMondayOf, formatWeekRange } from '../../lib/week.js';
-import { MEETING_COPY, SEASON_START_DATE, SEASON_END_DATE } from '../../data/content.js';
+import { MEETING_COPY, MONDAY_PREP_COPY, SEASON_START_DATE, SEASON_END_DATE } from '../../data/content.js';
 
 // Build all week options from SEASON_START_DATE through SEASON_END_DATE, newest first.
 // Each option value is a 'YYYY-MM-DD' Monday local-time string from getMondayOf.
@@ -28,9 +28,16 @@ export default function AdminMeeting() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [weekOf, setWeekOf] = useState(() => getMondayOf());
-  const [starting, setStarting] = useState(false);
+  const [starting, setStarting] = useState(null);
 
   const weekOptions = useMemo(() => buildWeekOptions(), []);
+
+  const fridayExistsForWeek = meetings.some(
+    (m) => m.week_of === weekOf && m.meeting_type === 'friday_review'
+  );
+  const mondayExistsForWeek = meetings.some(
+    (m) => m.week_of === weekOf && m.meeting_type === 'monday_prep'
+  );
 
   useEffect(() => {
     let alive = true;
@@ -53,17 +60,17 @@ export default function AdminMeeting() {
     };
   }, []);
 
-  async function handleStart() {
-    setStarting(true);
+  async function handleStart(meetingType) {
+    setStarting(meetingType);
     setError('');
     try {
-      const meeting = await createMeeting(weekOf);
+      const meeting = await createMeeting(weekOf, meetingType);
       navigate(`/admin/meeting/${meeting.id}`);
     } catch (err) {
       console.error(err);
       setError(MEETING_COPY.errors.loadFail);
     } finally {
-      setStarting(false);
+      setStarting(null);
     }
   }
 
@@ -85,10 +92,10 @@ export default function AdminMeeting() {
           </div>
 
           <div className="screen-header">
-            <div className="eyebrow">{MEETING_COPY.landingEyebrow}</div>
-            <h2>Friday Review</h2>
+            <div className="eyebrow">MEETING MODE</div>
+            <h2>Meeting Mode</h2>
             <p className="muted" style={{ fontSize: 15 }}>
-              {MEETING_COPY.heroCardDescription}
+              Start a Friday Review or Monday Prep session for the selected week.
             </p>
           </div>
 
@@ -145,15 +152,26 @@ export default function AdminMeeting() {
                   </option>
                 ))}
               </select>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleStart}
-                disabled={starting}
-                style={{ marginLeft: 'auto' }}
-              >
-                {starting ? `Starting${'\u2026'}` : MEETING_COPY.startCta}
-              </button>
+              <div style={{ display: 'flex', gap: 16, marginLeft: 'auto' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => handleStart('friday_review')}
+                  disabled={starting !== null || loading || fridayExistsForWeek}
+                  title={fridayExistsForWeek ? 'Already started for this week' : undefined}
+                >
+                  {starting === 'friday_review' ? 'Starting\u2026' : 'Start Friday Review'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary--monday"
+                  onClick={() => handleStart('monday_prep')}
+                  disabled={starting !== null || loading || mondayExistsForWeek}
+                  title={mondayExistsForWeek ? 'Already started for this week' : undefined}
+                >
+                  {starting === 'monday_prep' ? 'Starting\u2026' : 'Start Monday Prep'}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -184,6 +202,7 @@ export default function AdminMeeting() {
                 const endedLabel = m.ended_at
                   ? new Date(m.ended_at).toLocaleString()
                   : 'In progress';
+                const isMonday = m.meeting_type === 'monday_prep';
                 return (
                   <div
                     key={m.id}
@@ -215,6 +234,20 @@ export default function AdminMeeting() {
                           {formatWeekRange(m.week_of)}
                         </h4>
                       </div>
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '4px 8px',
+                        borderRadius: 12,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        background: isMonday ? 'rgba(37,99,235,0.15)' : 'rgba(196,30,58,0.15)',
+                        color: isMonday ? 'var(--blue)' : 'var(--red)',
+                        border: `1px solid ${isMonday ? 'rgba(37,99,235,0.3)' : 'rgba(196,30,58,0.3)'}`,
+                      }}>
+                        {isMonday ? 'Monday Prep' : 'Friday Review'}
+                      </span>
                       <Link
                         to={`/admin/meeting/${m.id}`}
                         className="btn btn-ghost"
