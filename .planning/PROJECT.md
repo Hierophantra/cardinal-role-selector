@@ -38,7 +38,7 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 ### Active — v1.2 Meeting & Insights Expansion
 
 - [ ] Season overview: partners see KPI hit-rate trends and season progress on their hub
-- [ ] Meeting history: past meetings visible to both admin and partners (not just latest)
+- ✓ Meeting history: past meetings visible to both admin and partners (not just latest) — v1.2 (Validated in Phase 10)
 - [ ] Export capability: meeting notes and scorecard data exportable
 - ✓ Dual meeting mode: Friday Review + Monday Prep sessions with different framing — v1.2 (Validated in Phase 09)
 - [ ] Partner progress view: dedicated progress dashboard beyond the hub status line
@@ -102,11 +102,11 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 
 ## Current State
 
-Phase 8 complete — AGENDA_STOPS consolidated in content.js (12 stops, single source), migration 007 ready for application (meeting_type column with constraints). Foundation set for dual meeting mode in Phase 9.
+Phase 10 complete — Meeting history list and ID-based summary view shipped. Partners can browse all ended meetings from their hub with type badges and week ranges, click through to any specific meeting's stop-by-stop notes. Admin read-only for ended meetings confirmed. Dual meeting mode (Phase 9) and meeting history (Phase 10) both validated.
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-04-12 after Phase 8 completion*
+*Last updated: 2026-04-13 after Phase 10 completion*
