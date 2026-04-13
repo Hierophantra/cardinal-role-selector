@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  fetchMeetings,
+  fetchMeeting,
   fetchMeetingNotes,
   fetchScorecards,
   fetchKpiSelections,
@@ -30,7 +30,7 @@ const STOPS = [
 ];
 
 export default function MeetingSummary() {
-  const { partner } = useParams();
+  const { partner, id } = useParams();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -52,11 +52,10 @@ export default function MeetingSummary() {
 
     async function load() {
       try {
-        const meetings = await fetchMeetings();
+        const ended = await fetchMeeting(id);
         if (!alive) return;
 
-        const ended = meetings.find((m) => m.ended_at != null);
-        if (!ended) {
+        if (!ended || !ended.ended_at) {
           setEmpty(true);
           setLoading(false);
           return;
@@ -98,7 +97,7 @@ export default function MeetingSummary() {
     return () => {
       alive = false;
     };
-  }, [partner, navigate]);
+  }, [partner, id, navigate]);
 
   if (loading) return null;
 
@@ -109,8 +108,8 @@ export default function MeetingSummary() {
       <div className="container">
         <div className="screen fade-in">
           <div className="nav-row" style={{ marginBottom: 12 }}>
-            <Link to={`/hub/${partner}`} className="btn-ghost">
-              {'\u2190'} Back to Hub
+            <Link to={`/meeting-history/${partner}`} className="btn-ghost">
+              {'\u2190'} Back to Meeting History
             </Link>
           </div>
 
