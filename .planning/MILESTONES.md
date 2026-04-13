@@ -1,5 +1,21 @@
 # Milestones
 
+## v1.2 Meeting & Insights Expansion (Shipped: 2026-04-13)
+
+**Phases completed:** 4 phases, 9 plans, 15 tasks
+
+**Key accomplishments:**
+
+- AGENDA_STOPS canonical 12-stop array added to content.js, fixing live kpi_6/kpi_7 MeetingSummary defect across all 4 consumer files
+- PostgreSQL migration adding `meeting_type` column to meetings table with DEFAULT, CHECK, and UNIQUE constraints enabling Friday Review / Monday Prep dual mode
+- Dual CTA landing page with per-type disable logic, blue CSS foundation, and type badges on AdminMeeting
+- 1. [Rule 1 - Bug] Updated MeetingSummary.jsx to use id param instead of latest-meeting scan
+- recharts installed and four pure seasonStats helpers wired to PROGRESS_COPY copy contracts and 22 Phase 11 CSS classes — data layer and visual foundation ready for Plans 02 and 03.
+- Season Overview hub card added as first hub-grid child in PartnerHub.jsx, and PartnerProgress.jsx built with recharts horizontal bar chart, growth priority cards, and empty/error states — route wired at /progress/:partner.
+- PartnerProgressMock.jsx created with hardcoded 83%/50%/33% KPI data, miss streak badge, and growth priority cards with Trace notes — wired to /admin/test/progress-mock route and AdminTest Quick Links.
+
+---
+
 ## v1.1 Mandatory/Choice KPI Model (Shipped: 2026-04-13)
 
 **Phases completed:** 3 phases, 7 plans, 12 tasks

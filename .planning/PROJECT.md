@@ -35,13 +35,14 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 - ✓ Accountability tracking: cumulative missed-KPI count + PIP flag at 5 (admin-only) — v1.1
 - ✓ Mandatory template delete suppression — v1.1
 
-### Active — v1.2 Meeting & Insights Expansion
+- ✓ Season overview: partners see KPI hit-rate trends and season progress on their hub — v1.2
+- ✓ Meeting history: past meetings visible to both admin and partners (not just latest) — v1.2
+- ✓ Dual meeting mode: Friday Review + Monday Prep sessions with different framing — v1.2
+- ✓ Partner progress view: dedicated progress dashboard beyond the hub status line — v1.2
 
-- ✓ Season overview: partners see KPI hit-rate trends and season progress on their hub — v1.2 (Validated in Phase 11)
-- ✓ Meeting history: past meetings visible to both admin and partners (not just latest) — v1.2 (Validated in Phase 10)
-- [ ] Export capability: meeting notes and scorecard data exportable
-- ✓ Dual meeting mode: Friday Review + Monday Prep sessions with different framing — v1.2 (Validated in Phase 09)
-- ✓ Partner progress view: dedicated progress dashboard beyond the hub status line — v1.2 (Validated in Phase 11)
+### Deferred
+
+- Export capability: meeting notes and scorecard data exportable (removed from v1.2, future milestone)
 
 ### Out of Scope
 
@@ -52,28 +53,17 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 - OAuth/SSO authentication — access codes sufficient for 3 users
 - Real-time collaboration — partners and admin are co-located during meetings
 
-## Current Milestone: v1.2 Meeting & Insights Expansion
-
-**Goal:** Give partners visibility into their season progress and add dual meeting modes (Friday Review + Monday Prep) with meeting history and data export.
-
-**Target features:**
-- Season overview on partner hub (KPI hit-rate trends and season progress)
-- Meeting history visible to both admin and partners (not just latest)
-- Export capability for meeting notes and scorecard data
-- Dual meeting mode (Friday Review + Monday Prep with different framing)
-- Partner progress view (dedicated progress dashboard)
-
 ## Context
 
-- Brownfield project: role definition tool fully built, v1.0 + v1.1 shipped
+- Brownfield project: v1.0 + v1.1 + v1.2 shipped
 - Two specific users (Theo, Jerry) plus one admin (Trace)
 - Partners have completed role questionnaire — data exists in Supabase
 - 20 real KPI templates seeded with mandatory/choice model per partner
-- 9,266 LOC across React components, data, and lib files
-- Tech stack: React 18 + Vite + Supabase + Framer Motion + vanilla CSS
+- 11,897 LOC across 41 React components, data, and lib files
+- Tech stack: React 18 + Vite + Supabase + Framer Motion + vanilla CSS + recharts
 - Dark theme with Cardinal brand (red accents, gold labels)
 - Access code auth — no user accounts for 3 users
-- Friday is the anchor meeting; Monday prep meeting being added in v1.2
+- Friday Review and Monday Prep meetings both operational
 - Partners work Saturdays, so scorecards may not be done by Friday
 
 ## Constraints
@@ -102,11 +92,11 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 
 ## Current State
 
-Phase 11 complete — Season Overview hub card and dedicated progress page shipped. Partners see cumulative KPI hit-rate %, per-KPI bar chart (recharts), miss streak alerts, and growth priority status cards at /progress/:partner. Hub card shows sparkline bars and worst-streak callout. Mock page at /admin/test/progress-mock exercises all color thresholds.
+v1.2 shipped — Full accountability platform with dual meeting modes (Friday Review + Monday Prep), meeting history, and season progress dashboard. Partners see KPI hit-rate trends, miss streak alerts, and growth priority status. 4 phases, 9 plans, 11,897 LOC.
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-04-13 after Phase 11 completion*
+*Last updated: 2026-04-13 after v1.2 milestone*
