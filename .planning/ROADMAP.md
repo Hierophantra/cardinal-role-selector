@@ -57,7 +57,9 @@
   2. Friday Review's clear_the_air key is accepted by the CHECK constraint without error
   3. Existing meeting records and note data are unaffected after migration runs
   4. Migration can run on a database that has already run it without error (idempotent)
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 12-01-PLAN.md — Expand meeting_notes CHECK constraint with 17 stop keys
 
 ### Phase 13: Meeting Stop Redesign
 **Goal**: Both meeting types deliver their correct stop structures with appropriate framing and note persistence
@@ -85,6 +87,6 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 12. Schema Migration | 0/TBD | Not started | - |
+| 12. Schema Migration | 0/1 | Not started | - |
 | 13. Meeting Stop Redesign | 0/TBD | Not started | - |
 | 14. Monday Prep Mock | 0/TBD | Not started | - |
