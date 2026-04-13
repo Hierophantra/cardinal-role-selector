@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Monday Prep Redesign
-status: Ready to plan
-stopped_at: Completed 12-schema-migration 12-01-PLAN.md
-last_updated: "2026-04-13T08:17:58.375Z"
+status: Ready to execute
+stopped_at: Completed 13-01-PLAN.md
+last_updated: "2026-04-13T08:41:27.215Z"
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
+  total_plans: 3
+  completed_plans: 2
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-13)
 
 **Core value:** Partners have clear, locked-in accountability commitments they check in on weekly, with an admin who can track progress and facilitate structured conversations.
-**Current focus:** Phase 12 — schema-migration
+**Current focus:** Phase 13 — meeting-stop-redesign
 
 ## Current Position
 
-Phase: 13
-Plan: Not started
+Phase: 13 (meeting-stop-redesign) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -42,6 +42,7 @@ Plan: Not started
 
 *Updated after each plan completion*
 | Phase 12-schema-migration P01 | 1 | 1 tasks | 1 files |
+| Phase 13-meeting-stop-redesign P01 | 20 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -55,6 +56,8 @@ Recent decisions affecting current work:
 - Friday Review expands from 12 to 13 stops (Clear the Air added as stop 1)
 - [Phase 12-schema-migration]: All 17 meeting_notes stop keys in one flat CHECK — DB prevents typos, app layer (content.js) controls per-type stop visibility
 - [Phase 12-schema-migration]: clear_the_air is a shared key used by both Friday Review and Monday Prep — meeting_type column distinguishes context
+- [Phase 13-meeting-stop-redesign]: FRIDAY_STOPS(13)/MONDAY_STOPS(6) replace inline STOPS; selected via useMemo from meeting.meeting_type
+- [Phase 13-meeting-stop-redesign]: KPI_START_INDEX=2 replaces hardcoded stopIndex-1 offset for kpi_ stops in Friday stop array
 
 ### Pending Todos
 
@@ -66,6 +69,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T08:14:54.145Z
-Stopped at: Completed 12-schema-migration 12-01-PLAN.md
+Last session: 2026-04-13T08:41:27.212Z
+Stopped at: Completed 13-01-PLAN.md
 Resume file: None
