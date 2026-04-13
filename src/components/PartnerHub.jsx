@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { fetchSubmission, fetchSubmissions, fetchKpiSelections, fetchScorecards } from '../lib/supabase.js';
 import { getMondayOf } from '../lib/week.js';
-import { VALID_PARTNERS, PARTNER_DISPLAY, HUB_COPY, KPI_COPY, SCORECARD_COPY } from '../data/content.js';
+import { computeSeasonStats, computeStreaks, computeWeekNumber, getPerformanceColor } from '../lib/seasonStats.js';
+import { VALID_PARTNERS, PARTNER_DISPLAY, HUB_COPY, KPI_COPY, SCORECARD_COPY, PROGRESS_COPY } from '../data/content.js';
 
 export default function PartnerHub() {
   const { partner } = useParams();
@@ -75,6 +76,24 @@ export default function PartnerHub() {
         ? 'inProgress'
         : 'notCommitted';
 
+  // Season stats derivation (Phase 11 — D-04)
+  const seasonStats = useMemo(
+    () => kpiLocked ? computeSeasonStats(kpiSelections, scorecards) : null,
+    [kpiLocked, kpiSelections, scorecards]
+  );
+  const streaks = useMemo(
+    () => kpiLocked ? computeStreaks(kpiSelections, scorecards) : [],
+    [kpiLocked, kpiSelections, scorecards]
+  );
+  const weekNumber = useMemo(() => computeWeekNumber(), []);
+  const perKpiStats = seasonStats?.perKpiStats ?? [];
+  const worstStreak = useMemo(() => {
+    if (!streaks.length) return null;
+    const active = streaks.filter((s) => s.streak >= 2);
+    if (!active.length) return null;
+    return active.reduce((worst, s) => (s.streak > worst.streak ? s : worst), active[0]);
+  }, [streaks]);
+
   // Precedence: error > !kpiLocked existing branches > scorecard branches (new, when kpiLocked) > fallback
   const statusText = error
     ? copy.errorLoad
@@ -115,6 +134,39 @@ export default function PartnerHub() {
           </div>
 
           <div className="hub-grid">
+            {/* Season Overview — first position, visible when KPIs locked (D-01, D-02, D-03) */}
+            {kpiLocked && (
+              <Link to={`/progress/${partner}`} className="hub-card">
+                <span className="eyebrow">SEASON OVERVIEW</span>
+                <h3>{PROGRESS_COPY.hubCard.title}</h3>
+                <p>{PROGRESS_COPY.hubCard.description}</p>
+                <span className="progress-hit-rate" style={{ color: seasonStats?.seasonHitRate !== null ? getPerformanceColor(seasonStats.seasonHitRate) : 'var(--muted)' }}>
+                  {seasonStats?.seasonHitRate !== null
+                    ? PROGRESS_COPY.hubCard.hitRateFmt(seasonStats.seasonHitRate)
+                    : PROGRESS_COPY.hubCard.hitRateEmpty}
+                </span>
+                <span className="progress-week-label">{PROGRESS_COPY.hubCard.weekFmt(weekNumber)}</span>
+                {worstStreak && (
+                  <span className="progress-streak-alert">
+                    {PROGRESS_COPY.hubCard.streakFmt(worstStreak.label, worstStreak.streak)}
+                  </span>
+                )}
+                <div className="progress-sparklines">
+                  {perKpiStats.map((kpi) => (
+                    <div
+                      key={kpi.id}
+                      className="progress-sparkline-bar"
+                      style={{
+                        width: `${kpi.hitRate ?? 0}%`,
+                        background: getPerformanceColor(kpi.hitRate),
+                      }}
+                    />
+                  ))}
+                </div>
+                <span className="hub-card-cta">{PROGRESS_COPY.hubCard.cta}</span>
+              </Link>
+            )}
+
             {/* Role Definition — always shown (per D-01: only functional options) */}
             <Link to={`/q/${partner}`} className="hub-card">
                             <h3>{copy.cards.roleDefinition.title}</h3>
