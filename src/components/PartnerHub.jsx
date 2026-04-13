@@ -160,12 +160,12 @@ export default function PartnerHub() {
               </Link>
             )}
 
-            {/* Meeting Summary — visible only when KPIs are locked (D-18) */}
+            {/* Meeting History — visible only when KPIs are locked (D-01, D-18) */}
             {kpiLocked && (
-              <Link to={`/meeting-summary/${partner}`} className="hub-card">
-                                <h3>Meeting Summary</h3>
-                <p>Review the latest Friday meeting — notes per stop and how the week scored.</p>
-                <span className="hub-card-cta">View latest summary {'\u2192'}</span>
+              <Link to={`/meeting-history/${partner}`} className="hub-card">
+                <h3>Meeting History</h3>
+                <p>Browse all past Friday Reviews and Monday Preps — stop-by-stop notes from every ended session.</p>
+                <span className="hub-card-cta">Browse meetings {'\u2192'}</span>
               </Link>
             )}
 
