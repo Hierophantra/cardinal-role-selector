@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Meeting & Insights Expansion
-status: Defining requirements
+status: Ready to plan
 stopped_at: null
 last_updated: "2026-04-13"
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -19,14 +19,31 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-13)
 
 **Core value:** Partners have clear, locked-in accountability commitments they check in on weekly, with an admin who can track progress and facilitate structured conversations.
-**Current focus:** Defining v1.2 requirements
+**Current focus:** Phase 8 — Schema Foundation & STOPS Consolidation
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-13 — Milestone v1.2 started
+Phase: 8 of 12 (Schema Foundation & STOPS Consolidation)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-04-13 — v1.2 roadmap created, Phase 8 ready to plan
+
+Progress: [░░░░░░░░░░] 0% (v1.2)
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 0 (v1.2)
+- Average duration: —
+- Total execution time: —
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
@@ -35,15 +52,11 @@ Last activity: 2026-04-13 — Milestone v1.2 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- Per-partner mandatory+choice KPI model (7 per partner) — v1.1 key decision
-- "Spring Season 2026" replaces "90-day lock" — season-based, not fixed day count
-- Mandatory KPIs editable by Trace, just not removable by partner
-- kpi_results JSONB shape keyed by kpi_selection_id — must accommodate 7 keys
-- 12-stop meeting agenda (intro → 7 KPIs → 3 growth → wrap)
-- KPI labels embedded in scorecard JSONB for history resilience
-- Reflections optional on hit KPIs, required on misses
-- Emoji icons removed from hub cards for cleaner appearance
-- Dual meeting mode: session-based model with meeting_type column, same 12-stop structure, different framing per type
+- Dual meeting mode: session-based model with `meeting_type` column, same 12-stop structure, different framing per type
+- STOPS array must be extracted to content.js before any meeting history work (confirmed live kpi_6/kpi_7 defect)
+- `recharts` 3.8.1 is the only new npm package for v1.2
+- Export via `window.print()` + print CSS — no PDF library
+- Season hit-rate excludes `result === null` from both numerator and denominator (avoid false miss count)
 
 ### Pending Todos
 
@@ -51,7 +64,8 @@ None yet.
 
 ### Blockers/Concerns
 
-None.
+- Monday Prep copy not yet authored — `MONDAY_PREP_COPY` needs actual meeting copy (eyebrows, prompts, headings) before Phase 9 can begin. Resolve during Phase 8 planning.
+- Monday Prep stop key names must be decided before writing the CHECK constraint expansion in Migration 007. Resolve during Phase 8 planning.
 
 ### Quick Tasks Completed
 
@@ -63,5 +77,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-13
-Stopped at: Milestone v1.2 started — defining requirements
+Stopped at: v1.2 roadmap created — ready to plan Phase 8
 Resume file: None

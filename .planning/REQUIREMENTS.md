@@ -63,28 +63,28 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MEET-01 | — | Pending |
-| MEET-02 | — | Pending |
-| MEET-03 | — | Pending |
-| MEET-04 | — | Pending |
-| MEET-05 | — | Pending |
-| MEET-06 | — | Pending |
-| MEET-07 | — | Pending |
-| MEET-08 | — | Pending |
-| MEET-09 | — | Pending |
-| INSGHT-01 | — | Pending |
-| INSGHT-02 | — | Pending |
-| INSGHT-03 | — | Pending |
-| INSGHT-04 | — | Pending |
-| INSGHT-05 | — | Pending |
-| EXPRT-01 | — | Pending |
-| EXPRT-02 | — | Pending |
+| MEET-01 | Phase 8 | Pending |
+| MEET-02 | Phase 8 | Pending |
+| MEET-03 | Phase 8 | Pending |
+| MEET-04 | Phase 9 | Pending |
+| MEET-05 | Phase 9 | Pending |
+| MEET-06 | Phase 8 | Pending |
+| MEET-07 | Phase 10 | Pending |
+| MEET-08 | Phase 10 | Pending |
+| MEET-09 | Phase 10 | Pending |
+| INSGHT-01 | Phase 11 | Pending |
+| INSGHT-02 | Phase 11 | Pending |
+| INSGHT-03 | Phase 11 | Pending |
+| INSGHT-04 | Phase 11 | Pending |
+| INSGHT-05 | Phase 11 | Pending |
+| EXPRT-01 | Phase 12 | Pending |
+| EXPRT-02 | Phase 12 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16
+- Mapped to phases: 16
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-13*
-*Last updated: 2026-04-13 after initial definition*
+*Last updated: 2026-04-13 after roadmap creation*
