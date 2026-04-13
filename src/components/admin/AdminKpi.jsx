@@ -16,17 +16,9 @@ import {
   unlockPartnerSelections,
   cascadeTemplateLabelSnapshot,
 } from '../../lib/supabase.js';
-import { ADMIN_KPI_COPY, PARTNER_DISPLAY } from '../../data/content.js';
+import { ADMIN_KPI_COPY, PARTNER_DISPLAY, CATEGORY_LABELS } from '../../data/content.js';
 
-const KPI_CATEGORIES = [
-  'Sales & Business Development',
-  'Operations',
-  'Finance',
-  'Marketing',
-  'Client Satisfaction',
-  'Team & Culture',
-  'Custom',
-];
+const KPI_CATEGORIES = ['sales', 'ops', 'client', 'team', 'finance'];
 const GROWTH_TYPES = ['personal', 'business'];
 const MANAGED = ['theo', 'jerry'];
 const ARM_DISARM_MS = 3000;
@@ -242,7 +234,7 @@ function KpiTemplateLibrary() {
                     <h4 className="kpi-card-label" style={{ margin: 0 }}>
                       {t.label}
                     </h4>
-                    <span className="kpi-category-tag">{t.category}</span>
+                    <span className="kpi-category-tag">{CATEGORY_LABELS[t.category] ?? t.category}</span>
                     <div className="kpi-template-tag-row">
                       <span className="kpi-scope-tag">
                         {SCOPE_DISPLAY[t.partner_scope] ?? t.partner_scope}
@@ -373,7 +365,7 @@ function EditForm({ draft, setDraft, onSave, onCancel, saving, error }) {
       >
         {KPI_CATEGORIES.map((c) => (
           <option key={c} value={c}>
-            {c}
+            {CATEGORY_LABELS[c] ?? c}
           </option>
         ))}
       </select>

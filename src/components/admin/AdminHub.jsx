@@ -88,8 +88,7 @@ export default function AdminHub() {
 
           {/* Meeting Mode Hero Card (per D-02 / Pitfall 6) — lives OUTSIDE .hub-grid so it renders full-width */}
           <Link to="/admin/meeting" className="hub-card hub-card--hero" style={{ textDecoration: 'none' }}>
-            <div className="hub-card-icon">{'\u{1F91D}'}</div>
-            <h3>{copy.cards.meetingMode.title}</h3>
+                        <h3>{copy.cards.meetingMode.title}</h3>
             <p>{copy.cards.meetingMode.description}</p>
           </Link>
 
@@ -98,23 +97,19 @@ export default function AdminHub() {
             <div className="eyebrow">{copy.sections.partners}</div>
             <div className="hub-grid">
               <Link to="/admin" className="hub-card">
-                <div className="hub-card-icon">{'\u{1F4CA}'}</div>
-                <h3>{copy.cards.dashboard.title}</h3>
+                                <h3>{copy.cards.dashboard.title}</h3>
                 <p>{copy.cards.dashboard.description}</p>
               </Link>
               <Link to="/admin/partners" className="hub-card">
-                <div className="hub-card-icon">{'\u{1F464}'}</div>
-                <h3>{copy.cards.partnerProfiles.title}</h3>
+                                <h3>{copy.cards.partnerProfiles.title}</h3>
                 <p>{copy.cards.partnerProfiles.description}</p>
               </Link>
               <Link to="/admin/comparison" className="hub-card">
-                <div className="hub-card-icon">{'\u{1F500}'}</div>
-                <h3>{copy.cards.comparison.title}</h3>
+                                <h3>{copy.cards.comparison.title}</h3>
                 <p>{copy.cards.comparison.description}</p>
               </Link>
               <Link to="/admin/test" className="hub-card">
-                <div className="hub-card-icon">{'\u{1F9EA}'}</div>
-                <h3>Test Account</h3>
+                                <h3>Test Account</h3>
                 <p>View current state and reset individual pieces of the test account.</p>
               </Link>
             </div>
@@ -125,13 +120,11 @@ export default function AdminHub() {
             <div className="eyebrow">{copy.sections.accountability}</div>
             <div className="hub-grid">
               <Link to="/admin/kpi" className="hub-card">
-                <div className="hub-card-icon">{'\u{1F3AF}'}</div>
-                <h3>{copy.cards.kpiManagement.title}</h3>
+                                <h3>{copy.cards.kpiManagement.title}</h3>
                 <p>{copy.cards.kpiManagement.description}</p>
               </Link>
               <Link to="/admin/scorecards" className="hub-card">
-                <div className="hub-card-icon">{'\u{1F4CB}'}</div>
-                <h3>{copy.cards.scorecardOversight.title}</h3>
+                                <h3>{copy.cards.scorecardOversight.title}</h3>
                 <p>{copy.cards.scorecardOversight.description}</p>
               </Link>
             </div>

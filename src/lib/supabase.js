@@ -207,9 +207,9 @@ export const resetTestSubmission = () => resetPartnerSubmission('test');
 export const resetTestKpis = () => resetPartnerKpis('test');
 export const resetTestScorecards = () => resetPartnerScorecards('test');
 
-export async function commitScorecardWeek(partner, weekOf, kpiSelectionIds) {
+export async function commitScorecardWeek(partner, weekOf, kpiSelectionIds, kpiLabels = {}) {
   const emptyResults = Object.fromEntries(
-    kpiSelectionIds.map((id) => [id, { result: null, reflection: '' }])
+    kpiSelectionIds.map((id) => [id, { result: null, reflection: '', label: kpiLabels[id] || '' }])
   );
   const now = new Date().toISOString();
   const { data, error } = await supabase

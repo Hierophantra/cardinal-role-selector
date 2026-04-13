@@ -143,17 +143,20 @@ export default function Scorecard() {
     [lockedKpis, kpiResults]
   );
 
-  const allAnsweredWithReflection = useMemo(
+  const allAnsweredWithRequiredReflection = useMemo(
     () =>
       lockedKpis.length > 0 &&
       lockedKpis.every((k) => {
         const r = kpiResults[k.id];
-        return r && (r.result === 'yes' || r.result === 'no') && r.reflection?.trim().length > 0;
+        if (!r || (r.result !== 'yes' && r.result !== 'no')) return false;
+        // Reflection required only on missed KPIs — optional on hits
+        if (r.result === 'no') return r.reflection?.trim().length > 0;
+        return true;
       }),
     [lockedKpis, kpiResults]
   );
 
-  const canSubmit = allAnsweredWithReflection && weeklyWin.trim().length > 0 && weekRating !== null;
+  const canSubmit = allAnsweredWithRequiredReflection && weeklyWin.trim().length > 0 && weekRating !== null;
 
   const historyRows = useMemo(
     () => allScorecards.filter((s) => s.week_of !== currentWeekOf),
@@ -167,10 +170,14 @@ export default function Scorecard() {
     setCommitting(true);
     setCommitError(null);
     try {
+      const kpiLabels = Object.fromEntries(
+        lockedKpis.map((k) => [k.id, k.label_snapshot])
+      );
       const row = await commitScorecardWeek(
         partner,
         currentWeekOf,
-        lockedKpis.map((k) => k.id)
+        lockedKpis.map((k) => k.id),
+        kpiLabels
       );
       setKpiResults(row.kpi_results || {});
       setCommittedAt(row.committed_at);
@@ -289,6 +296,11 @@ export default function Scorecard() {
 
   // Render the history section — used inside both precommit and editing views
   function renderHistory() {
+    // Build a label lookup from current KPIs (for old scorecards that don't have embedded labels)
+    const currentLabelMap = Object.fromEntries(
+      lockedKpis.map((k) => [k.id, k.label_snapshot])
+    );
+
     return (
       <>
         <hr className="scorecard-divider" />
@@ -300,8 +312,11 @@ export default function Scorecard() {
             {historyRows.map((row) => {
               const expanded = expandedHistoryWeek === row.week_of;
               const rowResults = row.kpi_results || {};
-              const hitCount = lockedKpis.reduce(
-                (n, k) => (rowResults[k.id]?.result === 'yes' ? n + 1 : n),
+              // Get all KPI IDs from this row's results (includes current + any orphaned from prior selections)
+              const allResultIds = Object.keys(rowResults);
+              const totalKpis = allResultIds.length;
+              const hitCount = allResultIds.reduce(
+                (n, id) => (rowResults[id]?.result === 'yes' ? n + 1 : n),
                 0
               );
               return (
@@ -322,25 +337,27 @@ export default function Scorecard() {
                     <span className="scorecard-history-week">{formatWeekRange(row.week_of)}</span>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                       <div className="scorecard-dots">
-                        {lockedKpis.map((k) => {
-                          const r = rowResults[k.id]?.result;
+                        {allResultIds.map((id) => {
+                          const r = rowResults[id]?.result;
                           const cls = r === 'yes' ? 'yes' : r === 'no' ? 'no' : 'null';
-                          return <span key={k.id} className={`scorecard-dot ${cls}`} />;
+                          return <span key={id} className={`scorecard-dot ${cls}`} />;
                         })}
                       </div>
-                      <span className="scorecard-hit-rate">{hitCount}/{lockedKpis.length}</span>
+                      <span className="scorecard-hit-rate">{hitCount}/{totalKpis}</span>
                     </div>
                   </div>
                   {expanded && (
                     <div className="scorecard-history-detail">
-                      {lockedKpis.map((k) => {
-                        const r = rowResults[k.id];
+                      {allResultIds.map((id) => {
+                        const r = rowResults[id];
                         const result = r?.result;
+                        // Label priority: embedded in JSONB > current selection > fallback
+                        const label = r?.label || currentLabelMap[id] || '(Previous KPI)';
                         const resultLabel = result === 'yes' ? 'Yes' : result === 'no' ? 'No' : '\u2014';
                         const resultClass = result === 'yes' ? 'yes' : result === 'no' ? 'no' : 'null';
                         return (
-                          <div key={k.id} className="scorecard-history-kpi-detail">
-                            <div className="scorecard-history-kpi-label">{k.label_snapshot}</div>
+                          <div key={id} className="scorecard-history-kpi-detail">
+                            <div className="scorecard-history-kpi-label">{label}</div>
                             <div className={`scorecard-history-kpi-result ${resultClass}`}>{resultLabel}</div>
                             {r?.reflection && (
                               <div className="scorecard-history-kpi-reflection">{r.reflection}</div>

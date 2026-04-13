@@ -61,7 +61,10 @@ export default function PartnerHub() {
   const scorecardAllComplete = thisWeekCard && kpiSelections.length > 0
     ? kpiSelections.every((k) => {
         const r = thisWeekCard.kpi_results?.[k.id];
-        return r && (r.result === 'yes' || r.result === 'no') && r.reflection?.trim().length > 0;
+        if (!r || (r.result !== 'yes' && r.result !== 'no')) return false;
+        // Reflection required only on missed KPIs
+        if (r.result === 'no') return r.reflection?.trim().length > 0;
+        return true;
       })
     : false;
   const scorecardState = !kpiLocked
@@ -114,8 +117,7 @@ export default function PartnerHub() {
           <div className="hub-grid">
             {/* Role Definition — always shown (per D-01: only functional options) */}
             <Link to={`/q/${partner}`} className="hub-card">
-              <div className="hub-card-icon">{'\u{1F4CB}'}</div>
-              <h3>{copy.cards.roleDefinition.title}</h3>
+                            <h3>{copy.cards.roleDefinition.title}</h3>
               <p>{copy.cards.roleDefinition.description}</p>
             </Link>
 
@@ -126,15 +128,13 @@ export default function PartnerHub() {
                 className="hub-card"
                 onClick={() => navigate(`/kpi-view/${partner}`)}
               >
-                <div className="hub-card-icon">{'\u{1F512}'}</div>
-                <h3>{KPI_COPY.hubCard.title}</h3>
+                                <h3>{KPI_COPY.hubCard.title}</h3>
                 <p>{KPI_COPY.hubCard.description}</p>
                 <span className="hub-card-cta">{KPI_COPY.hubCard.ctaLocked}</span>
               </button>
             ) : (
               <Link to={`/kpi/${partner}`} className="hub-card">
-                <div className="hub-card-icon">{'\u{1F3AF}'}</div>
-                <h3>{KPI_COPY.hubCard.title}</h3>
+                                <h3>{KPI_COPY.hubCard.title}</h3>
                 <p>{KPI_COPY.hubCard.description}</p>
                 {kpiInProgress && (
                   <span className="hub-card-in-progress">{KPI_COPY.hubCard.inProgressLabel}</span>
@@ -148,8 +148,7 @@ export default function PartnerHub() {
             {/* Weekly Scorecard — three states per D-19 (hidden until KPIs locked per D-18) */}
             {kpiLocked && (
               <Link to={`/scorecard/${partner}`} className="hub-card">
-                <div className="hub-card-icon">{'\u{1F4CA}'}</div>
-                <h3>{SCORECARD_COPY.hubCard.title}</h3>
+                                <h3>{SCORECARD_COPY.hubCard.title}</h3>
                 <p>{SCORECARD_COPY.hubCard.description}</p>
                 <span className="hub-card-cta">
                   {scorecardState === 'complete'
@@ -164,8 +163,7 @@ export default function PartnerHub() {
             {/* Meeting Summary — visible only when KPIs are locked (D-18) */}
             {kpiLocked && (
               <Link to={`/meeting-summary/${partner}`} className="hub-card">
-                <div className="hub-card-icon">{'\u{1F4DD}'}</div>
-                <h3>Meeting Summary</h3>
+                                <h3>Meeting Summary</h3>
                 <p>Review the latest Friday meeting — notes per stop and how the week scored.</p>
                 <span className="hub-card-cta">View latest summary {'\u2192'}</span>
               </Link>
@@ -178,14 +176,12 @@ export default function PartnerHub() {
                 state={{ from: `/hub/${partner}${adminView ? '?admin=1' : ''}` }}
                 className="hub-card"
               >
-                <div className="hub-card-icon">{'\u{1F500}'}</div>
-                <h3>{copy.cards.comparison.title}</h3>
+                                <h3>{copy.cards.comparison.title}</h3>
                 <p>{copy.cards.comparison.description}</p>
               </Link>
             ) : (
               <div className="hub-card hub-card--disabled">
-                <div className="hub-card-icon">{'\u{1F500}'}</div>
-                <h3>{copy.cards.comparison.title}</h3>
+                                <h3>{copy.cards.comparison.title}</h3>
                 <p>{copy.cards.comparison.description}</p>
                 <span className="hub-card-disabled-label">
                   Unlocks when both partners submit
