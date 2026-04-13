@@ -97,11 +97,11 @@ Plans:
   3. A bar chart on the partner hub shows per-KPI hit rate across completed weeks
   4. A KPI that has been missed multiple consecutive weeks shows a streak indicator (e.g. "missed 4 weeks in a row")
   5. A dedicated progress page shows season overview, per-KPI trends, and growth priority status in one view
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 Plans:
 - [x] 11-01-PLAN.md — Install recharts, create seasonStats.js utility module, PROGRESS_COPY content, Phase 11 CSS
 - [ ] 11-02-PLAN.md — Season Overview hub card + PartnerProgress.jsx page + route wiring
-- [ ] 11-03-PLAN.md — PartnerProgressMock.jsx mock component + AdminTest link + mock route
+- [x] 11-03-PLAN.md — PartnerProgressMock.jsx mock component + AdminTest link + mock route
 **UI hint**: yes
 
 ### Phase 12: Export
@@ -131,5 +131,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 8. Schema Foundation & STOPS Consolidation | v1.2 | 2/2 | Complete   | 2026-04-13 |
 | 9. Dual Meeting Mode | v1.2 | 2/2 | Complete   | 2026-04-13 |
 | 10. Meeting History | v1.2 | 2/2 | Complete    | 2026-04-13 |
-| 11. Season Overview & Progress | v1.2 | 1/3 | In Progress|  |
+| 11. Season Overview & Progress | v1.2 | 2/3 | In Progress|  |
 | 12. Export | v1.2 | 0/? | Not started | - |
