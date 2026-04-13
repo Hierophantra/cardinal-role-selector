@@ -89,6 +89,7 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 | Emoji icons removed from hub cards | Cleaner, more professional appearance | ✓ Good |
 | Dual meeting mode: session-based with meeting_type column | Same 12-stop structure, different framing per type; one meeting per type per week enforced at DB level | ✓ Good (Phase 8) |
 | STOPS array single source of truth in content.js | Eliminates copy drift between consumers; fixes kpi_6/kpi_7 defect | ✓ Good (Phase 8) |
+| FRIDAY_STOPS/MONDAY_STOPS separate arrays in content.js | Each meeting type has its own array; KPI_STOP_COUNT derived from FRIDAY_STOPS; KPI_START_INDEX=2 accounts for clear_the_air prepended at index 0 | ✓ Good (Phase 13) |
 
 ## Current Milestone: v1.3 Monday Prep Redesign
 
@@ -103,7 +104,7 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 
 v1.2 shipped — Full accountability platform with dual meeting modes (Friday Review + Monday Prep), meeting history, and season progress dashboard. Partners see KPI hit-rate trends, miss streak alerts, and growth priority status. 4 phases, 9 plans, 11,897 LOC.
 
-v1.3 in progress — Phase 12 complete: migration 008_schema_v13.sql ready to deploy. Expands meeting_notes CHECK constraint to 18 stop keys (12 existing + clear_the_air shared + 5 Monday Prep-only). Phases 13-14 unblocked pending migration deployment to Supabase.
+v1.3 in progress — Phase 12 complete: migration 008_schema_v13.sql ready to deploy. Phase 13 complete: dual stop arrays (FRIDAY_STOPS 13 stops, MONDAY_STOPS 6 stops) defined in content.js; all 6 Monday Prep stop components built in AdminMeetingSession.jsx; MeetingSummary.jsx and mock files updated to use FRIDAY_STOPS. Phase 14 (Monday Prep mock) up next.
 
 ## Evolution
 
