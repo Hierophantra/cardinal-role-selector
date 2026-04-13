@@ -40,7 +40,7 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 - [ ] Season overview: partners see KPI hit-rate trends and season progress on their hub
 - [ ] Meeting history: past meetings visible to both admin and partners (not just latest)
 - [ ] Export capability: meeting notes and scorecard data exportable
-- [ ] Dual meeting mode: Friday Review + Monday Prep sessions with different framing
+- ✓ Dual meeting mode: Friday Review + Monday Prep sessions with different framing — v1.2 (Validated in Phase 09)
 - [ ] Partner progress view: dedicated progress dashboard beyond the hub status line
 
 ### Out of Scope
