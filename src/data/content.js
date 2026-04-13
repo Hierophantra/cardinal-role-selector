@@ -675,7 +675,6 @@ export const MONDAY_STOPS = [
   'week_preview',
   'priorities_focus',
   'risks_blockers',
-  'growth_checkin',
   'commitments',
 ];
 

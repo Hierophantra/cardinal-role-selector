@@ -41,12 +41,30 @@ export default function PartnerHub() {
       .finally(() => setLoading(false));
   }, [partner]);
 
+  // Season stats derivation (Phase 11 — D-04)
+  // All hooks must run unconditionally before any early return
+  const kpiLocked = kpiSelections.length > 0 && Boolean(kpiSelections[0]?.locked_until);
+  const seasonStats = useMemo(
+    () => kpiLocked ? computeSeasonStats(kpiSelections, scorecards) : null,
+    [kpiLocked, kpiSelections, scorecards]
+  );
+  const streaks = useMemo(
+    () => kpiLocked ? computeStreaks(kpiSelections, scorecards) : [],
+    [kpiLocked, kpiSelections, scorecards]
+  );
+  const weekNumber = useMemo(() => computeWeekNumber(), []);
+  const worstStreak = useMemo(() => {
+    if (!streaks.length) return null;
+    const active = streaks.filter((s) => s.streak >= 2);
+    if (!active.length) return null;
+    return active.reduce((worst, s) => (s.streak > worst.streak ? s : worst), active[0]);
+  }, [streaks]);
+
   if (loading) return null;
 
   const partnerName = PARTNER_DISPLAY[partner] ?? partner;
   const copy = HUB_COPY.partner;
 
-  const kpiLocked = kpiSelections.length > 0 && Boolean(kpiSelections[0]?.locked_until);
   const kpiInProgress = kpiSelections.length > 0 && !kpiLocked;
 
   // Scorecard state derivation (Phase 3 — D-19)
@@ -76,23 +94,7 @@ export default function PartnerHub() {
         ? 'inProgress'
         : 'notCommitted';
 
-  // Season stats derivation (Phase 11 — D-04)
-  const seasonStats = useMemo(
-    () => kpiLocked ? computeSeasonStats(kpiSelections, scorecards) : null,
-    [kpiLocked, kpiSelections, scorecards]
-  );
-  const streaks = useMemo(
-    () => kpiLocked ? computeStreaks(kpiSelections, scorecards) : [],
-    [kpiLocked, kpiSelections, scorecards]
-  );
-  const weekNumber = useMemo(() => computeWeekNumber(), []);
   const perKpiStats = seasonStats?.perKpiStats ?? [];
-  const worstStreak = useMemo(() => {
-    if (!streaks.length) return null;
-    const active = streaks.filter((s) => s.streak >= 2);
-    if (!active.length) return null;
-    return active.reduce((worst, s) => (s.streak > worst.streak ? s : worst), active[0]);
-  }, [streaks]);
 
   // Precedence: error > !kpiLocked existing branches > scorecard branches (new, when kpiLocked) > fallback
   const statusText = error
