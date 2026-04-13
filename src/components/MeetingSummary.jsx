@@ -13,21 +13,8 @@ import {
   PARTNER_DISPLAY,
   MEETING_COPY,
   GROWTH_STATUS_COPY,
+  AGENDA_STOPS,
 } from '../data/content.js';
-
-// Fixed 10-stop agenda — mirrors AdminMeetingSession.jsx STOPS array.
-const STOPS = [
-  'intro',
-  'kpi_1',
-  'kpi_2',
-  'kpi_3',
-  'kpi_4',
-  'kpi_5',
-  'growth_personal',
-  'growth_business_1',
-  'growth_business_2',
-  'wrap',
-];
 
 export default function MeetingSummary() {
   const { partner } = useParams();
@@ -139,7 +126,7 @@ export default function MeetingSummary() {
                 </p>
               </div>
 
-              {STOPS.map((stopKey, i) => (
+              {AGENDA_STOPS.map((stopKey, i) => (
                 <StopBlock
                   key={stopKey}
                   stopKey={stopKey}

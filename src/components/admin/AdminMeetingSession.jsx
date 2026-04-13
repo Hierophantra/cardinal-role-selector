@@ -16,27 +16,9 @@ import {
   MEETING_COPY,
   GROWTH_STATUS_COPY,
   PARTNER_DISPLAY,
+  AGENDA_STOPS,
+  KPI_STOP_COUNT,
 } from '../../data/content.js';
-
-// --- Fixed 12-stop agenda (D-14, updated Phase 6) ---
-// Enforced at DB layer via meeting_notes.agenda_stop_key CHECK constraint (migration 005, pre-expanded to kpi_7).
-// Order is canonical: intro → kpi_1..7 → personal growth → business growth 1..2 → wrap.
-const STOPS = [
-  'intro',
-  'kpi_1',
-  'kpi_2',
-  'kpi_3',
-  'kpi_4',
-  'kpi_5',
-  'kpi_6',
-  'kpi_7',
-  'growth_personal',
-  'growth_business_1',
-  'growth_business_2',
-  'wrap',
-];
-
-const KPI_STOP_COUNT = STOPS.filter(s => s.startsWith('kpi_')).length;
 
 const PARTNERS = ['theo', 'jerry'];
 const DEBOUNCE_MS = 400;
@@ -169,7 +151,7 @@ export default function AdminMeetingSession() {
   // --- Navigation ---
   const goNext = useCallback(() => {
     setDirection(1);
-    setStopIndex((i) => Math.min(i + 1, STOPS.length - 1));
+    setStopIndex((i) => Math.min(i + 1, AGENDA_STOPS.length - 1));
   }, []);
 
   const goPrev = useCallback(() => {
@@ -345,7 +327,7 @@ export default function AdminMeetingSession() {
     );
   }
 
-  const currentStopKey = STOPS[stopIndex];
+  const currentStopKey = AGENDA_STOPS[stopIndex];
   const weekLabel = formatWeekRange(meeting.week_of);
 
   return (
@@ -353,7 +335,7 @@ export default function AdminMeetingSession() {
       {/* === Header === */}
       <div className="meeting-shell-header">
         <div className="meeting-progress-pill">
-          {MEETING_COPY.progressPill(stopIndex + 1, STOPS.length)}
+          {MEETING_COPY.progressPill(stopIndex + 1, AGENDA_STOPS.length)}
         </div>
         <div
           className="muted"
@@ -425,7 +407,7 @@ export default function AdminMeetingSession() {
           type="button"
           className="btn btn-primary"
           onClick={goNext}
-          disabled={stopIndex === STOPS.length - 1}
+          disabled={stopIndex === AGENDA_STOPS.length - 1}
         >
           Next {'\u2192'}
         </button>

@@ -6,22 +6,8 @@ import {
   MEETING_COPY,
   GROWTH_STATUS_COPY,
   PARTNER_DISPLAY,
+  AGENDA_STOPS,
 } from '../../data/content.js';
-
-// --- Fixed 10-stop agenda (mirrors AdminMeetingSession.jsx) ---
-// Canonical order: intro → kpi_1..5 → personal growth → business growth 1..2 → wrap.
-const STOPS = [
-  'intro',
-  'kpi_1',
-  'kpi_2',
-  'kpi_3',
-  'kpi_4',
-  'kpi_5',
-  'growth_personal',
-  'growth_business_1',
-  'growth_business_2',
-  'wrap',
-];
 
 const PARTNERS = ['theo', 'jerry'];
 const DEBOUNCE_MS = 400;
@@ -228,7 +214,7 @@ export default function AdminMeetingSessionMock() {
   // --- Navigation ---
   const goNext = useCallback(() => {
     setDirection(1);
-    setStopIndex((i) => Math.min(i + 1, STOPS.length - 1));
+    setStopIndex((i) => Math.min(i + 1, AGENDA_STOPS.length - 1));
   }, []);
 
   const goPrev = useCallback(() => {
@@ -305,7 +291,7 @@ export default function AdminMeetingSessionMock() {
     navigate('/admin/test');
   }, [endPending, navigate]);
 
-  const currentStopKey = STOPS[stopIndex];
+  const currentStopKey = AGENDA_STOPS[stopIndex];
   const weekLabel = formatWeekRange(meeting.week_of);
 
   return (
@@ -313,7 +299,7 @@ export default function AdminMeetingSessionMock() {
       {/* === Header === */}
       <div className="meeting-shell-header">
         <div className="meeting-progress-pill">
-          {MEETING_COPY.progressPill(stopIndex + 1, STOPS.length)}
+          {MEETING_COPY.progressPill(stopIndex + 1, AGENDA_STOPS.length)}
         </div>
         <span className="eyebrow" style={{ color: 'var(--gold)', fontSize: 11 }}>
           MOCK
@@ -383,7 +369,7 @@ export default function AdminMeetingSessionMock() {
           type="button"
           className="btn btn-primary"
           onClick={goNext}
-          disabled={stopIndex === STOPS.length - 1}
+          disabled={stopIndex === AGENDA_STOPS.length - 1}
         >
           Next {'\u2192'}
         </button>
