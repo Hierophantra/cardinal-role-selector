@@ -66,7 +66,10 @@ Plans:
   2. A Monday Prep session shows Monday Prep eyebrows, prompts, and headings at each of the 12 stops
   3. A Friday Review session shows the original Friday Review framing (no regression)
   4. Viewing an ended meeting shows a read-only session — no edit fields, no End Meeting button
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 09-01-PLAN.md — createMeeting extension + dual CTA landing + type badges + CSS foundations
+- [ ] 09-02-PLAN.md — Session copy swap + blue accent + read-only ended meetings
 **UI hint**: yes
 
 ### Phase 10: Meeting History
@@ -119,7 +122,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. Partner & Meeting Flow Updates | v1.1 | 3/3 | Complete | 2026-04-12 |
 | 7. Admin Model Evolution | v1.1 | 2/2 | Complete | 2026-04-13 |
 | 8. Schema Foundation & STOPS Consolidation | v1.2 | 2/2 | Complete   | 2026-04-13 |
-| 9. Dual Meeting Mode | v1.2 | 0/? | Not started | - |
+| 9. Dual Meeting Mode | v1.2 | 0/2 | Not started | - |
 | 10. Meeting History | v1.2 | 0/? | Not started | - |
 | 11. Season Overview & Progress | v1.2 | 0/? | Not started | - |
 | 12. Export | v1.2 | 0/? | Not started | - |
