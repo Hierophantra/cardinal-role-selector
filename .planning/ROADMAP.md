@@ -81,7 +81,10 @@ Plans:
   2. Clicking any meeting in the list loads that specific meeting's notes (not always the latest)
   3. Trace can open any past meeting from admin and see it in read-only mode
   4. A meeting that ended in a prior week shows its stop-by-stop notes accurately
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 10-01-PLAN.md — Routes + MeetingHistory.jsx + PartnerHub card swap + CSS classes
+- [ ] 10-02-PLAN.md — MeetingSummary.jsx ID-based loading + back-nav + MEET-09 verification
 **UI hint**: yes
 
 ### Phase 11: Season Overview & Progress
@@ -123,6 +126,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. Admin Model Evolution | v1.1 | 2/2 | Complete | 2026-04-13 |
 | 8. Schema Foundation & STOPS Consolidation | v1.2 | 2/2 | Complete   | 2026-04-13 |
 | 9. Dual Meeting Mode | v1.2 | 2/2 | Complete   | 2026-04-13 |
-| 10. Meeting History | v1.2 | 0/? | Not started | - |
+| 10. Meeting History | v1.2 | 0/2 | Planning complete | - |
 | 11. Season Overview & Progress | v1.2 | 0/? | Not started | - |
 | 12. Export | v1.2 | 0/? | Not started | - |
