@@ -45,7 +45,7 @@ Declared values (must be multiples of 4). Derived from existing patterns in `src
 
 Exceptions:
 - Week picker label + select + button row uses `gap: 16px` with `marginLeft: auto` on the button — maintain this layout for the dual-CTA row
-- Sticky meeting nav bar: fixed `height: 64px`, `padding: 0 40px` — do not alter
+- Sticky meeting nav bar: fixed `height: 64px`, `padding: 0 40px` — **inherited from Phase 4 implementation; do not replicate this value in any new element introduced in this phase**
 - Disabled button touch target: maintain minimum `height: 48px` for the two new CTA buttons
 
 ---
@@ -63,7 +63,7 @@ All values extracted from `src/index.css` measured usage. No new sizes introduce
 
 Additional constrained usages in this phase:
 - Disabled button tooltip text (title attr): browser default rendering — no custom style
-- "Ended [date]" status label: 13px, weight 400, color `var(--muted)`
+- "Ended [date]" status label: `font-size: 12px`, weight 400, color `var(--muted)`, `font-style: italic` — muted color and italic style are sufficient to visually distinguish it without a fifth size
 - Type badge text on past meeting cards: 12px, weight 700, uppercase, letter-spacing 0.12em — matches `.meeting-progress-pill` pattern
 - Progress pill text: 12px, weight 700, uppercase, letter-spacing 0.12em — existing `.meeting-progress-pill` class
 
@@ -108,6 +108,31 @@ Note on progress pill: Existing `.meeting-progress-pill` uses `color: var(--gold
 ```
 
 Add to `:root` block in `src/index.css` immediately after the `--gold` line.
+
+---
+
+## Visuals
+
+### Primary Focal Points
+
+**Landing page (`AdminMeeting.jsx`):** The primary visual anchor is the dual CTA button row — "Start Friday Review" and "Start Monday Prep" side by side. All other landing page elements (week picker, past meetings list) are subordinate to this row. The two buttons must have equal visual weight with only color distinguishing their type (red vs blue fill).
+
+**Session view (`AdminMeetingSession.jsx`):** The primary visual anchor is the 28px stop title displayed at the top of the active stop content area. All supporting elements — the eyebrow label, progress pill, and nav arrows — orbit this heading and must not compete with it in visual weight.
+
+### Layout Hierarchy
+
+Landing page reading order:
+1. "Meeting Mode" neutral heading (`.screen-header`)
+2. Week picker select (unchanged)
+3. Dual CTA button row (primary anchor)
+4. Past meetings list with type badges (supporting)
+
+Session view reading order:
+1. Sticky meeting nav bar (persistent, minimal)
+2. 28px stop title (primary anchor)
+3. Eyebrow label + progress pill (supporting context)
+4. Stop content area (textarea fields, KPI cells)
+5. Prev/Next navigation (always visible)
 
 ---
 
@@ -164,7 +189,7 @@ Badge anatomy:
 - Prev/Next navigation: fully active
 - Status label: rendered near session header, below the stop eyebrow
   - Copy: `"Ended [formatted date]"` — e.g. "Ended Apr 9, 2026"
-  - Style: `font-size: 13px; color: var(--muted); font-style: italic`
+  - Style: `font-size: 12px; color: var(--muted); font-style: italic`
   - Position: below `.meeting-shell-header`, above the stop content area
 
 ---
