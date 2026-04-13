@@ -1,213 +1,272 @@
-# Domain Pitfalls
+# Pitfalls Research
 
-**Domain:** Partner KPI accountability tool with weekly scorecards and admin meeting facilitation
-**Researched:** 2026-04-09
-**Confidence:** MEDIUM — drawn from training knowledge of accountability software patterns, Supabase data modeling, and direct analysis of the existing codebase
+**Domain:** Adding season overview, meeting history, CSV export, and dual meeting mode to an existing partner accountability tool with JSONB scorecards and constrained meeting schema (v1.2 expansion)
+**Researched:** 2026-04-12
+**Confidence:** HIGH — based on direct codebase inspection; several pitfalls are confirmed live defects, not hypothetical
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites or major user trust collapse.
+Mistakes that cause data loss, silent rendering errors, or hard schema blockers.
 
 ---
 
-### Pitfall 1: Treating the Weekly Scorecard as Stateless
+### Pitfall 1: STOPS Array Already Diverged Across Four Files (Confirmed Live Defect)
 
-**What goes wrong:** The scorecard is implemented as a form that saves the current week's answers but doesn't create a time-series record. Partners fill in "yes/no" for each KPI, and the submission overwrites the previous week's data (same `upsert` pattern already used for the submissions table). After a few weeks, historical data is gone.
+**What goes wrong:**
+`AdminMeetingSession.jsx` defines 12 stops (`kpi_1`..`kpi_7` + growth + intro + wrap). Three other files — `MeetingSummary.jsx`, `AdminMeetingSessionMock.jsx`, and `MeetingSummaryMock.jsx` — still define the old 10-stop version, missing `kpi_6` and `kpi_7`. When meeting history surfaces past Friday sessions to partners, or when mock files are used in demos, `kpi_6` and `kpi_7` notes are silently omitted. They exist in the DB but are never rendered.
 
-**Why it happens:** The existing codebase uses `upsert` with `onConflict: 'partner'` — a natural copy/paste starting point for scorecard writes. It works for the role questionnaire because that's a one-time, single-record-per-partner event. Scorecards are fundamentally different: each week is a new record, not an update.
+**Why it happens:**
+STOPS is copy-pasted rather than imported from a shared constant. When the session was expanded from 10 to 12 stops for v1.1's 7-KPI model, only `AdminMeetingSession.jsx` was updated.
 
-**Consequences:** No accountability trend, no way to see if a partner's KPI success rate is improving or declining, admin meeting facilitation loses the "last week vs. this week" comparison that makes Friday meetings meaningful. A rewrite of the data model is required once this is caught.
+**How to avoid:**
+Extract STOPS to `src/data/content.js` as a named export (`AGENDA_STOPS`). All files import from one source. Fix this before building meeting history — history renders these same stops.
 
-**Prevention:**
-- Design the `scorecards` table from day one with a `week_of` (date, ISO Monday) primary key alongside `partner`.
-- Composite primary key: `(partner, week_of)` — never `upsert` on partner alone.
-- Week is derived in the client: `startOfWeek(new Date(), { weekStartsOn: 1 })` — never user-supplied.
+**Warning signs:**
+- Any `grep` for `const STOPS = [` in `src/` returns more than one result
+- Meeting summary shows 5 KPI stops; session recorded 7
+- kpi_6/kpi_7 notes exist in Supabase `meeting_notes` but never appear to partners
 
-**Detection (warning sign):** If a developer asks "should I just upsert the scorecard by partner like we do for submissions?" — stop and correct the model immediately.
-
-**Phase:** Address in the database schema design task, before any scorecard UI is built.
-
----
-
-### Pitfall 2: Orphaned KPI Selections When Admin Edits Templates
-
-**What goes wrong:** Admin can create and edit KPI templates. A partner selects 5 KPIs from the current template. Later, admin edits the template (renames a KPI, removes one, changes a metric). The partner's locked selections now reference KPIs that either no longer exist or have changed meaning. The scorecard silently breaks or shows the old label.
-
-**Why it happens:** Storing only `kpi_id` foreign keys in the partner's selection record, then rendering the KPI label by joining to the current template. If the template row changes, the label changes for historical records too.
-
-**Consequences:** A partner thinks they committed to "Monthly Recurring Revenue" but the admin renamed it to "New Sales Revenue" mid-cycle. The 90-day lock-in loses integrity.
-
-**Prevention:**
-- Snapshot the KPI label into the partner selection record at lock-in time. Store both `kpi_id` (for joins) and `kpi_label_snapshot` (for display).
-- Alternatively, treat template edits as new template versions — never mutate an active template row, create a new one. Mark old versions archived.
-- The simpler path for this 3-user tool: snapshot labels into the selection record. Don't over-engineer versioning.
-
-**Detection:** Any time the data model has `partner_kpi_selections.kpi_id → kpi_templates.id` without a label snapshot column, this pitfall is live.
-
-**Phase:** Schema design, before KPI template management UI is built.
+**Phase to address:**
+First phase that touches meeting history or the partner-facing summary. Do not defer past the dual meeting mode phase — that adds a third stop-list variant.
 
 ---
 
-### Pitfall 3: 90-Day Lock Is UX, Not Data
+### Pitfall 2: Adding `meeting_type` as NOT NULL Without a Default Breaks `createMeeting` Immediately
 
-**What goes wrong:** The "90-day lock" is implemented entirely in the frontend — a conditional that checks a date and disables the edit button. There is no server-side enforcement. Admin bypasses are done by toggling UI state rather than writing an explicit unlock record. A future developer (or the admin using a different device/session) doesn't see the lock.
+**What goes wrong:**
+`createMeeting(weekOf)` inserts `{ week_of, held_at }` only. If `meeting_type` is added as NOT NULL without a DEFAULT, every call to `createMeeting` after the migration fails with a Postgres constraint violation. Meeting creation is completely broken until the application code is also updated — and the migration and the deploy are separate events in Supabase.
 
-**Why it happens:** Locks are easy to fake in UI. The existing app already uses env-var access codes, not row-level security — so developers pattern-match to "we do auth on the client."
+**Why it happens:**
+The schema migration runs before the application code is deployed. There is a window (or a permanent failure if the deploy is skipped) where the DB rejects the insert the app makes.
 
-**Consequences:** Admin accidentally unlocks KPIs without an audit trail. Partners see inconsistent lock state across sessions. The accountability ritual loses credibility if locks feel arbitrary.
+**How to avoid:**
+Add `meeting_type` as `VARCHAR NOT NULL DEFAULT 'friday_review'`. All existing rows and all existing `createMeeting` calls continue to work. Update `createMeeting` to accept an optional `meetingType = 'friday_review'` parameter. The default handles backward compatibility.
 
-**Prevention:**
-- Store `locked_at` (timestamp) and `locked_by` (admin) in the KPI selection record.
-- Unlock is an explicit write: create an `unlock_events` record with `reason` and `unlocked_by`. Never delete the lock — add an unlock event and check for it.
-- UI reads lock status from the database, not from local state.
+**Warning signs:**
+- Migration adds NOT NULL column without a DEFAULT
+- `createMeeting` still only passes `{ week_of, held_at }` after the migration is written
 
-**Detection:** If the unlock flow is "set a React state flag to true" rather than a Supabase write, the lock is fake.
-
-**Phase:** KPI lock-in feature, same sprint as the 90-day confirmation UX.
-
----
-
-### Pitfall 4: Admin Meeting Mode Built as a Page, Not a State Machine
-
-**What goes wrong:** The admin meeting facilitation UI is a static page with a list of KPIs and a "next" button. During a real Friday meeting, the admin needs to know: where they are in the agenda, what the partner said last week, what was flagged as a blocker, and what needs annotation. A simple list page with no persistent state turns into frantic scrolling mid-meeting.
-
-**Why it happens:** Meeting mode is mocked as "admin sees everything" rather than "admin is walking through a structured agenda with checkpoints."
-
-**Consequences:** The meeting runs off the tool. Partners and admin revert to verbal-only with no written record. The entire purpose of the platform — creating a written accountability artifact per Friday meeting — fails.
-
-**Prevention:**
-- Model meeting mode as a sequential state machine: one KPI per screen, with current week check-in status, last week's answer, and the reflection text.
-- Each agenda "stop" has a distinct URL or step index so the admin can share their screen and partners see what's under discussion.
-- Admin annotation (override, note) happens inline at each stop, not on a separate page afterward.
-- After all KPIs are walked, a meeting summary is generated and can be saved (a `meeting_notes` record in Supabase).
-
-**Detection:** If the meeting mode design is "scroll through a long page of all KPIs," it will fail in a live meeting.
-
-**Phase:** Admin meeting facilitation feature, plan the state machine before building any UI.
+**Phase to address:**
+Dual meeting mode phase. The migration and the `createMeeting` update ship together.
 
 ---
 
-## Moderate Pitfalls
+### Pitfall 3: `agenda_stop_key` CHECK Constraint Rejects Any Monday Prep Stop Key
+
+**What goes wrong:**
+`meeting_notes.agenda_stop_key` has a CHECK constraint (documented in `AdminMeetingSession.jsx` line 22: "migration 005, pre-expanded to kpi_7") listing exactly: `intro, kpi_1..kpi_7, growth_personal, growth_business_1, growth_business_2, wrap`. Any Monday Prep stop key that does not appear in this list (e.g. `prep_blockers`, `monday_focus`, `carry_forward`) causes `upsertMeetingNote` to throw a Postgres constraint violation. Notes silently fail to save — the only trace is a `console.error`.
+
+**Why it happens:**
+The CHECK constraint was written for Friday Review only. It functions as a DB-level enum. No mechanism exists to add new stop keys without a migration.
+
+**How to avoid:**
+Before writing any Monday Prep stop keys in application code, run a migration that expands the CHECK to include all Monday Prep stop keys. Finalize the Monday Prep stop-key list before writing the migration — partial expansions require a second migration. Alternatively, convert the column to unconstrained VARCHAR (acceptable given only 3 users ever write notes; the constraint provides minimal safety at this scale).
+
+**Warning signs:**
+- New stop keys appear in a component's STOPS array before the migration runs
+- `upsertMeetingNote` logs an error but the UI shows no visible failure
+- Notes appear to save (no error shown) but are missing when the meeting is reopened
+
+**Phase to address:**
+Dual meeting mode phase, first task before any component work. The migration is the gate.
 
 ---
 
-### Pitfall 5: Partner Hub Becomes Navigation Debt
+### Pitfall 4: `MeetingSummary.jsx` Hardcodes "Find the Latest Ended Meeting" — Cannot Show History
 
-**What goes wrong:** The hub screen (where partners choose between Role Definition, KPI Selection, Scorecard) is built as a simple link list. As features are added — growth priorities, progress view, upcoming meeting prep — the hub becomes a cluttered menu. Partners don't know what action they need to take this week.
+**What goes wrong:**
+`MeetingSummary.jsx` line 58: `const ended = meetings.find((m) => m.ended_at != null)`. Since `fetchMeetings` orders by `held_at DESC`, this always returns the most recently ended meeting. If partners navigate to any history entry, they see the latest meeting's data regardless of which entry they selected. The component appears to work but shows wrong data for any non-latest entry.
 
-**Prevention:**
-- Hub shows contextual state: if KPI selection is not yet done, that card is highlighted and the others are dimmed. If this week's scorecard is pending, the scorecard card has a prominent CTA. Role definition is de-emphasized (already done).
-- Hub is a "what do you need to do now" screen, not a navigation drawer.
-- Design hub to drive one primary action per session, not to expose all routes equally.
+**Why it happens:**
+The component was built for a single "show your last meeting" use case. The route is `/meeting-summary/:partner` with no meeting ID segment. Without a `:meetingId` in the route, the component has no way to load a specific meeting.
 
-**Detection:** If the hub renders three equally-weighted cards/links with no state-driven emphasis, usability will degrade as features grow.
+**How to avoid:**
+Add `:meetingId` to the route: `/meeting-summary/:partner/:meetingId`. The component loads the specific meeting via `fetchMeeting(meetingId)` rather than scanning the list. The history list page generates links to these URLs. The existing "latest meeting" behavior becomes the history list's first entry link.
 
-**Phase:** Hub screen build — decide on contextual vs. static before implementing.
+**Warning signs:**
+- History list links go to `/meeting-summary/:partner` without a meeting ID
+- MeetingSummary uses `.find()` or `meetings[0]` instead of fetching by ID
+- Clicking an older entry in history always renders the same content
 
----
-
-### Pitfall 6: Growth Priority Tracking Has No Definition of "Done"
-
-**What goes wrong:** Growth priorities are admin-controlled with optional partner input. But "tracking" a growth priority has no defined lifecycle: what does it mean for a priority to be complete, stalled, or active? Without this, admin annotations pile up with no resolution, and the Friday meeting has no way to conclude a growth priority discussion.
-
-**Prevention:**
-- Define status enum at schema time: `active`, `achieved`, `stalled`, `deferred`.
-- Admin transitions status explicitly — status is not inferred from annotation content.
-- Each transition optionally captures a note.
-- UI surfaces current status clearly; meeting mode includes a "change status" action per growth priority.
-
-**Detection:** If the growth priority schema only has `is_complete: boolean`, it will be insufficient within a month of use.
-
-**Phase:** Growth priority schema design, before admin control panel UI.
+**Phase to address:**
+Meeting history phase. Route change and load logic change ship together.
 
 ---
 
-### Pitfall 7: Binary Check-In Without Reflection Text Enforcement
+### Pitfall 5: Season Hit-Rate Calculation Conflates Null Results With Misses
 
-**What goes wrong:** The scorecard asks yes/no per KPI and then prompts for "success contributors / blockers." Partners can submit "yes" or "no" for every KPI without writing anything in the reflection field. After a few weeks the reflection fields are all empty and the Friday meeting has no qualitative data to discuss.
+**What goes wrong:**
+`commitScorecardWeek` initializes `kpi_results` with `result: null` for each KPI ID (correct for controlled textarea behavior). If the season overview hit-rate counts `null` as a miss — or includes null-result entries in the denominator — the hit-rate is wrong in two ways: early-season rows with unanswered KPIs look like all-miss weeks, and any admin-reopened week resets entries to null, making a partner's rate drop artificially.
 
-**Prevention:**
-- Reflection text should be required if at least one KPI is marked "no." A single blocker explanation per submission is more realistic than per-KPI text.
-- Alternatively: all-yes submissions allow empty reflection; any-no submissions require at least one sentence.
-- Do not require per-KPI reflection — that's 5 fields to fill and creates friction that kills weekly compliance.
+**Why it happens:**
+The JSONB structure stores "not yet answered" as `{ result: null }`, which looks structurally similar to a miss `{ result: 'no' }` to naive counting logic.
 
-**Detection:** If the scorecard form allows submission with zero reflection text regardless of check-in answers, behavioral data quality will degrade.
+**How to avoid:**
+Treat `result === null` as "not yet answered" — exclude from both numerator and denominator. Only `result === 'yes'` or `result === 'no'` are answered weeks. The existing `scorecardAllComplete` logic in `PartnerHub.jsx` already handles this correctly — reuse that pattern exactly. Validate the calculation against real Theo/Jerry scorecard rows in Supabase before shipping.
 
-**Phase:** Scorecard UI build — bake the validation rule in before initial release.
+**Warning signs:**
+- Season overview shows 0% or very low hit-rate early in the season
+- Hit-rate drops the week after an admin reopens a scorecard
+- Season overview disagrees with manually counting the scorecard rows
 
----
-
-### Pitfall 8: Supabase RLS Absent on Sensitive Tables
-
-**What goes wrong:** The existing app uses env-var access codes with no Supabase Row Level Security. This is acceptable for the role questionnaire (one-time write, admin reads everything via anon key). For scorecards, KPI selections, and growth priorities, this means any user who figures out the anon key can read both partners' accountability data — including what they marked as "blocked" and their private reflection text.
-
-**Why it happens:** The existing pattern has no RLS, so new tables are created without it by default.
-
-**Prevention:**
-- Add RLS policies on all new tables: `scorecards`, `kpi_selections`, `growth_priorities`, `unlock_events`.
-- Partner-facing reads: `auth.role() = 'anon'` is insufficient — tie reads to the `partner` column matching a session value stored in localStorage or a Supabase Edge Function that validates the access code server-side.
-- For a 3-user tool: the pragmatic minimum is making anon key reads return only the authenticated partner's rows. Admin reads all rows via a separate Supabase service role key never exposed to the client.
-- Full proper solution: access code validation happens in a Supabase Edge Function that returns a signed JWT, enabling real RLS. This is v2 territory unless data sensitivity demands it now.
-
-**Detection:** If new tables are created with `ALTER TABLE ... DISABLE ROW LEVEL SECURITY` (the default), any user who extracts the anon key from the Vite bundle can query everything.
-
-**Phase:** Schema design — make a deliberate decision about RLS scope before building any new tables.
+**Phase to address:**
+Season overview phase. Verify against known data before considering the feature done.
 
 ---
 
-## Minor Pitfalls
+### Pitfall 6: CSV Export Serializes JSONB `kpi_results` as a Raw JSON Blob
+
+**What goes wrong:**
+`kpi_results` is a JSONB column keyed by UUID: `{ "abc-uuid": { label: "...", result: "yes", reflection: "..." } }`. A naive CSV export that calls `JSON.stringify(row.kpi_results)` produces one unreadable cell per scorecard row. Trace cannot use this output in a spreadsheet. The export appears complete but is functionally useless.
+
+**Why it happens:**
+JSONB columns do not map to flat CSV rows without manual unwrapping. The export function must iterate entries and emit one output row per KPI per week.
+
+**How to avoid:**
+Export scorecards as: one row per KPI per week, columns `partner, week_of, kpi_label, result, reflection`. Iterate `Object.entries(row.kpi_results)` for each scorecard. Use the embedded `label` field (added in v1.1 — it is the canonical historical record; do not attempt to rejoin against `kpi_selections` at export time).
+
+For meeting notes export: one row per note, columns `meeting_id, week_of, meeting_type, agenda_stop_key, note_body`.
+
+**Warning signs:**
+- CSV download works without error but opening in Excel shows a `{` in column D
+- Export button is wired to `JSON.stringify` or a direct `.select('*')` without post-processing
+
+**Phase to address:**
+Export phase. Validate by opening the downloaded file in Excel and confirming human-readable rows before shipping.
 
 ---
 
-### Pitfall 9: Framer Motion Variants Re-Animated on Route Re-Entry
+### Pitfall 7: No Guard Against Duplicate Meetings for the Same Week and Type
 
-**What goes wrong:** Existing screens use `fade-in` class animations. Meeting mode or scorecard flow navigates between steps. If route-level components re-mount on each step transition, partners see the full page fade-in on every "next" click, making the tool feel sluggish.
+**What goes wrong:**
+`createMeeting(weekOf)` is a plain insert with no uniqueness check. Trace can start two Friday Review meetings for the same week (double-click, navigate back and click again). Past meetings list shows duplicates. Meeting notes are split across two meeting IDs. With dual meeting mode, duplicating becomes easier — two Friday Reviews and two Monday Preps per week are structurally possible.
 
-**Prevention:**
-- Use Framer Motion's `AnimatePresence` with `mode="wait"` for step transitions within a flow.
-- Reserve route-level fade-in for first load; step transitions should use a faster, lighter animation (slide or quick fade, 150ms not 300ms).
+**Why it happens:**
+The `meetings` table currently has no unique constraint on `(week_of)` or `(week_of, meeting_type)`. The UI performs no pre-check.
 
-**Phase:** Scorecard step flow and meeting mode step flow — set animation strategy before building multi-step UIs.
+**How to avoid:**
+Two layers:
+1. DB: add `UNIQUE (week_of, meeting_type)` when `meeting_type` is added. Use `upsert` on conflict or catch the unique constraint violation and redirect to the existing meeting.
+2. UI: in `AdminMeeting.jsx`, check the `meetings` list before rendering the Start button. If a meeting already exists for the selected week and type, show "Resume" linking to the existing meeting ID instead of a Start button.
 
----
+**Warning signs:**
+- Past meetings list shows two rows for the same week
+- Clicking Start on a week that already has an ended meeting creates a new in-progress row
+- Notes from the first session are invisible because the second session has a different `meeting_id`
 
-### Pitfall 10: KPI Template Content Blocked on Placeholder
-
-**What goes wrong:** KPI content is intentionally placeholder pending the partner meeting. If development couples the KPI selection UI to specific KPI IDs baked into component logic, swapping in real KPI content requires a code change rather than a data change.
-
-**Prevention:**
-- KPI templates live entirely in the database, not in a `content.js` file like the existing questionnaire copy.
-- The KPI selection component renders whatever rows are returned from Supabase — no hardcoded IDs or labels in JSX.
-- This is already the right instinct per the PROJECT.md "Admin ability to create/edit/add KPI templates" requirement — just enforce it from the start.
-
-**Detection:** If `content.js` gets a `kpiOptions` array added to it, that's the wrong path.
-
-**Phase:** KPI data model — confirm DB-driven before any UI build.
+**Phase to address:**
+Dual meeting mode phase — add the unique constraint when `meeting_type` is added. Retroactively relevant for meeting history phase, which will make duplicates visually obvious.
 
 ---
 
-## Phase-Specific Warnings
+## Technical Debt Patterns
 
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
-| Supabase schema for scorecards | Stateless upsert (Pitfall 1) | Composite PK `(partner, week_of)` from day one |
-| KPI template admin UI | Orphaned label references (Pitfall 2) | Snapshot labels at lock-in time |
-| 90-day lock confirmation | Client-only lock (Pitfall 3) | `locked_at` in DB, unlock events table |
-| Admin meeting mode design | Static page not state machine (Pitfall 4) | Sequential step model, per-step URL or index |
-| Hub screen build | Equal-weight navigation (Pitfall 5) | Contextual state drives primary CTA |
-| Growth priority schema | No status lifecycle (Pitfall 6) | Status enum at schema time |
-| Scorecard form | Reflection text skipped (Pitfall 7) | Require reflection when any KPI is "no" |
-| Any new Supabase table | No RLS (Pitfall 8) | Conscious RLS decision before table creation |
-| Multi-step flows (scorecard, meeting mode) | Full-page re-animation (Pitfall 9) | AnimatePresence with fast step transitions |
-| KPI content development | Hardcoded KPI IDs in components (Pitfall 10) | All KPI content from DB, not content.js |
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| STOPS array copy-pasted in every file | Fast one-file authoring | Live divergence today; every stop change requires hunting 4+ files | Never — already caused a confirmed defect |
+| `agenda_stop_key` CHECK constraint as de-facto enum | Prevents bad data at DB level | Blocks Monday Prep stops until a migration expands the list | Acceptable for single meeting type only; must migrate before dual mode |
+| `MeetingSummary.jsx` finds latest meeting by scanning list | Simple for single-meeting use case | Cannot show a specific past meeting without route and load logic rewrite | Only acceptable while one meeting ever exists; must change for history |
+| JSONB `kpi_results` keyed by selection UUID | Preserves history through KPI re-selections (v1.1 fix) | Export must unwrap; no DB-level per-KPI aggregation | Acceptable — label embedding solved the orphan problem; unwrap at export time |
+| No unique constraint on `(week_of)` in `meetings` | Simpler initial schema | Duplicate meeting rows possible | Should be added when `meeting_type` column is added |
+
+---
+
+## Integration Gotchas
+
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| Supabase ALTER TABLE for `meeting_type` | Add NOT NULL with no DEFAULT — breaks all existing inserts immediately | Add `NOT NULL DEFAULT 'friday_review'` so existing inserts continue to work |
+| Supabase `upsertMeetingNote` with new stop keys | Use a new stop key before the CHECK constraint is expanded — note silently fails | Expand CHECK constraint in migration before writing application code that uses new keys |
+| Supabase JSONB in CSV export | `JSON.stringify` the column directly | Unwrap at application layer: one output row per `kpi_results` entry |
+| `fetchMeetings()` ordering | Assuming `meetings[0]` is always "the current session" — it is, until there are multiple ended meetings | Explicitly filter by `ended_at != null` for history; load by ID for a specific meeting |
+| Supabase RLS with access-code auth | Adding `auth.uid()`-based RLS policies — these 3 users have no Supabase auth identities, so policies silently pass or fail unexpectedly | Keep existing anon-key pattern; do not introduce user-identity RLS without also changing the auth model |
+
+---
+
+## Performance Traps
+
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| Season overview fetches all scorecards for both partners then aggregates in JS | Slightly slow hub load; doubles fetch size as season progresses | Acceptable at 3 users and one season of data; aggregation stays in JS | Not a concern at this scale |
+| Meeting history page fetches all meeting notes for every past meeting on load | N+1 pattern if implemented as "load notes per row" | Load meeting list first; load notes only when a specific meeting is opened | Noticeable above ~20 meetings; fine for one season |
+| CSV export loads all scorecards for both partners into memory | Fine for one season | Same approach for second season | Not a concern until multi-season support |
+
+---
+
+## Security Mistakes
+
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| `meeting_type` read from URL query param rather than the DB row | Client constructs a URL that assigns an arbitrary type to a session | Read `meeting_type` only from the fetched `meetings` row — never from `location.search` or route params |
+| CSV export accessible from partner routes | Partners can download each other's reflection data | Export route/button must be admin-only; confirm it lives under `/admin/*` paths and requires the admin access code |
+| New partner-scoped DB helper functions that bypass `assertResettable` | Arbitrary partner slug could modify any row | Apply `assertResettable(partner)` to every new function that modifies data by partner slug |
+
+---
+
+## UX Pitfalls
+
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| Meeting history list includes in-progress meetings | Partners see "In progress" entries that lead to an incomplete summary | Filter history list to `ended_at != null`; show an in-progress session as a separate "Live" indicator |
+| Monday Prep meetings appear in the same list as Friday Reviews with no type label | Trace cannot distinguish meeting types at a glance | Display `meeting_type` as a visible badge on each history row |
+| Season overview shows only a single aggregate hit-rate number | Hides trend — a partner who hit 7/7 last week after two 0/7 weeks looks the same as a consistent 7/7 performer | Show week-by-week trend (table or sparkline) alongside the season aggregate |
+| CSV export button provides no feedback during download | User double-clicks thinking nothing happened; produces duplicate downloads | Disable button and show "Exporting..." during blob construction; re-enable after download triggers |
+| `MeetingSummary.jsx` comment says "Fixed 10-stop agenda — mirrors AdminMeetingSession.jsx" but they are now out of sync | Partners do not see kpi_6/kpi_7 meeting notes | Fix divergence (Pitfall 1); update comment to reference shared constant |
+
+---
+
+## "Looks Done But Isn't" Checklist
+
+- [ ] **STOPS consolidation:** `grep -r "const STOPS = \["` in `src/` returns zero results — all files import from `content.js`
+- [ ] **meeting_type migration:** `meetings` table has `meeting_type` column AND `UNIQUE (week_of, meeting_type)` constraint — verify both in Supabase table editor
+- [ ] **CHECK constraint expansion:** Attempting to insert a Monday Prep stop key via `upsertMeetingNote` succeeds — verify before writing any Monday Prep component
+- [ ] **CSV output format:** Opening the export in Excel shows one row per KPI per week with human-readable label, result, reflection — not a JSON blob in column D
+- [ ] **Meeting history navigation:** Clicking the second entry in meeting history loads the second meeting's notes, not the latest meeting's notes — verify with real data
+- [ ] **Hit-rate calculation:** Weeks where all `kpi_results` entries have `result: null` do not count toward the denominator — verify against a known scorecard row in Supabase
+- [ ] **Duplicate meeting guard:** Clicking Start twice for the same week either errors or redirects to the existing meeting — no new row created
+
+---
+
+## Recovery Strategies
+
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|----------------|
+| STOPS divergence causes missing notes in partner summary | MEDIUM | Update 3 files to import shared constant; no data migration needed — notes are in DB, just not rendered |
+| NOT NULL `meeting_type` breaks `createMeeting` | HIGH | Hotfix migration to add DEFAULT; redeploy `supabase.js`; no data loss but meeting creation is down until fixed |
+| CHECK constraint rejects Monday Prep stop keys | MEDIUM | Migration to expand CHECK; notes that failed to save before the fix are permanently gone |
+| Duplicate meetings in history | LOW-MEDIUM | Delete duplicate rows in Supabase table editor; add unique constraint; add UI guard |
+| CSV exports raw JSON blobs | LOW | Fix serialization in export component; no DB changes needed |
+
+---
+
+## Pitfall-to-Phase Mapping
+
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| STOPS divergence | First phase touching meeting history or dual mode | `grep "const STOPS = \["` in `src/` returns zero results |
+| meeting_type NOT NULL breaks createMeeting | Dual meeting mode — migration task | createMeeting works with no second argument; existing rows unaffected |
+| CHECK constraint blocks new stop keys | Dual meeting mode — migration task before component work | Insert test note with Monday Prep stop key via Supabase SQL editor; succeeds |
+| MeetingSummary always shows latest meeting | Meeting history phase | Click second entry in list; confirm it shows the second meeting's notes |
+| Hit-rate counts nulls as misses | Season overview phase | Verify against known Supabase scorecard data with unanswered weeks |
+| CSV exports raw JSON | Export phase | Open downloaded file in Excel; confirm readable rows |
+| Duplicate meeting creation | Dual meeting mode phase | Click Start twice for same week; no second row created |
 
 ---
 
 ## Sources
 
-- Direct analysis of existing codebase (`supabase.js`, `App.jsx`, `Admin.jsx`, `content.js`) — HIGH confidence
-- Training knowledge of Supabase upsert patterns and time-series modeling — HIGH confidence
-- Training knowledge of accountability/OKR software UX failure modes — MEDIUM confidence (training data, not verified against current industry sources due to web search unavailability)
-- Project context from `.planning/PROJECT.md` — HIGH confidence
+- Direct codebase analysis — confirmed live:
+  - `src/components/admin/AdminMeetingSession.jsx` (12-stop STOPS, migration 005 comment)
+  - `src/components/MeetingSummary.jsx` (10-stop STOPS, `.find(m => m.ended_at != null)` pattern)
+  - `src/components/admin/AdminMeetingSessionMock.jsx` (10-stop STOPS)
+  - `src/components/admin/MeetingSummaryMock.jsx` (10-stop STOPS)
+  - `src/lib/supabase.js` (createMeeting insert shape, upsertMeetingNote conflict key, commitScorecardWeek null initialization)
+  - `src/components/PartnerHub.jsx` (scorecardAllComplete null-handling pattern)
+- PROJECT.md v1.1 Key Decisions: "KPI labels stored in scorecard JSONB" — orphan fix history
+- Existing pitfalls from prior research (v1.0 planning, 2026-04-09) preserved in Git history
+
+---
+*Pitfalls research for: Cardinal accountability tool — v1.2 Meeting & Insights Expansion*
+*Researched: 2026-04-12*

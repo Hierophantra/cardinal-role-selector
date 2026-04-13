@@ -1,276 +1,378 @@
 # Architecture Patterns
 
-**Domain:** Partner KPI accountability system (brownfield extension)
-**Researched:** 2026-04-09
-**Confidence:** HIGH — derived from existing codebase analysis + well-established KPI system patterns
+**Domain:** Partner KPI accountability system — v1.2 integration research
+**Researched:** 2026-04-12
+**Confidence:** HIGH — derived from full codebase read (all components, migrations, lib, data files)
 
 ---
 
-## Recommended Architecture
+## Context: Brownfield, Fixed Architecture
 
-The new milestone extends the existing SPA with three new feature zones: KPI Selection, Weekly Scorecard, and Admin Meeting Mode. Each zone is self-contained enough to live as its own route cluster but shares Supabase as the single source of truth.
+This is a v1.2 milestone on a fully-built system. The architecture is not up for debate. Research answers one question: **how do the four new features plug into what already exists?**
 
-The existing pattern — route-per-feature, page component owns state, Supabase as the only persistence layer — is sound and should continue unchanged. The primary extension point is `src/lib/supabase.js` (new table operations) and `src/App.jsx` (new routes).
-
-### High-Level Component Map
+Existing topology:
 
 ```
-App.jsx (routing)
-├── /                       Login.jsx               [existing]
-├── /hub/:partner           Hub.jsx                 [NEW] — feature selector after login
-├── /q/:partner             Questionnaire.jsx        [existing]
-├── /kpi/:partner           KpiSelection.jsx         [NEW] — partner selects KPIs + growth priorities
-├── /scorecard/:partner     Scorecard.jsx            [NEW] — weekly binary check-in per KPI
-├── /status/:partner        PartnerStatus.jsx        [NEW] — partner's own progress view
-├── /admin                  Admin.jsx                [existing, extend]
-├── /admin/profile/:partner AdminProfile.jsx         [existing]
-├── /admin/comparison       AdminComparison.jsx      [existing, extend]
-├── /admin/control          AdminControl.jsx         [NEW] — unlock KPIs, toggle permissions, override
-└── /admin/meeting          AdminMeeting.jsx         [NEW] — guided meeting agenda
-```
+Browser (React 18 SPA)
+├── src/App.jsx                     React Router route declarations (15 routes)
+├── src/components/
+│   ├── Login.jsx                   Auth gate — reads env vars
+│   ├── PartnerHub.jsx              Partner dashboard (/hub/:partner)
+│   ├── Scorecard.jsx               Weekly check-in (/scorecard/:partner)
+│   ├── KpiSelection.jsx / KpiSelectionView.jsx
+│   ├── MeetingSummary.jsx          Partner view: latest ended meeting only
+│   └── admin/
+│       ├── AdminHub.jsx            Admin landing
+│       ├── AdminMeeting.jsx        Start meeting + history list
+│       ├── AdminMeetingSession.jsx 12-stop guided agenda (live + past)
+│       ├── AdminPartners.jsx       Accountability: missed KPIs, PIP flag
+│       ├── AdminScorecards.jsx
+│       ├── AdminKpi.jsx
+│       └── AdminProfile.jsx / AdminComparison.jsx
+├── src/lib/
+│   ├── supabase.js                 All DB calls (~25 named exports)
+│   └── week.js                    getMondayOf(), formatWeekRange(), isWeekClosed()
+└── src/data/
+    └── content.js                 All copy: MEETING_COPY, SCORECARD_COPY, HUB_COPY, etc.
 
-### Supabase Table Structure (New Tables)
-
-```
-kpi_templates          — admin-managed KPI library (id, label, category, description)
-kpi_selections         — per-partner KPI choices (partner, kpi_id, locked_at, locked_until)
-growth_priorities      — per-partner priority choices (partner, type, label, locked_at)
-scorecards             — weekly check-in rows (id, partner, week_start, kpi_id, met, reflection)
-meeting_notes          — admin annotations per meeting (id, week_start, kpi_id, partner, note)
+Supabase PostgreSQL
+├── submissions                    Questionnaire data (read-only for v1.2)
+├── kpi_templates                  20 templates, mandatory/choice, partner_scope
+├── kpi_selections                 7 per partner, locked_until, label_snapshot
+├── growth_priorities              3 per partner, status, admin_note
+├── scorecards                     week_of + JSONB kpi_results + 5 reflection columns
+├── meetings                       id, week_of, held_at, ended_at
+└── meeting_notes                  meeting_id + agenda_stop_key + body (UNIQUE constraint)
 ```
 
 ---
 
-## Component Boundaries
+## Feature Integration Analysis
 
-| Component | Responsibility | Reads From | Writes To |
-|-----------|---------------|------------|-----------|
-| `Hub.jsx` | Post-login nav: choose between questionnaire, KPI selection, scorecard | `kpi_selections` (lock status check) | nothing |
-| `KpiSelection.jsx` | Partner selects 5 KPIs + growth priorities, confirms 90-day lock | `kpi_templates`, `kpi_selections`, `growth_priorities` | `kpi_selections`, `growth_priorities` |
-| `Scorecard.jsx` | Weekly binary yes/no per KPI + reflection text | `kpi_selections` (to know which KPIs are active), `scorecards` (prior entries) | `scorecards` |
-| `PartnerStatus.jsx` | Partner views their own KPI + growth priority status | `kpi_selections`, `growth_priorities`, `scorecards` | nothing |
-| `AdminControl.jsx` | Admin unlocks KPIs, overrides selections, toggles growth input permissions | `kpi_selections`, `growth_priorities`, `kpi_templates` | `kpi_selections`, `growth_priorities` |
-| `AdminMeeting.jsx` | Guided agenda walking through each partner's KPIs + growth priorities + prior scores | all tables (read) | `meeting_notes` |
-| `AdminComparison.jsx` | Side-by-side KPI selections for both partners | `kpi_selections`, `kpi_templates` | nothing |
+### Feature 1: Season Overview (Partner Hub)
 
-**Rule:** No component writes to another component's domain. `Scorecard` never writes `kpi_selections`. `AdminControl` never writes `scorecards` directly.
+**What's needed:** KPI hit-rate trends and season progress on the partner hub.
+
+**Data already in PartnerHub.jsx state on mount:**
+- `scorecards` — all weeks, newest first (from `fetchScorecards(partner)`)
+- `kpiSelections` — 7 locked KPIs (from `fetchKpiSelections(partner)`)
+
+No new Supabase calls are needed. Season hit-rate is a pure derivation from existing state.
+
+**Computation pattern:**
+```js
+// useMemo in PartnerHub.jsx
+const seasonStats = useMemo(() => {
+  const submittedWeeks = scorecards.filter(s => s.submitted_at);
+  const weeklyRates = submittedWeeks.map(s => {
+    const results = Object.values(s.kpi_results ?? {});
+    const answered = results.filter(r => r.result === 'yes' || r.result === 'no');
+    const hits = answered.filter(r => r.result === 'yes').length;
+    return answered.length > 0 ? hits / answered.length : null;
+  });
+  const validRates = weeklyRates.filter(r => r !== null);
+  return {
+    weeklyRates,
+    seasonRate: validRates.length > 0
+      ? validRates.reduce((a, b) => a + b, 0) / validRates.length
+      : null,
+    weeksSubmitted: submittedWeeks.length,
+  };
+}, [scorecards]);
+```
+
+**Component change:** `PartnerHub.jsx` gets a new section rendered below existing cards. No new route, no new component.
+
+**Content change:** Add `SEASON_OVERVIEW_COPY` block to `content.js`.
+
+**New Supabase function:** None.
 
 ---
 
-## Data Flow
+### Feature 2: Meeting History (Partner + Admin)
 
-### KPI Selection Flow
+**What already exists:**
 
-```
-Admin seeds kpi_templates (AdminControl or direct Supabase)
-    ↓
-Partner visits /kpi/:partner
-    ↓
-KpiSelection.jsx fetches kpi_templates (all available KPIs)
-KpiSelection.jsx fetches kpi_selections (existing partner choices, if any)
-    ↓
-Partner picks 5 KPIs + growth priorities in UI
-    ↓
-Partner clicks "Lock In" confirmation
-    ↓
-supabase.js: upsert kpi_selections rows (partner, kpi_id, locked_at, locked_until = now + 90 days)
-supabase.js: upsert growth_priorities rows
-    ↓
-UI shows confirmation, navigates to /hub/:partner
-```
+`AdminMeeting.jsx` already renders a "Past Meetings" list using `fetchMeetings()` and links each row to `/admin/meeting/:id`. That covers the admin side — the list exists, and `AdminMeetingSession.jsx` can display a past (ended) meeting if the read-only mode is added.
 
-### Weekly Scorecard Flow
+`MeetingSummary.jsx` (partner-facing) calls `fetchMeetings()` and picks the *first ended meeting* with `meetings.find(m => m.ended_at != null)`. This is the current limitation — it always shows the latest ended meeting and has no list view.
 
-```
-Partner visits /scorecard/:partner
-    ↓
-Scorecard.jsx computes current week_start (Monday of current week)
-Scorecard.jsx fetches active kpi_selections for partner
-Scorecard.jsx fetches existing scorecard rows for (partner + week_start) — enables partial saves
-    ↓
-Partner steps through each KPI: yes/no + reflection
-    ↓
-Each answer upserts into scorecards (partner, week_start, kpi_id, met, reflection)
-    ↓
-On completion, navigates to /status/:partner
-```
+**Two sub-problems:**
 
-**Note on partial saves:** Because scorecards are upserted per-KPI as the partner steps through, a browser close mid-check-in does not lose completed answers. Fetch on next visit resumes where they left off.
+**2a. Partner meeting history list**
 
-### Admin Meeting Mode Flow
+`MeetingSummary.jsx` is a detail view, not a list. Adding a list to it conflates two responsibilities.
 
-```
-Admin visits /admin/meeting
-    ↓
-AdminMeeting.jsx fetches current week scorecards for both partners
-AdminMeeting.jsx fetches kpi_selections for both partners
-AdminMeeting.jsx fetches growth_priorities for both partners
-    ↓
-UI presents guided agenda: one KPI at a time, both partners' status shown side by side
-    ↓
-Admin adds notes/annotations mid-meeting → upserted to meeting_notes (non-blocking, async)
-    ↓
-Admin can override partner data via AdminControl.jsx (separate route, not inline)
-```
+Recommendation: new `MeetingHistory.jsx` at `/meeting-history/:partner`. It fetches meetings, filters to `ended_at != null`, and renders a list. Each row links to `/meeting-summary/:partner?id=:meetingId`.
 
-### State Ownership
+`MeetingSummary.jsx` is modified to read `?id=` from URL search params and load that specific meeting instead of always picking the first ended one.
 
-The existing pattern of "page component owns all state for its feature" continues:
+**2b. Admin read-only past meeting view**
 
-| Feature | State Owner | State Contents |
-|---------|-------------|---------------|
-| KPI Selection | `KpiSelection.jsx` | `templates`, `selectedKpis`, `growthPriorities`, `locked`, `submitting` |
-| Scorecard | `Scorecard.jsx` | `activKpis`, `currentWeek`, `answers`, `step`, `submitting` |
-| Partner Status | `PartnerStatus.jsx` | `selections`, `priorities`, `recentScores` |
-| Admin Meeting | `AdminMeeting.jsx` | `agendaStep`, `bothPartnerData`, `notes` |
-| Admin Control | `AdminControl.jsx` | `selections`, `permissions`, `editMode` |
+`AdminMeetingSession.jsx` already loads any meeting by ID and supports editing notes. When `meeting.ended_at` is set, suppress the "End Meeting" button and make note textareas read-only. This is a **modification of an existing component**, not a new one.
 
-No global state manager needed. Context is not warranted for 3 users and bounded feature zones.
+**New route:** `/meeting-history/:partner` → `MeetingHistory.jsx`
+
+**Modified components:** `MeetingSummary.jsx` (read `?id=`), `AdminMeetingSession.jsx` (read-only when ended)
+
+**New Supabase functions:** None — `fetchMeetings()`, `fetchMeeting(id)`, `fetchMeetingNotes(id)` all exist.
 
 ---
 
-## Patterns to Follow
+### Feature 3: Export Capability
 
-### Pattern 1: Mirror the Questionnaire Orchestrator
+**What's needed:** Meeting notes and scorecard data downloadable.
 
-`KpiSelection.jsx` and `Scorecard.jsx` should mirror `Questionnaire.jsx`'s structure:
-- Own all state
-- Control step progression via a `step` index
-- Delegate rendering to sub-screen components
-- Handle Supabase writes in a single `handleSubmit` or `handleStepComplete` function
+**Architecture decision: client-side export only.** No Edge Function, no server calls. The data is already loaded into component state. Export is a pure JS operation triggered by a button click.
 
-This keeps the mental model consistent and reuses the existing pattern other developers (or LLMs) already understand from the codebase.
+**Export targets:**
+- Meeting notes: one meeting's notes as structured text (agenda stop by stop)
+- Scorecard data: all weeks for a partner as CSV (week_of, KPI label, result, reflection)
 
-### Pattern 2: Derive "current week" client-side
+**Implementation:** New `src/lib/exportUtils.js` with two pure functions:
 
-KPI check-ins are weekly. Compute `week_start` as the Monday of the current week in the client, then use it as the Supabase query key. No server-side cron or scheduled function needed. This is consistent with the no-backend constraint.
+```js
+// exportUtils.js
+export function exportMeetingNotes(meeting, notes, kpis, growth) {
+  // formats notes as plain text with stop labels
+  // triggers Blob download
+}
 
-```javascript
-function getCurrentWeekStart() {
-  const now = new Date();
-  const day = now.getDay(); // 0 = Sunday
-  const diff = now.getDate() - day + (day === 0 ? -6 : 1); // adjust to Monday
-  const monday = new Date(now.setDate(diff));
-  monday.setHours(0, 0, 0, 0);
-  return monday.toISOString().split('T')[0]; // "YYYY-MM-DD"
+export function exportScorecards(partnerName, scorecards, kpiSelections) {
+  // formats as CSV rows
+  // triggers Blob download
+}
+
+function downloadText(filename, content) {
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
 }
 ```
 
-### Pattern 3: Lock state as a field, not a separate table
+**Where export buttons live:**
+- `AdminMeetingSession.jsx` (read-only past meeting view): "Export Notes" button
+- `MeetingSummary.jsx`: "Export Notes" button
+- `AdminScorecards.jsx`: "Export CSV" button (optional, lower priority)
 
-KPI lock is a field on `kpi_selections` (`locked_at`, `locked_until`), not a separate locks table. Admin unlock is a PATCH to clear or extend `locked_until`. Simple reads can derive "is locked?" without joins.
+**New file:** `src/lib/exportUtils.js`
 
-### Pattern 4: Extend supabase.js with named operations
+**New Supabase functions:** None.
 
-All new Supabase calls go in `src/lib/supabase.js` as named exports. Components never use the raw `supabase` client directly — they import operation functions. This mirrors `upsertSubmission`, `fetchSubmissions`, `fetchSubmission` already established.
+---
 
-New additions:
-- `fetchKpiTemplates()`
-- `fetchKpiSelections(partner)`
-- `upsertKpiSelection(partner, kpiId, lockedUntil)`
-- `fetchScorecard(partner, weekStart)`
-- `upsertScorecardEntry(partner, weekStart, kpiId, met, reflection)`
-- `fetchGrowthPriorities(partner)`
-- `upsertGrowthPriority(partner, type, label, lockedUntil)`
-- `upsertMeetingNote(weekStart, partner, kpiId, note)`
+### Feature 4: Dual Meeting Mode (Friday Review + Monday Prep)
 
-### Pattern 5: Hub as a routing guard, not a feature
+**What exists:** `AdminMeeting.jsx` is hardcoded to "Friday Review". `MEETING_COPY.stops.introEyebrow` is `'FRIDAY REVIEW'`. The 12-stop agenda structure is retrospective. Monday Prep needs the same structural scaffold but forward-looking copy.
 
-`Hub.jsx` is a thin navigation component that shows available features and their current state (locked/unlocked, completed this week). It does not own feature logic. It reads lock status from Supabase on mount and renders cards linking to feature routes.
+**Schema impact:** The `meetings` table has no `type` column. A `type` column on the `meetings` table is the correct and minimal change:
+
+```sql
+-- Migration 007
+ALTER TABLE meetings
+  ADD COLUMN type text NOT NULL DEFAULT 'friday_review';
+ALTER TABLE meetings
+  ADD CONSTRAINT meetings_type_check
+  CHECK (type IN ('friday_review', 'monday_prep'));
+```
+
+All existing meeting rows inherit `friday_review` via the DEFAULT. No data migration needed.
+
+`createMeeting(weekOf)` in `supabase.js` gains a second parameter: `createMeeting(weekOf, type = 'friday_review')`.
+
+**Component changes:**
+
+`AdminMeeting.jsx`: Add a type selector (radio or two buttons: "Friday Review" / "Monday Prep") before or alongside the week picker. The type is passed to `createMeeting`.
+
+`AdminMeetingSession.jsx`: Reads `meeting.type` and selects a copy object:
+```js
+const copy = meeting.type === 'monday_prep' ? MONDAY_PREP_COPY : MEETING_COPY;
+```
+The 12 stops, notes logic, debounce, end-meeting flow — all identical. Only strings differ.
+
+`content.js`: Add `MONDAY_PREP_COPY` that mirrors `MEETING_COPY.stops` shape with forward-looking language (e.g., introEyebrow: `'MONDAY PREP'`, kpi prompts about plans rather than results).
+
+`MeetingSummary.jsx` / `MeetingHistory.jsx`: Display which meeting type it was (cosmetic — label from `meeting.type`).
+
+**New migration:** `007_dual_meeting_mode.sql`
+
+---
+
+## Component Map: New vs Modified
+
+| Component | Status | Reason |
+|-----------|--------|--------|
+| `PartnerHub.jsx` | Modified | Season overview section; uses existing state |
+| `MeetingHistory.jsx` | New | Partner meeting list — list responsibility not in MeetingSummary |
+| `MeetingSummary.jsx` | Modified | Read `?id=` param; any meeting, not just latest |
+| `AdminMeeting.jsx` | Modified | Meeting type selector (Friday / Monday) |
+| `AdminMeetingSession.jsx` | Modified | Read-only when ended; copy switching on meeting.type |
+| `src/lib/exportUtils.js` | New | Pure download helpers — keeps components clean |
+| `src/data/content.js` | Modified | Add MONDAY_PREP_COPY, SEASON_OVERVIEW_COPY, MEETING_HISTORY_COPY |
+| `src/lib/supabase.js` | Modified | `createMeeting` gains `type` param |
+| Migration 007 | New | `type` column on meetings table |
+
+**New routes:**
+
+| Route | Component | Access |
+|-------|-----------|--------|
+| `/meeting-history/:partner` | `MeetingHistory.jsx` | Partners + admin (`?admin=1`) |
+
+---
+
+## Data Flow Changes
+
+### Season Overview (read path, no writes)
+```
+PartnerHub mount
+  -> fetchScorecards(partner)    [already called]
+  -> fetchKpiSelections(partner) [already called]
+  -> useMemo: compute seasonHitRate, weeklyRates[]
+  -> render season overview section below existing cards
+```
+
+### Partner Meeting History
+```
+/meeting-history/:partner
+  -> MeetingHistory.jsx mount
+  -> fetchMeetings() — filter ended_at != null
+  -> render list, each row links to:
+     /meeting-summary/:partner?id=:meetingId
+
+/meeting-summary/:partner?id=:meetingId
+  -> MeetingSummary.jsx reads ?id from URLSearchParams
+  -> fetchMeeting(id) + fetchMeetingNotes(id) [both exist in supabase.js]
+  -> fetchKpiSelections(partner) + fetchGrowthPriorities(partner)
+  -> render read-only view + export button
+```
+
+### Dual Meeting Mode — Start
+```
+AdminMeeting.jsx: user selects type + week
+  -> createMeeting(weekOf, type)  [supabase.js gains type param]
+  -> navigate(/admin/meeting/:id)
+
+AdminMeetingSession.jsx: reads meeting.type
+  -> copy = type === 'monday_prep' ? MONDAY_PREP_COPY : MEETING_COPY
+  -> same 12-stop render, different string values
+  -> when meeting.ended_at set: suppress End button, make notes read-only
+```
+
+### Export — Client-side
+```
+User clicks "Export Notes" or "Export CSV"
+  -> data already in component state (no extra fetch)
+  -> exportMeetingNotes() or exportScorecards() from exportUtils.js
+  -> Blob download, no network call
+```
+
+---
+
+## Architectural Patterns to Follow
+
+### Pattern 1: Extend content.js for all new copy
+
+Every new user-facing string goes into a named export block in `content.js`. `MONDAY_PREP_COPY.stops` must mirror `MEETING_COPY.stops` in shape so `AdminMeetingSession` can switch between them with a single variable assignment. Diverging from this shape would require conditional property access throughout the 12-stop render.
+
+### Pattern 2: Derive, don't store — season hit rates
+
+Season hit rates are computed from existing scorecard rows via `useMemo`. Do not add a summary column or an analytics table. 3 users, ~25 weeks per season — computing hit rates from raw rows takes microseconds.
+
+### Pattern 3: meeting.type controls copy, not component branching
+
+`AdminMeetingSession.jsx` uses `meeting.type` to select a copy object, not to render a different component. The session structure (stops, notes, nav, debounce, end-meeting state machine) is identical between meeting types. Two separate session components would duplicate ~400 lines of complex state for a string difference.
+
+### Pattern 4: Export as pure lib functions
+
+`exportUtils.js` functions accept already-loaded data arrays and trigger downloads. Components call them from `onClick` and pass their existing state. Zero additional Supabase calls, zero loading states.
 
 ---
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Putting meeting agenda logic in AdminComparison
+### Anti-Pattern 1: New global state or context
 
-`AdminComparison.jsx` exists for static side-by-side comparison. The meeting facilitation flow (stepping through agenda items, capturing live notes, guiding discussion) is meaningfully different behavior and warrants its own route and component.
+The codebase has no React context. Each component owns its own fetched data. Introducing context (e.g., "current season stats provider") for 3 users and bounded views adds complexity with no benefit. Season stats belong in `PartnerHub.jsx` state.
 
-**Instead:** Create `AdminMeeting.jsx` as a separate route `/admin/meeting`. Share data-fetching helpers from `supabase.js`.
+### Anti-Pattern 2: Separate MondayMeetingSession component
 
-### Anti-Pattern 2: Using URL state for KPI lock persistence
+Copying `AdminMeetingSession.jsx` into a new file to handle Monday Prep creates two copies of a 400+ line state machine. Any bug fix must be applied twice. The stops, debounce, upsert, and end-meeting logic are identical. Use `meeting.type` as a copy selector, not a component branch.
 
-Lock status must survive browser reload and be the same for all users. Do not use `localStorage`, `sessionStorage`, or URL params for this.
+### Anti-Pattern 3: Server-side export
 
-**Instead:** Store lock timestamps in Supabase. Derive lock status from `locked_until` field on read.
+A Supabase Edge Function for CSV/text generation is unnecessary infrastructure for 3 users. All data is already in browser state when the user clicks export. Client-side Blob generation has no cold-start latency, no deployment step, and requires no additional Supabase permissions.
 
-### Anti-Pattern 3: Inline admin override inside scorecard
+### Anti-Pattern 4: Patching MeetingSummary to be both list and detail
 
-Partners' scorecard check-in UI and admin override capability should not share a component. Mixing these creates fragile conditional rendering keyed on role.
-
-**Instead:** Partner check-in is `/scorecard/:partner`. Admin overrides are in `/admin/control`. Admin can edit data there, outside the partner-facing UI.
-
-### Anti-Pattern 4: Fetching all tables on every admin page
-
-`AdminMeeting.jsx` needs all data for the meeting. But `Admin.jsx` (the dashboard) does not. Keep fetches scoped to the route that needs them.
-
-**Instead:** Each route/component fetches only what it renders. Co-locate fetches with components.
+`MeetingSummary.jsx` is currently a detail view (one meeting). Adding a list of meetings to the same component conflates two responsibilities and triggers the "find first ended" heuristic to evolve into complex conditional rendering. Keep responsibilities split: `MeetingHistory.jsx` for the list, `MeetingSummary.jsx` for the detail.
 
 ---
 
 ## Suggested Build Order
 
-Dependencies determine build order. Each item below can only start when its prerequisites are done.
+Dependencies drive order. Each phase unblocks the next.
 
-```
-1. Supabase schema
-   └── Create kpi_templates, kpi_selections, growth_priorities, scorecards, meeting_notes tables
-   └── Insert placeholder KPI template rows
+**Phase 1 — Schema + createMeeting type (unblocks dual mode and all downstream)**
+- Migration 007: `type` column on `meetings`
+- Update `createMeeting(weekOf, type)` in `supabase.js`
+- Add `MONDAY_PREP_COPY` and `MEETING_HISTORY_COPY` to `content.js`
 
-2. src/lib/supabase.js extensions
-   └── Add all new named operation functions
-   └── This unblocks everything else
+Rationale: once `meetings.type` exists and `createMeeting` accepts it, no other phase is blocked by schema.
 
-3. Hub.jsx + routing in App.jsx
-   └── Partners can log in and navigate to feature zones
-   └── Cards are disabled/enabled based on lock status
+**Phase 2 — Dual meeting mode (uses Phase 1)**
+- Modify `AdminMeeting.jsx`: type selector UI
+- Modify `AdminMeetingSession.jsx`: copy switching + read-only mode when ended
 
-4. KpiSelection.jsx (+ sub-screens)
-   └── Depends on: supabase.js ops, kpi_templates data existing
-   └── Partners can select and lock their KPIs
+Rationale: read-only mode in `AdminMeetingSession` is also needed by Phase 3 (admin history navigation).
 
-5. Scorecard.jsx (+ sub-screens)
-   └── Depends on: kpi_selections data existing (partner must have selected KPIs first)
-   └── Partners can do weekly check-ins
+**Phase 3 — Meeting history (uses Phase 2 read-only session)**
+- Modify `MeetingSummary.jsx`: read `?id=` query param
+- New `MeetingHistory.jsx` + route `/meeting-history/:partner`
+- Add `SEASON_OVERVIEW_COPY` to `content.js`
+- Add meeting history link to `PartnerHub.jsx`
 
-6. PartnerStatus.jsx
-   └── Depends on: scorecards data existing
-   └── Read-only, low risk — can be built in parallel with Scorecard
+**Phase 4 — Season overview (independent; no schema changes)**
+- Add `useMemo` season stats derivation to `PartnerHub.jsx`
+- Add season overview JSX section to `PartnerHub.jsx`
 
-7. AdminControl.jsx
-   └── Depends on: kpi_selections + growth_priorities existing
-   └── Admin can unlock, override, toggle permissions
+Rationale: zero schema changes, no new components, data already on the page. Lowest-risk phase.
 
-8. AdminComparison.jsx extension
-   └── Depends on: kpi_selections data existing
-   └── Extend existing component to show KPI selections alongside role data
+**Phase 5 — Export (independent; uses data already loaded)**
+- New `src/lib/exportUtils.js`
+- Add export buttons to `AdminMeetingSession.jsx` (read-only) and `MeetingSummary.jsx`
+- Optionally: scorecard CSV in `AdminScorecards.jsx`
 
-9. AdminMeeting.jsx
-   └── Depends on: scorecards + kpi_selections + growth_priorities all populated
-   └── Build last — aggregates from all prior tables
-```
-
-**Critical path:** Schema → supabase.js → Hub → KpiSelection → Scorecard → AdminMeeting
+Phases 4 and 5 can be built in parallel — they share no dependencies with each other.
 
 ---
 
-## Scalability Considerations
+## Integration Points Summary
 
-This system has exactly 3 users and is not expected to scale. Scalability notes are included only to flag decisions that would become technical debt if the tool were ever extended.
+| Existing Component | Change | Feature |
+|--------------------|--------|---------|
+| `AdminMeeting.jsx` | Add meeting type selector (Friday / Monday) | Dual mode |
+| `AdminMeetingSession.jsx` | Copy switching on `meeting.type`; read-only when `ended_at` set | Dual mode + history |
+| `MeetingSummary.jsx` | Read `?id=` param; load specific meeting | History |
+| `PartnerHub.jsx` | Season overview section; meeting history link | Season overview + history |
+| `supabase.js` | `createMeeting(weekOf, type)` gains type param | Dual mode |
+| `content.js` | MONDAY_PREP_COPY, SEASON_OVERVIEW_COPY, MEETING_HISTORY_COPY | All features |
 
-| Concern | Current Approach | Risk if Extended |
-|---------|-----------------|-----------------|
-| Auth | Env var access codes | Not viable beyond ~5 users; would need Supabase Auth |
-| Partner hardcoding | `VITE_THEO_KEY`, `VITE_JERRY_KEY` | Adding a 3rd partner requires code changes, not config |
-| KPI templates | Admin-managed in Supabase table | Scales fine — already data-driven |
-| Week computation | Client-side Monday calculation | Fine for 3 users; timezone edge cases if multi-region |
-| Meeting notes | Unstructured text per (week, partner, kpi) | Fine at this scale; no search needed |
+| New Asset | What It Is | Feature |
+|-----------|------------|---------|
+| `MeetingHistory.jsx` | Partner list of all ended meetings | History |
+| `src/lib/exportUtils.js` | Pure download helpers | Export |
+| Migration 007 | `type` column on `meetings` | Dual mode |
 
 ---
 
 ## Sources
 
-- Existing codebase: `.planning/codebase/ARCHITECTURE.md` (HIGH confidence — direct analysis)
-- Project requirements: `.planning/PROJECT.md` (HIGH confidence — authoritative spec)
-- KPI tracking patterns: training data on accountability tool architecture (MEDIUM confidence — well-established patterns for small-scale systems)
-- Supabase SPA patterns: established from Supabase docs for client-only architectures (MEDIUM confidence)
+- Existing codebase: `src/components/**`, `src/lib/supabase.js`, `src/lib/week.js`, `src/data/content.js` — direct read (HIGH confidence)
+- DB schema: `supabase/migrations/001` through `006` — direct read (HIGH confidence)
+- Project spec: `.planning/PROJECT.md` — direct read (HIGH confidence)
+
+---
+*Architecture research for: Cardinal Partner Accountability System v1.2*
+*Researched: 2026-04-12*

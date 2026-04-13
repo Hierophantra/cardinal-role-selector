@@ -1,129 +1,182 @@
 # Feature Landscape: Partner KPI Accountability
 
 **Domain:** Two-partner business accountability — KPI tracking, weekly scorecards, guided meeting facilitation
-**Researched:** 2026-04-09
-**Confidence:** MEDIUM — Based on training knowledge of EOS/Traction patterns, OKR tooling, and accountability software. Web search unavailable. Core patterns (Ninety.io, Bloom Growth, 15Five, Lattice) are well-established and stable.
+**Researched:** 2026-04-12 (updated for v1.2 milestone)
+**Confidence:** HIGH for features anchored to existing codebase; MEDIUM for dual-meeting-mode framing patterns (established OKR/EOS domain knowledge, web search unavailable)
 
 ---
 
-## Table Stakes
+## Scope Note
 
-Features users expect in any accountability tracking tool. Missing = the tool doesn't serve its purpose.
+v1.0 and v1.1 are shipped. This file covers new v1.2 features only: **season overview, meeting history, data export, and dual meeting mode.** Prior feature research is preserved in the section below.
+
+---
+
+## v1.2 Feature Landscape
+
+### Table Stakes (Users Expect These)
+
+Features whose absence makes the v1.2 milestone feel incomplete or broken.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Defined KPI list per person | Without this, there's nothing to track — it IS the accountability contract | Low | Already in PROJECT.md: choose 5 from ~8-9 templates |
-| Binary yes/no check-in per KPI | The minimal viable accountability signal — did it happen or not | Low | Simpler than rating scales; PROJECT.md decision validated |
-| Reflection prompt on check-in | "Yes/no" alone tells you nothing useful. "Why?" is the accountability conversation | Low | Success contributors + blockers per PROJECT.md |
-| Lock-in period for KPI commitments | Without a lock, partners change KPIs to avoid accountability; defeats the purpose | Low | 90-day lock per PROJECT.md |
-| Admin visibility into both partners | Facilitator must see both sides to run any meaningful conversation | Low | Already exists for role questionnaire; extends naturally |
-| Historical record of check-ins | Can't have a meaningful weekly conversation without knowing last week's state | Low | Supabase persistence — each check-in stored with timestamp |
-| Current status visible to partners | Partners should be able to see their own KPI standing without asking admin | Low | "Partner progress view" per PROJECT.md |
-| Growth priorities alongside KPIs | A KPI tracks execution; a growth priority tracks direction. Both are accountability objects | Medium | 1 personal + 2 business per PROJECT.md |
+| Meeting history — admin | Admin built and ended 5 meetings; should be able to review any of them. Currently AdminMeeting.jsx lists past meetings but "Open" navigates back into the live session UI — it does not provide a read-only summary view | MEDIUM | Needs a read-only replay route for ended meetings, separate from the live session |
+| Meeting history — partner | MeetingSummary.jsx hardcodes the single most-recently-ended meeting. Partners have no way to see any prior meeting. This is a silent data hole | MEDIUM | Needs a meeting list + per-meeting detail view on the partner side |
+| Season KPI hit-rate on hub | Partners check in weekly but have no view of cumulative hit-rate. The hub status line only reflects the current week. After 8 weeks of data, "this week: 5/7" is not enough — "season so far: 72% hit rate" is the accountability signal | MEDIUM | All scorecard data already exists in `scorecards` table; computation is pure JS aggregation |
+| Week-over-week trend per KPI | Knowing your overall hit rate is less useful than knowing which specific KPI you keep missing. Standard in all accountability/OKR tools (Lattice, 15Five, Ninety.io) | MEDIUM | KPI IDs are stable within a season; cross-week join is straightforward |
+| Season progress indicator | Partners need to know where they are in the season (e.g., "Week 8 of ~26") to contextualize their hit rate. Without this, the overview is time-decontextualized | LOW | SEASON_START_DATE and SEASON_END_DATE already exported from content.js |
 
-## Differentiators
+### Differentiators
 
-Features that set this tool apart — not universally expected, but high value for this specific context.
+Features that add meaningful value for this specific use case, beyond what a generic tool would provide.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Guided meeting agenda (meeting mode) | Most accountability tools show data but don't structure the conversation. Meeting mode turns the tool into a facilitator co-pilot | High | This is the highest-value differentiator. Admin walks through each KPI with a structured agenda rather than ad-hoc review |
-| Admin override + annotation capability | Real accountability conversations produce decisions that override what was pre-committed. Admin needs to record those decisions in-tool, not in a separate doc | Medium | Prevents data rot where tool diverges from reality |
-| Toggleable partner input on growth priorities | Admin retains narrative control but can grant self-reporting — this mirrors how real facilitated accountability works (trust is earned incrementally) | Medium | Binary toggle per partner per priority |
-| Lock unlock with admin conversation requirement | The friction of needing to have a conversation to change a KPI is itself a feature — it prevents impulse changes | Low | Admin controls unlock; conversation context can be annotated |
-| KPI template management | Admin can evolve the KPI library over time without a developer. Content independence from code is critical for a tool used long-term | Medium | CRUD on KPI templates; partners select from admin-curated list |
-| Side-by-side partner comparison (KPI view) | Already built for roles; extending to KPIs lets admin spot asymmetries (one partner consistently hitting, one not) at a glance | Low (extension) | Natural extension of AdminComparison.jsx pattern already in codebase |
-| Hub screen with mode selection | Clear entry point for "what am I here to do today" prevents confusion — role questionnaire, KPI selection, or scorecard are distinct modes | Low | Already in PROJECT.md as active requirement |
-| 90-day lock-in confirmation ceremony | The explicit confirmation moment creates psychological commitment. Users who click "I commit to these for 90 days" take it more seriously than passive assignment | Low | Full-screen confirmation step before lock |
+| Monday Prep meeting mode | Friday Review is retrospective; Monday Prep is prospective. Same data, different framing: "what's ahead this week" vs. "how did last week go." Two meetings per week is the EOS L10 pattern's rhythm — review + set-up | HIGH | Requires `meeting_type` column on `meetings` table (currently no type column exists); different agenda stop copy but likely same 12-stop structure with reframed headings |
+| Export — meeting notes as plaintext/markdown | Meeting notes live in the tool and nowhere else. When someone says "what did we decide in the Feb 7 meeting?", they should be able to pull that up outside the app | MEDIUM | `meeting_notes` rows are flat text per stop; joining them is straightforward. Render as printable HTML or plaintext download |
+| Export — scorecard data as CSV | Scorecard data is the primary accountability record. A seasonal CSV export lets Trace do analysis outside the tool (e.g., in Excel), share with outside advisors, or archive at season end | MEDIUM | `scorecards` rows with JSONB `kpi_results`; flattening the JSONB per KPI per week is the main complexity |
+| Per-KPI miss streak indicator | Not just "you missed 3 of 7 this week" but "you've missed Revenue KPI 4 weeks in a row" — this surfaces the recurring patterns that Friday meetings should address | MEDIUM | Requires iterating allScorecards in order and computing consecutive-miss runs per KPI ID |
+| Season summary on admin view | Trace needs the same at-a-glance season overview as partners, but for both partners simultaneously. The existing AdminPartners accountability card (missed-KPI count + PIP flag) is the seed of this | LOW-MEDIUM | Extends existing AdminPartners.jsx pattern; aggregates the same scorecard data Trace already sees per-partner |
 
-## Anti-Features
-
-Features to explicitly NOT build for this project.
+### Anti-Features
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| Numeric rating scales (1-5, 1-10) | Rating KPIs invites endless debate about what a "3" means. Binary yes/no forces clarity and is faster for 3 users | Stay binary: done or not done, with a "why" field |
-| Email/push notifications | These users check in together in person on Fridays. Notifications solve a problem they don't have, add infrastructure complexity | Let the Friday meeting be the reminder mechanism |
-| Historical trend charts / dashboards | Premature optimization. The conversation matters more than the visualization at this stage. Charts require enough data history to be meaningful | Add in v2 after 3+ months of check-in data exists |
-| Percentage or weighted scoring | Overly complex for 2 people. Produces false precision that distracts from qualitative conversation | Rely on the reflection text for nuance |
-| Self-service KPI creation by partners | Partners selecting their own KPIs from scratch bypasses facilitated alignment. Admin curates the library; partners choose from it | Admin creates/edits templates; partners select from the curated list |
-| Automated meeting summaries or AI features | Adds complexity, API cost, and dependency for marginal gain. The admin is the scribe | Admin annotates manually; keeps it human |
-| User accounts / password auth | Three users, access codes already work and are established. Switching auth models for 3 users is pure overhead | Keep VITE_THEO_KEY / VITE_JERRY_KEY / VITE_ADMIN_KEY env var model |
-| Multi-team or multi-company support | This tool is for Cardinal specifically. Generic multi-tenancy requires fundamentally different data architecture | Hardcode Theo/Jerry; no generic user tables |
-| Mobile app | Accessed on Friday meeting devices (laptop/tablet). No mobile-specific requirements | Web-first, ensure it works on iPad-size screens in case used on a tablet during meetings |
-| Integrations (Slack, Google Sheets, etc.) | Three users, in-person meetings. Integration overhead not warranted | Manual data entry by admin is sufficient |
+| Charting library (Chart.js, Recharts, D3) | A 2-partner tool with 26 weeks of binary data does not need a charting library. The data set is tiny; dot rows and fraction labels (5/7, 6/7) communicate the trend better than a line graph for this audience | Use the existing `scorecard-dots` pattern from Scorecard.jsx history rows — colored dots + N/total. It's already built and already makes sense to the users |
+| CSV generation library (Papa Parse, etc.) | Overkill. This is flat data: one row per partner per week, ~7 KPI columns. Raw JS string building produces valid CSV for this schema without a dependency | Build a plain `generateCsv(scorecards, kpiSelections)` helper in a new `src/lib/export.js` |
+| PDF generation (jsPDF, etc.) | Meeting notes are prose text. `window.print()` with a print stylesheet produces a clean printable document without a dependency | Add a `@media print` CSS block that hides nav, shows only the summary content |
+| Real-time sync during Monday Prep | Partners are not co-located on Monday mornings — Monday Prep is admin-only. No collaborative editing needed | Admin-only session just like Friday Review |
+| Separate Monday Prep scorecard | Monday Prep does not need its own data record. The framing is different; the data (KPIs, growth priorities) is identical | Reuse the same `meetings` + `meeting_notes` tables; `meeting_type` column distinguishes framing at render time |
+| Trend "analysis" or insights text | Auto-generated text like "You're on a downward trend" adds no value over the data itself and requires inference logic that can be wrong | Show the data; let the conversation produce the insight |
 
 ---
 
-## Feature Dependencies
+## Feature Dependencies (v1.2 specific)
 
 ```
-KPI Template Library (admin CRUD)
-  → KPI Selection Flow (partners choose from templates)
-      → 90-Day Lock-In Confirmation
-          → Weekly Scorecard Check-In (binary + reflection)
-              → Historical Check-In Record (Supabase rows per week)
-                  → Partner Progress View (own KPI status)
-                  → Admin Comparison View (both partners' KPI status)
-                  → Admin Meeting Mode (walks through each KPI with history)
+Existing: scorecards table (week_of, partner, kpi_results JSONB)
+    └──enables──> Season Overview (aggregate hit rates across all weeks)
+                      └──enables──> Per-KPI trend view (cross-week per-KPI drill)
+                      └──enables──> Miss streak detection
 
-Growth Priority Selection (1 personal + 2 business)
-  → 90-Day Lock-In Confirmation (same confirmation flow as KPIs)
-      → Growth Priority Tracking (admin-controlled)
-          → Toggleable Partner Input (admin grants/revokes self-reporting)
-          → Admin Meeting Mode (growth priorities in agenda alongside KPIs)
+Existing: meetings + meeting_notes tables (ended_at, agenda_stop_key, body)
+    └──enables──> Meeting History — admin (read-only ended-meeting view)
+    └──enables──> Meeting History — partner (partner-facing ended-meeting list)
+    └──enables──> Export: meeting notes (join meetings + meeting_notes, format as text)
 
-Admin Override / Annotation
-  → Requires: Any locked KPI or growth priority to exist
-  → Used in: Meeting Mode (decisions made during meeting get recorded)
-  → Used in: Control Panel (unlock, modify, annotate outside of meetings)
+meetings table (currently no type column)
+    ──needs DB migration──> meeting_type column ('friday_review' | 'monday_prep')
+    └──enables──> Dual Meeting Mode (same session UI, different copy/framing)
+    └──enables──> AdminMeeting.jsx to show two "Start" options (Friday Review / Monday Prep)
 
-Hub Screen
-  → Depends on: knowing which modules are "available" for the logged-in partner
-  → Gates: Role Definition flow (existing), KPI Selection (new), Scorecard (new, only after KPI lock)
-  → Scorecard only unlocks after KPI selection is locked — partners can't check in on KPIs they haven't committed to
+scorecards table
+    └──enables──> Export: scorecard CSV (flatten kpi_results JSONB per week)
 ```
 
----
+### Dependency Notes
 
-## MVP Recommendation
-
-The accountability loop doesn't work until all four steps are live: KPI selection → lock-in → check-in → admin visibility. Build them in sequence; none is useful without the next.
-
-**Prioritize (Phase 1 — Core Accountability Loop):**
-1. KPI template management (admin CRUD) — admin must curate before partners select
-2. KPI selection flow (choose 5 from templates) + growth priority selection
-3. 90-day lock-in confirmation (single screen, explicit commit)
-4. Weekly scorecard check-in (binary per KPI + reflection prompts)
-5. Partner progress view (own KPI status post-lock)
-6. Admin comparison view (both partners, KPI selections and weekly status)
-
-**Prioritize (Phase 2 — Admin Power):**
-7. Admin control panel (unlock/modify/annotate locked items)
-8. Growth priority tracking with toggleable partner input
-9. Admin meeting mode (guided agenda for Friday meetings)
-
-**Defer:**
-- Historical trend charts — after 12+ weeks of data
-- KPI template versioning — not needed until KPIs need to change after the 90-day cycle
-- Any notification mechanism — the Friday meeting is the trigger
+- **Season overview requires existing scorecards data:** No new data model needed. All computation is frontend aggregation over `fetchScorecards()` which already exists.
+- **Meeting history requires no DB changes:** `fetchMeetings()` and `fetchMeetingNotes(id)` already exist. What's missing is routing and a read-only UI for ended meetings on both admin and partner sides.
+- **Dual meeting mode requires one DB migration:** Add `meeting_type` column to `meetings` table. The session UI (AdminMeetingSession.jsx) can receive `meeting.meeting_type` and adjust copy/eyebrow labels without structural change.
+- **Export requires no DB changes:** Pure frontend work — fetch existing data, transform, trigger download.
+- **MeetingSummary.jsx needs a history-aware rewrite:** Currently it finds the single most-recently-ended meeting. Needs to accept a `meetingId` route param (or show a list) to support browsing history.
 
 ---
 
-## Domain Patterns (Reference)
+## MVP for v1.2
 
-These patterns come from EOS/Traction tooling (Ninety.io, Bloom Growth) and OKR platforms (Lattice, 15Five). Confidence: MEDIUM — training knowledge, web verification unavailable.
+### Launch With
 
-- **Scorecard vs. Rocks:** EOS distinguishes weekly metrics (Scorecard) from 90-day priorities (Rocks). This project maps cleanly: KPIs = Scorecard items, Growth Priorities = Rocks.
-- **Red/yellow/green status:** Most tools use traffic light status for quick visual scan. Cardinal's binary (yes/no) is simpler and appropriate for 2 users; admin can mentally apply RAG based on streaks.
-- **The L10 Meeting pattern:** EOS L10 meetings have a fixed agenda: scorecard review → rock review → issues list → to-dos. Cardinal's meeting mode should follow this structure: KPI check-ins → growth priority check-ins → discussion / blockers → decisions.
-- **Lock-in duration:** 90 days is the EOS standard for "Rocks" (quarterly objectives). Aligns with the PROJECT.md decision — well-supported by domain practice.
-- **Facilitator as source of truth:** In facilitated accountability systems, the facilitator (admin here) records outcomes, not participants. This validates the admin-override architecture.
+- [ ] Season overview on partner hub — KPI hit-rate aggregate + season week progress indicator. High visibility, zero new DB work, uses data partners have already been producing.
+- [ ] Meeting history for admin — read-only view of any ended meeting (reuse or adapt MeetingSummary.jsx, route it from AdminMeeting.jsx). Admin needs this before partners do.
+- [ ] Meeting history for partner — partner can browse past meeting summaries (not just latest). Requires a meeting-list route on the partner side.
+- [ ] Dual meeting mode — `meeting_type` column + Monday Prep framing. Required per milestone definition; simpler than it sounds (one migration + copy variation in session UI).
+
+### Add After Core Is Working
+
+- [ ] Export: meeting notes — plaintext/print export of any ended meeting. Add after history UI is stable.
+- [ ] Export: scorecard CSV — season export at season-end. Lower urgency; useful at season close, not during active use.
+- [ ] Per-KPI miss streak indicator — valuable but additive to season overview; add once overview is live.
+- [ ] Partner progress view (dedicated page) — the hub season overview may be sufficient. Build the dedicated page only if the hub card feels cramped.
+
+### Defer to v1.3+
+
+- [ ] Admin season summary (cross-partner trend view) — builds naturally on per-partner season overview once that pattern is established.
+
+---
+
+## Feature Prioritization Matrix
+
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| Season KPI hit-rate on hub | HIGH — directly answers "am I on track?" | LOW — pure JS aggregation, existing data | P1 |
+| Season week progress indicator | HIGH — contextualizes hit rate | LOW — constants already exported | P1 |
+| Meeting history — admin | HIGH — admin needs audit trail | MEDIUM — new route + read-only UI | P1 |
+| Meeting history — partner | HIGH — partners can't review past notes | MEDIUM — new list + detail routes | P1 |
+| Dual meeting mode (Monday Prep) | HIGH — per milestone spec | MEDIUM — one migration + copy variant | P1 |
+| Export: meeting notes | MEDIUM — nice archival tool | LOW-MEDIUM — text join + print CSS | P2 |
+| Export: scorecard CSV | MEDIUM — useful at season end | MEDIUM — JSONB flattening | P2 |
+| Per-KPI miss streak indicator | MEDIUM — surfaces recurring patterns | MEDIUM — streak algorithm | P2 |
+| Partner progress view (dedicated page) | LOW-MEDIUM — hub may be sufficient | MEDIUM — new route + full page | P3 |
+| Admin cross-partner season view | MEDIUM | MEDIUM | P3 |
+
+---
+
+## Pattern Notes (Domain Context)
+
+Confidence: MEDIUM — Training knowledge of EOS/Traction, Ninety.io, Bloom Growth, Lattice, 15Five.
+
+**Season overview in accountability tools:**
+- All EOS-derived tools (Ninety.io, Bloom Growth) show quarterly scorecard hit rates as a fraction or percentage at the top of the scorecard view. The standard is "X of Y KPIs on track this quarter" plus a week-count indicator ("Week 8 of 13").
+- Per-KPI trend in these tools is typically a row of colored dots or traffic lights — one per week — reading left to right. This maps directly to the existing `scorecard-dots` pattern in Scorecard.jsx. Extend, don't invent.
+
+**Meeting history:**
+- In tools like Ninety.io and 15Five, meeting history is a chronological list of ended meeting sessions, each expandable to see the agenda + notes from that session. Users expect the list newest-first.
+- Partners typically see a read-only version; the facilitator/admin sees the same with optional edit capability.
+- The current MeetingSummary.jsx read-only rendering is correct architecture — it just needs to be routable by meeting ID rather than always fetching the latest.
+
+**Dual meeting modes:**
+- EOS separates the "Level 10 Meeting" (weekly review, Friday equivalent) from "State of the Company" quarterly reviews. Some companies add a Monday morning brief (lookahead). The key difference is framing: Friday = retrospective ("did we hit it?"), Monday = prospective ("what are we attacking this week?").
+- In tools that support multiple meeting types, the type is stored on the meeting record and affects copy/prompts only — the agenda structure and data model are identical. This is the right approach here.
+- Monday Prep sessions in this context do not need partner scorecards (partners haven't checked in yet for the week). The agenda is lighter: growth priority status + weekly intention-setting notes per stop.
+
+**Export:**
+- Meeting notes export in facilitated tools is almost always plaintext or simple HTML — not PDF. The audience is printing for reference, not formal reports. `window.print()` with a clean print stylesheet is the standard low-friction approach.
+- Scorecard CSV export is rare in small-team tools because the audience is already in the tool. It becomes valuable at season boundaries (archiving, retrospectives). Offer it in the admin control panel at season end, not as an ongoing feature.
 
 ---
 
 ## Sources
 
-- Training knowledge: EOS/Traction methodology (Gino Wickman), Ninety.io feature set, Bloom Growth feature set, 15Five check-in patterns, Lattice OKR tooling — MEDIUM confidence
-- Project context: `.planning/PROJECT.md` — HIGH confidence (direct requirement source)
-- Web search: unavailable for this session
+- Codebase analysis: `src/lib/supabase.js`, `src/components/admin/AdminMeeting.jsx`, `src/components/admin/AdminMeetingSession.jsx`, `src/components/MeetingSummary.jsx`, `src/components/Scorecard.jsx`, `src/components/PartnerHub.jsx` — HIGH confidence (direct inspection)
+- `.planning/PROJECT.md` v1.2 milestone definition — HIGH confidence
+- Domain knowledge: EOS/Traction methodology (Ninety.io, Bloom Growth patterns), OKR tooling (Lattice, 15Five check-in flows) — MEDIUM confidence (training knowledge, web search unavailable)
+
+---
+
+## Prior Research (v1.0/v1.1 context — preserved)
+
+*The sections below cover features built in v1.0 and v1.1. Retained as context for the roadmap.*
+
+### Table Stakes (v1.0/v1.1 — SHIPPED)
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Defined KPI list per person | Without this, there's nothing to track | Low | SHIPPED |
+| Binary yes/no check-in per KPI | The minimal viable accountability signal | Low | SHIPPED |
+| Reflection prompt on check-in | "Yes/no" alone tells you nothing useful | Low | SHIPPED |
+| Lock-in period for KPI commitments | Without a lock, partners change KPIs to avoid accountability | Low | SHIPPED |
+| Admin visibility into both partners | Facilitator must see both sides | Low | SHIPPED |
+| Historical record of check-ins | Can't have a meaningful weekly conversation without knowing last week's state | Low | SHIPPED |
+| Growth priorities alongside KPIs | KPI tracks execution; growth priority tracks direction | Medium | SHIPPED |
+
+### Anti-Features (v1.0/v1.1 — remain valid)
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Numeric rating scales | Binary yes/no forces clarity and is faster | Stay binary |
+| Email/push notifications | In-person meetings; notifications solve a non-problem | Friday meeting is the reminder |
+| Charting libraries | 2-person tool, tiny dataset | Dot row pattern (already built) |
+| Self-service KPI creation by partners | Bypasses facilitated alignment | Admin curates library |
+| User accounts / password auth | Three users, access codes work | Keep env var model |
+| Multi-team support | Tool is for Cardinal specifically | Hardcode Theo/Jerry |
