@@ -78,7 +78,7 @@ export default function Scorecard() {
     Promise.all([fetchKpiSelections(partner), fetchScorecards(partner)])
       .then(([sels, scorecards]) => {
         // Guard 3: KPIs not locked yet → hub (D-18)
-        if (sels.length === 0 || !sels[0]?.locked_until) {
+        if (sels.length === 0) {
           navigate(`/hub/${partner}`, { replace: true });
           return;
         }
