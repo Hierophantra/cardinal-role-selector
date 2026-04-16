@@ -25,20 +25,20 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 ### Role Identity
 
 - [x] **ROLE-01**: `src/data/roles.js` defines role identity content per partner: title, italic self-quote, role narrative, focus areas array, day-in-life paragraph
-- [ ] **ROLE-02**: `RoleIdentitySection.jsx` renders role title in Cardinal red, italic self-quote with red left-border accent, and multi-paragraph role narrative
-- [ ] **ROLE-03**: "What You Focus On" collapsible renders labeled focus areas; default expanded on desktop
-- [ ] **ROLE-04**: "Your Day Might Involve" collapsible renders day-in-life paragraph; default collapsed
-- [ ] **ROLE-05**: Collapsible state uses `useState` + CSS `max-height` transition (no Framer Motion for these toggles)
+- [x] **ROLE-02**: `RoleIdentitySection.jsx` renders role title in Cardinal red, italic self-quote with red left-border accent, and multi-paragraph role narrative
+- [x] **ROLE-03**: "What You Focus On" collapsible renders labeled focus areas; default expanded on desktop
+- [x] **ROLE-04**: "Your Day Might Involve" collapsible renders day-in-life paragraph; default collapsed
+- [x] **ROLE-05**: Collapsible state uses `useState` + CSS `max-height` transition (no Framer Motion for these toggles)
 
 ### Partner Hub (desktop-first redesign)
 
 - [ ] **HUB-01**: Hub layout reordered top-to-bottom: header → role identity → focus areas → day-in-life → This Week's KPIs → workflow cards → personal growth
-- [ ] **HUB-02**: "This Week's KPIs" section lists 6 mandatory KPIs with status dots (green=met, amber=partial, gray/red=not met) next to each name
-- [ ] **HUB-03**: Weekly choice card uses amber accent (border-left) and shows current week's selection, with "Change" button when scorecard not yet submitted for the week
-- [ ] **HUB-04**: If no weekly choice selected yet, card prompts "Choose your KPI for this week" and links to the weekly-selection flow
-- [ ] **HUB-05**: Last-week quiet hint — "Last week: [previous KPI name]" — displayed below the weekly choice card
-- [ ] **HUB-06**: Personal Growth section at bottom shows mandatory priority (always visible) and self-chosen priority with approval-state badge (pending/approved/rejected)
-- [ ] **HUB-07**: If self-chosen personal growth not yet entered, section shows input CTA
+- [x] **HUB-02**: "This Week's KPIs" section lists 6 mandatory KPIs with status dots (green=met, amber=partial, gray/red=not met) next to each name
+- [x] **HUB-03**: Weekly choice card uses amber accent (border-left) and shows current week's selection, with "Change" button when scorecard not yet submitted for the week
+- [x] **HUB-04**: If no weekly choice selected yet, card prompts "Choose your KPI for this week" and links to the weekly-selection flow
+- [x] **HUB-05**: Last-week quiet hint — "Last week: [previous KPI name]" — displayed below the weekly choice card
+- [x] **HUB-06**: Personal Growth section at bottom shows mandatory priority (always visible) and self-chosen priority with approval-state badge (pending/approved/rejected)
+- [x] **HUB-07**: If self-chosen personal growth not yet entered, section shows input CTA
 - [ ] **HUB-08**: Hub `useState` declarations for new collapsibles and counters come BEFORE any early returns (avoids v1.3-style hooks-ordering violation)
 - [x] **HUB-09**: `computeSeasonStats` redesigned to iterate `Object.entries(card.kpi_results)` directly using embedded `entry.label` (not current selection IDs), so rotating weekly-choice history remains visible
 
@@ -72,7 +72,7 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 
 ### Growth Priorities
 
-- [ ] **GROWTH-01**: Mandatory personal growth priority auto-assigned per partner from seed (Theo: leave work at set time 2+ days/week; Jerry: initiate one difficult conversation weekly)
+- [x] **GROWTH-01**: Mandatory personal growth priority auto-assigned per partner from seed (Theo: leave work at set time 2+ days/week; Jerry: initiate one difficult conversation weekly)
 - [x] **GROWTH-02**: Self-chosen personal growth priority: partner enters from hub via an inline textarea; on save, the value locks with `approval_state='approved'` — no pending state. Trace can edit the locked value from admin UI (ADMIN-04).
 - [ ] **GROWTH-03**: Business growth priorities: 2 shared between partners, seeded from the 7 options in spec section 5 (or custom entry), locked once both partners confirm and Trace approves
 - [ ] **GROWTH-04**: Business growth priority Day-60 milestone badge appears on hub + comparison view starting at engagement day 60 if no `milestone_at` recorded
@@ -140,20 +140,20 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 | SCHEMA-10 | Phase 14 | Complete |
 | SCHEMA-11 | Phase 14 | Complete |
 | ROLE-01 | Phase 15 | Complete |
-| ROLE-02 | Phase 15 | Pending |
-| ROLE-03 | Phase 15 | Pending |
-| ROLE-04 | Phase 15 | Pending |
-| ROLE-05 | Phase 15 | Pending |
+| ROLE-02 | Phase 15 | Complete |
+| ROLE-03 | Phase 15 | Complete |
+| ROLE-04 | Phase 15 | Complete |
+| ROLE-05 | Phase 15 | Complete |
 | HUB-01 | Phase 15 | Pending |
-| HUB-02 | Phase 15 | Pending |
-| HUB-03 | Phase 15 | Pending |
-| HUB-04 | Phase 15 | Pending |
-| HUB-05 | Phase 15 | Pending |
-| HUB-06 | Phase 15 | Pending |
-| HUB-07 | Phase 15 | Pending |
+| HUB-02 | Phase 15 | Complete |
+| HUB-03 | Phase 15 | Complete |
+| HUB-04 | Phase 15 | Complete |
+| HUB-05 | Phase 15 | Complete |
+| HUB-06 | Phase 15 | Complete |
+| HUB-07 | Phase 15 | Complete |
 | HUB-08 | Phase 15 | Pending |
 | HUB-09 | Phase 15 | Complete |
-| GROWTH-01 | Phase 15 | Pending |
+| GROWTH-01 | Phase 15 | Complete |
 | GROWTH-02 | Phase 15 | Complete |
 | WEEKLY-01 | Phase 16 | Pending |
 | WEEKLY-02 | Phase 16 | Pending |

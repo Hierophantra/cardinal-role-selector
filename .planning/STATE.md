@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role Identity & Weekly KPI Rotation
 status: Ready to execute
-stopped_at: Completed 15-01-PLAN.md
-last_updated: "2026-04-16T20:32:02.250Z"
+stopped_at: Completed 15-02-PLAN.md
+last_updated: "2026-04-16T20:39:37.636Z"
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
-  percent: 67
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-04-16 — v2.0 milestone started)
 ## Current Position
 
 Phase: 15 (role-identity-hub-redesign) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Shipped Milestones
 
@@ -78,6 +78,11 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 - [Phase 15]: Plan 15-01: ROLE_IDENTITY shape locked in src/data/roles.js — downstream phases 16-18 must not mutate shape (R-4)
 - [Phase 15]: Plan 15-01: seasonStats now iterates Object.entries(kpi_results) by entry.label — rotating-ID safe (P-B1) before Phase 16 ships
 - [Phase 15]: Plan 15-01: REQUIREMENTS.md GROWTH-02 + ADMIN-04 synced to no-approval pivot (D-15/D-20/D-21) — Phase 16-18 research regen will reflect correct semantics
+- [Phase 15-role-identity-hub-redesign]: Plan 15-02: Three hub section components created — all prop contracts locked (Wave 3 hub must conform)
+- [Phase 15-role-identity-hub-redesign]: Plan 15-02: PersonalGrowthSection drops partner prop (checker M5); hub closes over partner in onSaveSelfChosen callback
+- [Phase 15-role-identity-hub-redesign]: Plan 15-02: statusModifierClass exported as named helper from ThisWeekKpisSection (checker B1) — allows unit-testing pure status→class mapping
+- [Phase 15-role-identity-hub-redesign]: Plan 15-02: Rule 2 fix — added .growth-status-badge.pending to Phase 15 CSS block (checker N7 assumed it existed at lines 1353-1385 but it didn't; existing block unchanged)
+- [Phase 15-role-identity-hub-redesign]: Plan 15-02: Wave 3 MUST register placeholder /weekly-kpi/:partner route in App.jsx — ThisWeekKpisSection CTA depends on it
 
 ### Pending Todos
 
@@ -100,6 +105,6 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 
 ## Session Continuity
 
-Last session: 2026-04-16T20:31:53.267Z
-Stopped at: Completed 15-01-PLAN.md
+Last session: 2026-04-16T20:39:37.633Z
+Stopped at: Completed 15-02-PLAN.md
 Resume file: None
