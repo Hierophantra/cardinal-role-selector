@@ -10,17 +10,17 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 
 ### Schema & Seed (migration 009)
 
-- [ ] **SCHEMA-01**: Migration 009 wipes `scorecards` + `kpi_selections` + `growth_priorities` + `kpi_templates` together to avoid orphaned JSONB keys in scorecard history
-- [ ] **SCHEMA-02**: New `weekly_kpi_selections` table stores partner, week_start_date, kpi_template_id, label_snapshot, counter_value (JSONB), created_at
-- [ ] **SCHEMA-03**: Postgres trigger `trg_no_back_to_back` rejects insert when a row exists for the same partner whose week_start_date is exactly 7 days earlier with the same kpi_template_id
-- [ ] **SCHEMA-04**: `kpi_templates` extended with `conditional` (boolean, default false), `countable` (boolean, default false), and `partner_overrides` (jsonb, nullable) columns
-- [ ] **SCHEMA-05**: `growth_priorities` extended with `subtype` (enum: mandatory_personal, self_personal, business), `approval_state` (enum: pending, approved, rejected, n/a), `milestone_at` (date, nullable), `milestone_note` (text, nullable)
-- [ ] **SCHEMA-06**: `meeting_notes` CHECK constraint expanded to accept `role_check` stop key for both meeting types (migration idempotent DROP + ADD pattern from migration 008)
-- [ ] **SCHEMA-07**: New `admin_settings` table (key text PK, value jsonb, updated_at) for runtime-editable toggles (Jerry sales KPI active flag, Theo closing rate threshold)
-- [ ] **SCHEMA-08**: v2.0 reseed inserts 2 shared mandatory KPIs, 4 Theo role-mandatory + 4 Theo optional, 4 Jerry role-mandatory + 3 Jerry optional, 1 Jerry conditional sales KPI (inactive by default), plus mandatory personal growth priorities per partner and 7 business growth priority options
-- [ ] **SCHEMA-09**: KPI categories normalized to the standard set: `sales`, `ops`, `client`, `team`, `finance`
+- [x] **SCHEMA-01**: Migration 009 wipes `scorecards` + `kpi_selections` + `growth_priorities` + `kpi_templates` together to avoid orphaned JSONB keys in scorecard history
+- [x] **SCHEMA-02**: New `weekly_kpi_selections` table stores partner, week_start_date, kpi_template_id, label_snapshot, counter_value (JSONB), created_at
+- [x] **SCHEMA-03**: Postgres trigger `trg_no_back_to_back` rejects insert when a row exists for the same partner whose week_start_date is exactly 7 days earlier with the same kpi_template_id
+- [x] **SCHEMA-04**: `kpi_templates` extended with `conditional` (boolean, default false), `countable` (boolean, default false), and `partner_overrides` (jsonb, nullable) columns
+- [x] **SCHEMA-05**: `growth_priorities` extended with `subtype` (enum: mandatory_personal, self_personal, business), `approval_state` (enum: pending, approved, rejected, n/a), `milestone_at` (date, nullable), `milestone_note` (text, nullable)
+- [x] **SCHEMA-06**: `meeting_notes` CHECK constraint expanded to accept `role_check` stop key for both meeting types (migration idempotent DROP + ADD pattern from migration 008)
+- [x] **SCHEMA-07**: New `admin_settings` table (key text PK, value jsonb, updated_at) for runtime-editable toggles (Jerry sales KPI active flag, Theo closing rate threshold)
+- [x] **SCHEMA-08**: v2.0 reseed inserts 2 shared mandatory KPIs, 4 Theo role-mandatory + 4 Theo optional, 4 Jerry role-mandatory + 3 Jerry optional, 1 Jerry conditional sales KPI (inactive by default), plus mandatory personal growth priorities per partner and 7 business growth priority options
+- [x] **SCHEMA-09**: KPI categories normalized to the standard set: `sales`, `ops`, `client`, `team`, `finance`
 - [ ] **SCHEMA-10**: All required Supabase lib functions exported: `fetchWeeklyKpiSelection`, `fetchPreviousWeeklyKpiSelection`, `upsertWeeklyKpiSelection`, `incrementKpiCounter`, `fetchAdminSetting`, `upsertAdminSetting`, `fetchGrowthPriorities`, `upsertGrowthPriority`
-- [ ] **SCHEMA-11**: `locked_until` semantics simplified — always null in v2.0 (seasonal locking dropped in favor of weekly rotation; hub derives state from mandatory list + weekly-choice presence)
+- [x] **SCHEMA-11**: `locked_until` semantics simplified — always null in v2.0 (seasonal locking dropped in favor of weekly rotation; hub derives state from mandatory list + weekly-choice presence)
 
 ### Role Identity
 
@@ -128,17 +128,17 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SCHEMA-01 | Phase 14 | Pending |
-| SCHEMA-02 | Phase 14 | Pending |
-| SCHEMA-03 | Phase 14 | Pending |
-| SCHEMA-04 | Phase 14 | Pending |
-| SCHEMA-05 | Phase 14 | Pending |
-| SCHEMA-06 | Phase 14 | Pending |
-| SCHEMA-07 | Phase 14 | Pending |
-| SCHEMA-08 | Phase 14 | Pending |
-| SCHEMA-09 | Phase 14 | Pending |
+| SCHEMA-01 | Phase 14 | Complete |
+| SCHEMA-02 | Phase 14 | Complete |
+| SCHEMA-03 | Phase 14 | Complete |
+| SCHEMA-04 | Phase 14 | Complete |
+| SCHEMA-05 | Phase 14 | Complete |
+| SCHEMA-06 | Phase 14 | Complete |
+| SCHEMA-07 | Phase 14 | Complete |
+| SCHEMA-08 | Phase 14 | Complete |
+| SCHEMA-09 | Phase 14 | Complete |
 | SCHEMA-10 | Phase 14 | Pending |
-| SCHEMA-11 | Phase 14 | Pending |
+| SCHEMA-11 | Phase 14 | Complete |
 | ROLE-01 | Phase 15 | Pending |
 | ROLE-02 | Phase 15 | Pending |
 | ROLE-03 | Phase 15 | Pending |

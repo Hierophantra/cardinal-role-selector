@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role Identity & Weekly KPI Rotation
-status: Executing Phase 14
-stopped_at: Completed 14-03-PLAN.md (REQUIREMENTS.md SCHEMA-08 correction)
-last_updated: "2026-04-16T07:52:23.561Z"
+status: Ready to execute
+stopped_at: Completed 14-01-PLAN.md
+last_updated: "2026-04-16T07:55:39.794Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-04-16 — v2.0 milestone started)
 ## Current Position
 
 Phase: 14 (schema-seed) — EXECUTING
-Plan: 1 of 3
+Plan: 2 of 3
 
 ## Shipped Milestones
 
@@ -57,6 +57,9 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 - Wipe scope: scorecards + kpi_selections + growth_priorities + kpi_templates + meetings + meeting_notes (growth_priority_templates retained; v2.0 rows added alongside)
 - test partner seeded as Theo clone (mandatory selections only)
 - [Phase 14]: Plan 14-03: REQUIREMENTS.md SCHEMA-08 corrected from '5 Theo optional' to '4 Theo optional' per D-02/canonical PDF (1-char surgical edit)
+- [Phase 14]: Migration 009 uses PDF verbatim strings for baseline_action/growth_clause; partner_scope='both' for shared templates; admin_settings stores flat JSONB scalars
+- [Phase 14]: trg_no_back_to_back error contract: ERRCODE P0001 + message prefix 'back_to_back_kpi_not_allowed' (consumed by plan 14-02 supabase.js wrappers)
+- [Phase 14]: NOT NULL on baseline_action/growth_clause enforced AFTER seed (initial ALTER tolerates NULL during wipe+seed cycle)
 
 ### Pending Todos
 
@@ -73,6 +76,6 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 
 ## Session Continuity
 
-Last session: 2026-04-16T07:52:23.558Z
-Stopped at: Completed 14-03-PLAN.md (REQUIREMENTS.md SCHEMA-08 correction)
+Last session: 2026-04-16T07:55:24.552Z
+Stopped at: Completed 14-01-PLAN.md
 Resume file: None
