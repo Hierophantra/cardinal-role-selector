@@ -2,7 +2,7 @@
 
 ## What This Is
 
-An internal accountability platform for Cardinal's two business partners (Theo and Jerry) and their admin/facilitator (Trace). Partners commit to 7 KPIs (5 mandatory + 2 chosen) and 3 growth priorities each season, check in weekly with binary results and reflections, and participate in structured Friday meetings facilitated through the app.
+An internal accountability platform for Cardinal's two business partners (Theo and Jerry) and their admin/facilitator (Trace). Partners commit to 7 KPIs (5 mandatory + 2 chosen) and 3 growth priorities each season, check in weekly with binary results and reflections, and participate in two distinct facilitator-guided meeting types: Monday Prep (5 intention-focused stops) for planning the week, and Friday Review (13 KPI-focused stops) for accountability. Both meetings start with Clear the Air.
 
 ## Core Value
 
@@ -40,9 +40,15 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 - ✓ Dual meeting mode: Friday Review + Monday Prep sessions with different framing — v1.2
 - ✓ Partner progress view: dedicated progress dashboard beyond the hub status line — v1.2
 
+- ✓ Monday Prep distinct 5-stop structure (Clear the Air, Week Preview, Priorities & Focus, Risks & Blockers, Commitments) — v1.3
+- ✓ Friday Review expanded to 13 stops with Clear the Air as stop 1 — v1.3
+- ✓ Meeting_notes schema accepts all 17 stop keys (idempotent migration 008) — v1.3
+- ✓ Dual stop array architecture (FRIDAY_STOPS / MONDAY_STOPS) in content.js — v1.3
+
 ### Deferred
 
 - Export capability: meeting notes and scorecard data exportable (removed from v1.2, future milestone)
+- Monday Prep mock in admin test account (TEST-01 dropped with Phase 14 removal from v1.3)
 
 ### Out of Scope
 
@@ -55,16 +61,16 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 
 ## Context
 
-- Brownfield project: v1.0 + v1.1 + v1.2 shipped
+- Brownfield project: v1.0 + v1.1 + v1.2 + v1.3 shipped
 - Two specific users (Theo, Jerry) plus one admin (Trace)
 - Partners have completed role questionnaire — data exists in Supabase
 - 20 real KPI templates seeded with mandatory/choice model per partner
-- 11,897 LOC across 41 React components, data, and lib files
 - Tech stack: React 18 + Vite + Supabase + Framer Motion + vanilla CSS + recharts
 - Dark theme with Cardinal brand (red accents, gold labels)
 - Access code auth — no user accounts for 3 users
-- Friday Review and Monday Prep meetings both operational
+- Meeting modes fully differentiated: Friday Review (13 stops, KPI-focused) vs. Monday Prep (5 stops, intention-focused); both start with Clear the Air
 - Partners work Saturdays, so scorecards may not be done by Friday
+- Hosted on Vercel, Supabase project `pkiijsrxfnokfvopdjuh`
 
 ## Constraints
 
@@ -90,21 +96,21 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 | Dual meeting mode: session-based with meeting_type column | Same 12-stop structure, different framing per type; one meeting per type per week enforced at DB level | ✓ Good (Phase 8) |
 | STOPS array single source of truth in content.js | Eliminates copy drift between consumers; fixes kpi_6/kpi_7 defect | ✓ Good (Phase 8) |
 | FRIDAY_STOPS/MONDAY_STOPS separate arrays in content.js | Each meeting type has its own array; KPI_STOP_COUNT derived from FRIDAY_STOPS; KPI_START_INDEX=2 accounts for clear_the_air prepended at index 0 | ✓ Good (Phase 13) |
-
-## Current Milestone: v1.3 Monday Prep Redesign
-
-**Goal:** Give Monday Prep its own intention-focused structure (6 stops) and add Clear the Air to both meeting types.
-
-**Target features:**
-- Monday Prep restructured to 6 planning-focused stops (Clear the Air, Week Preview, Priorities & Focus, Risks & Blockers, Growth Check-in, Commitments & Action Items)
-- Friday Review gains Clear the Air as new stop 1 (13 stops total)
-- Monday Prep mock in admin test account
+| Monday Prep finalized at 5 stops (not 6) | Growth Check-in stop removed post-ship — redundant with Friday's growth stops; Monday stays pure planning | ✓ Good (v1.3) |
+| Clear the Air as first stop of both meetings | Emotional/interpersonal stuff surfaces before tactical work, prevents discussions from being poisoned | ✓ Good (v1.3) |
 
 ## Current State
 
-v1.2 shipped — Full accountability platform with dual meeting modes (Friday Review + Monday Prep), meeting history, and season progress dashboard. Partners see KPI hit-rate trends, miss streak alerts, and growth priority status. 4 phases, 9 plans, 11,897 LOC.
+**v1.3 shipped** — Monday Prep now runs its own 5-stop intention-focused flow (Clear the Air, Week Preview, Priorities & Focus, Risks & Blockers, Commitments & Action Items), Friday Review expanded to 13 stops with Clear the Air as stop 1. Dual stop array pattern (FRIDAY_STOPS / MONDAY_STOPS) in content.js with meeting-type-driven selection. Migration 008 expanded meeting_notes CHECK constraint to all 17 stop keys.
 
-v1.3 in progress — Phase 12 complete: migration 008_schema_v13.sql ready to deploy. Phase 13 complete: dual stop arrays (FRIDAY_STOPS 13 stops, MONDAY_STOPS 6 stops) defined in content.js; all 6 Monday Prep stop components built in AdminMeetingSession.jsx; MeetingSummary.jsx and mock files updated to use FRIDAY_STOPS. Phase 14 (Monday Prep mock) up next.
+Cumulative: v1.0 + v1.1 + v1.2 + v1.3 = complete role-definition → KPI selection → weekly scorecard → season progress → dual-meeting-type accountability platform. 4 milestones, 13 phases, 22 plans shipped.
+
+## Next Milestone Goals
+
+No milestone currently planned. Candidate areas for future work:
+- **Testing/mocks**: TEST-01 was dropped with Phase 14 removal — admin test account mocks for Monday Prep could return if needed
+- **Export**: EXPORT-01 deferred from v1.2 — meeting notes and scorecard data export
+- **UX polish**: Any user-feedback items that emerge from live Monday Prep + Friday Review usage
 
 ## Evolution
 
@@ -124,4 +130,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-13 after Phase 12 (schema-migration) complete*
+*Last updated: 2026-04-13 after v1.3 milestone complete*
