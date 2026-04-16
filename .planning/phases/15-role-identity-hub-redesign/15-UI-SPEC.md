@@ -219,7 +219,7 @@ Same section-header pattern as FocusAreasSection. Content is a `<ul>` of bullet 
 
 **Entry form (self-chosen = not set):**
 - Inline textarea, 80px min-height, `font-size: 15px`, `color: var(--text)`, uses global `textarea` styles (already styled at `src/index.css:63–81`)
-- "Save" button below textarea — `.btn-primary` (existing class; confirm exact class name in PartnerHub)
+- "Lock in my priority" button below textarea — `.btn-primary` (existing class; confirm exact class name in PartnerHub)
 - On save: calls `upsertGrowthPriority` with `subtype='self_personal'`, `approval_state='approved'`; transitions row to Locked state
 - No modal, no navigation, no confirmation dialog (D-15, D-16)
 - Textarea placeholder: "What personal growth are you committed to this season?"
@@ -243,7 +243,7 @@ Same section-header pattern as FocusAreasSection. Content is a `<ul>` of bullet 
 | Click "Your Day Might Involve" header | PartnerHub (section toggle) | Expands collapsed section. Chevron rotates. CSS max-height 0 → 600px. | `dayInLifeOpen` boolean |
 | Click "Choose your KPI" / "Change" | ThisWeekKpisSection | React Router `<Link>` navigates to `/weekly-kpi/:partner`. No DB write. | Route change only |
 | Type in self-chosen textarea | PersonalGrowthSection | Updates draft string in local state. No DB write on keystroke. | `selfChosenDraft` string |
-| Click "Save" (growth entry) | PersonalGrowthSection | Calls `upsertGrowthPriority`. On success: row switches to Locked view. On failure: inline error text below textarea. No confirmation dialog. | `growthPriorities` re-fetched or optimistic update |
+| Click "Lock in my priority" (growth entry) | PersonalGrowthSection | Calls `upsertGrowthPriority`. On success: row switches to Locked view. On failure: inline error text below button. No confirmation dialog. | `growthPriorities` re-fetched or optimistic update |
 
 **Animation budget:** CSS `transition: max-height 0.22s ease` for collapsibles only. No Framer Motion in Phase 15 hub components (D-07). No fade-in animations on section reveal.
 
@@ -255,7 +255,7 @@ Same section-header pattern as FocusAreasSection. Content is a `<ul>` of bullet 
 
 | Element | Copy |
 |---------|------|
-| Primary CTA (growth entry) | "Save" — on inline Save button below self-chosen textarea |
+| Primary CTA (growth entry) | "Lock in my priority" — on inline button below self-chosen textarea |
 | Primary CTA (weekly choice, no selection) | "Choose this week's KPI" — link text inside amber card |
 | Section heading: role section | No heading text; role title serves as the anchor |
 | Section heading: focus areas | "What You Focus On" |
@@ -273,10 +273,10 @@ Same section-header pattern as FocusAreasSection. Content is a `<ul>` of bullet 
 | Read more toggle: collapsed | "Read more" |
 | Read more toggle: expanded | "Show less" |
 | Textarea placeholder | "What personal growth are you committed to this season?" |
-| Save error (growth) | "Couldn't save your priority. Try again." (inline, below Save button, 12px, `color: var(--miss)`) |
+| Save error (growth) | "Couldn't save your priority. Try again." (inline, below button, 12px, `color: var(--miss)`) |
 | Admin label in UI | "Trace" — never "admin" in any new user-facing string (CONTEXT.md D-05, memory `feedback_admin_identity.md`) |
 
-Destructive actions in Phase 15: none. The Save action on growth entry is append-only and locks the value. No delete, no confirm dialog required.
+Destructive actions in Phase 15: none. The "Lock in my priority" action on growth entry is append-only and locks the value. No delete, no confirm dialog required.
 
 ---
 
@@ -313,7 +313,7 @@ Current week = `week_start_date` equal to `getMondayOf(new Date())`.
 | `growthPriorities` loading | Rows render empty (same `null` loading gate as hub) |
 | Mandatory row (subtype=`mandatory_personal`) | Row label + priority text. No pill. |
 | Self-chosen row (subtype=`self_personal`) exists | Row label + priority text + "Locked" green pill |
-| No self-chosen row exists | Row label + "Not set" amber pill + inline textarea + Save button |
+| No self-chosen row exists | Row label + "Not set" amber pill + inline textarea + "Lock in my priority" button |
 
 ---
 
@@ -373,3 +373,4 @@ No external component registries. No shadcn. All components are hand-authored va
 | Weekly-choice CTA = real `<Link>` | RESEARCH.md §Discretion — recommended over disabled button |
 | Typography: 13px and 14px collapsed to 12px | Checker revision — typography max 4 sizes rule |
 | Spacing: gap 6px → 8px, padding 20px → 24px | Checker revision — spacing multiples-of-4 rule |
+| Growth entry CTA: "Save" → "Lock in my priority" | Checker revision 2026-04-16 — BLOCK rule: generic single-word CTA label. CONTEXT.md D-16 names the interaction pattern ("inline textarea + Save button"), not the exact label. Label chosen to match D-15/D-17 locked-after-save semantic (the action is a commitment, not a generic data persist). |
