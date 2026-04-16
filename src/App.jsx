@@ -23,6 +23,21 @@ import MeetingHistoryMock from './components/admin/MeetingHistoryMock.jsx';
 import PartnerProgressMock from './components/admin/PartnerProgressMock.jsx';
 import PartnerProgress from './components/PartnerProgress.jsx';
 
+// Placeholder — Phase 16 replaces this with the real WeeklyKpiSelectionFlow.
+// Registered so hub CTAs in Phase 15 don't fall through to the catch-all redirect.
+function WeeklyKpiPlaceholder() {
+  return (
+    <div className="app-shell">
+      <div className="container">
+        <div className="screen">
+          <h2>Weekly KPI Selection</h2>
+          <p>Coming soon — Phase 16.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <Routes>
@@ -32,6 +47,7 @@ export default function App() {
       <Route path="/kpi/:partner" element={<KpiSelection />} />
       <Route path="/kpi-view/:partner" element={<KpiSelectionView />} />
       <Route path="/scorecard/:partner" element={<Scorecard />} />
+      <Route path="/weekly-kpi/:partner" element={<WeeklyKpiPlaceholder />} />
       <Route path="/progress/:partner" element={<PartnerProgress />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/admin/hub" element={<AdminHub />} />

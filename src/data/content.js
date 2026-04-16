@@ -321,8 +321,8 @@ export const HUB_COPY = {
     },
     cards: {
       roleDefinition: {
-        title: 'Role Definition',
-        description: 'Complete your role and ownership questionnaire',
+        title: 'View Questionnaire',
+        description: 'Review your completed role and ownership questionnaire answers',
         ctaSubmitted: 'View Submission',
         ctaNotSubmitted: 'Start Questionnaire',
       },
