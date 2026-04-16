@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role Identity & Weekly KPI Rotation
-status: Planning
-stopped_at: Roadmap created — Phase 14 is next
-last_updated: "2026-04-16T00:00:00.000Z"
+status: Executing Phase 14
+stopped_at: Completed 14-03-PLAN.md (REQUIREMENTS.md SCHEMA-08 correction)
+last_updated: "2026-04-16T07:52:23.561Z"
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 3
+  completed_plans: 1
 ---
 
 # Project State
@@ -19,18 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-16 — v2.0 milestone started)
 
 **Core value:** Partners have clear, locked-in accountability commitments they check in on weekly, with an admin who can track progress and facilitate structured conversations.
-**Current focus:** Milestone v2.0 — Role Identity & Weekly KPI Rotation (Phase 14: Schema + Seed)
+**Current focus:** Phase 14 — schema-seed
 
 ## Current Position
 
-Phase: 14 — Schema + Seed
-Plan: —
-Status: Not started
-Last activity: 2026-04-16 — Roadmap created
-
-```
-Progress: [                    ] 0% (0/5 phases)
-```
+Phase: 14 (schema-seed) — EXECUTING
+Plan: 1 of 3
 
 ## Shipped Milestones
 
@@ -46,15 +40,28 @@ Progress: [                    ] 0% (0/5 phases)
 Decisions are logged in PROJECT.md Key Decisions table.
 
 Key v2.0 decisions already baked into roadmap:
+
 - Weekly KPI selection is hub-only (no meeting-mode interactive selection)
-- Counter storage: JSONB on weekly_kpi_selections row (no separate kpi_counters table)
+- Counter storage: JSONB on weekly_kpi_selections row (no separate kpi_counters table) — confirmed in Phase 14 CONTEXT D-20
 - locked_until always null in v2.0 (seasonal locking dropped)
 - Self-chosen personal growth: hub-driven entry, Trace approves from admin
 
+Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
+
+- Canonical spec = Cardinal_Role_KPI_Summary.pdf; REQUIREMENTS SCHEMA-08 "5 Theo optional" to be corrected to 4
+- kpi_templates gets baseline_action + growth_clause NOT NULL columns; measure dropped
+- admin_settings holds theo_close_rate_threshold=40, jerry_conditional_close_rate_threshold=25, jerry_sales_kpi_active=false (eager seed, flat scalars)
+- growth_priorities.subtype = 3-value enum; approval_state = 4-value enum incl n/a
+- weekly_kpi_selections.counter_value is multi-key dict keyed by template_id (covers mandatory + weekly choice)
+- Row auto-created on first counter increment or weekly-choice write
+- Wipe scope: scorecards + kpi_selections + growth_priorities + kpi_templates + meetings + meeting_notes (growth_priority_templates retained; v2.0 rows added alongside)
+- test partner seeded as Theo clone (mandatory selections only)
+- [Phase 14]: Plan 14-03: REQUIREMENTS.md SCHEMA-08 corrected from '5 Theo optional' to '4 Theo optional' per D-02/canonical PDF (1-char surgical edit)
+
 ### Pending Todos
 
-- KPI template spec content (Phase 14 blocker): labels, countable flags, conditional flag, mandatory-vs-choice status must be authored from milestone spec before migration SQL can be finalized
-- Confirm counter storage decision documented in migration comment
+- Update REQUIREMENTS.md SCHEMA-08 text during Phase 14 execution: "4 Theo role-mandatory + 4 Theo optional"
+- Phase 14 planning next: run /gsd:plan-phase 14
 
 ### Blockers/Concerns
 
@@ -66,6 +73,6 @@ Key v2.0 decisions already baked into roadmap:
 
 ## Session Continuity
 
-Last session: 2026-04-16
-Stopped at: Roadmap created — ready for /gsd:plan-phase 14
+Last session: 2026-04-16T07:52:23.558Z
+Stopped at: Completed 14-03-PLAN.md (REQUIREMENTS.md SCHEMA-08 correction)
 Resume file: None

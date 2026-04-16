@@ -72,7 +72,7 @@
 **Plans**: 3 plans
 - [ ] 14-01-PLAN.md — Migration 009: DDL + wipe + seed (v2.0 schema substrate in one SQL file)
 - [ ] 14-02-PLAN.md — supabase.js 8 new exports (weekly selection, counters, admin settings, typed error)
-- [ ] 14-03-PLAN.md — REQUIREMENTS.md SCHEMA-08 text correction (4 Theo optional, not 5)
+- [x] 14-03-PLAN.md — REQUIREMENTS.md SCHEMA-08 text correction (4 Theo optional, not 5)
 
 ### Phase 15: Role Identity + Hub Redesign
 **Goal**: Partners open their hub and see their role identity anchoring the page — title, self-quote, and narrative — alongside a redesigned KPI section and personal growth priorities with approval-state visibility
@@ -131,7 +131,7 @@
 |-------|-----------|----------------|--------|-----------|
 | 12. Schema Migration | v1.3 | 1/1 | Complete | 2026-04-13 |
 | 13. Meeting Stop Redesign | v1.3 | 2/2 | Complete | 2026-04-13 |
-| 14. Schema + Seed | v2.0 | 0/3 | Not started | - |
+| 14. Schema + Seed | v2.0 | 1/3 | In Progress|  |
 | 15. Role Identity + Hub Redesign | v2.0 | 0/? | Not started | - |
 | 16. Weekly KPI Selection + Scorecard + Counters | v2.0 | 0/? | Not started | - |
 | 17. Meeting Stops + Admin Controls | v2.0 | 0/? | Not started | - |
