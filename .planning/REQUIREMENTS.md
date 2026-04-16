@@ -73,7 +73,7 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 ### Growth Priorities
 
 - [ ] **GROWTH-01**: Mandatory personal growth priority auto-assigned per partner from seed (Theo: leave work at set time 2+ days/week; Jerry: initiate one difficult conversation weekly)
-- [ ] **GROWTH-02**: Self-chosen personal growth priority: partner enters from hub, status starts `pending`, Trace approves from admin (status → `approved` or `rejected`)
+- [ ] **GROWTH-02**: Self-chosen personal growth priority: partner enters from hub via an inline textarea; on save, the value locks with `approval_state='approved'` — no pending state. Trace can edit the locked value from admin UI (ADMIN-04).
 - [ ] **GROWTH-03**: Business growth priorities: 2 shared between partners, seeded from the 7 options in spec section 5 (or custom entry), locked once both partners confirm and Trace approves
 - [ ] **GROWTH-04**: Business growth priority Day-60 milestone badge appears on hub + comparison view starting at engagement day 60 if no `milestone_at` recorded
 - [ ] **GROWTH-05**: Business growth priority selection happens via a dedicated selection flow accessible from hub (no meeting-mode interactive selection in v2.0)
@@ -92,7 +92,7 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 - [ ] **ADMIN-01**: Admin KPI Management includes a toggle for Jerry's conditional sales KPI; toggling on makes the KPI appear as Jerry's 7th mandatory (before weekly choice)
 - [ ] **ADMIN-02**: Admin KPI Management includes an editable threshold field for Theo's closing-rate target KPI (default 40%); persisted in `admin_settings`
 - [ ] **ADMIN-03**: Admin view shows weekly KPI rotation history per partner: week_start_date, selected KPI, counter value
-- [ ] **ADMIN-04**: Trace can approve or reject pending self-chosen personal growth priorities from admin UI; partner hub reflects new state
+- [ ] **ADMIN-04**: Trace can edit any partner's self-chosen personal growth priority from admin UI (description text); partner hub reflects the edited value on next load
 - [ ] **ADMIN-05**: Existing Edit Template functionality supports modifying baseline text, growth clause text, countable flag, and category for any KPI template
 - [ ] **ADMIN-06**: Mandatory templates remain locked from deletion (existing guarantee preserved)
 
