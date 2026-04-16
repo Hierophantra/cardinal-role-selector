@@ -57,9 +57,15 @@ Source: RESEARCH.md §13; existing CSS at `src/index.css` lines 127–129, 706, 
 | Role | Size | Weight | Line Height | Notes |
 |------|------|--------|-------------|-------|
 | Body | 15px | 400 | 1.55 | Default paragraph, KPI row text, narrative body. Source: `src/index.css` line 53 (`p { line-height: 1.55 }`) and line 70 (input/default 15px). |
-| Label / Metadata | 12px | 700 | 1.4 | Uppercase labels, status pills, section-header caps, hint text caps. Letter-spacing 0.1em–0.18em (match existing badge/label patterns). |
+| Label / Metadata | 12px | 700 | 1.4 | Uppercase caps labels, status pills, section-header caps, hints, toggle affordances, and inline error text. Letter-spacing 0.1em–0.18em for caps usage; no letter-spacing for non-caps hints and toggle affordances. |
 | Heading (section) | 20px | 700 | 1.3 | Section headings inside hub ("This Week's KPIs", "Personal Growth", "What You Focus On"). Source: `.hub-card h3 { font-size: 20px }` at line 690. |
 | Display (role title) | 28px | 700 | 1.2 | Partner role title rendered in `--red`. Source: existing login h1 uses 28px (line 210); role title is the page anchor so it takes the display slot. |
+
+**12px is intentionally multi-use.** It covers two distinct visual sub-roles that share the same size:
+- **Caps variant** — `text-transform: uppercase; letter-spacing: 0.1em–0.18em` — used for row labels ("Role-mandatory growth"), status pills, section caps. Weight 700.
+- **Non-caps variant** — no transform, no letter-spacing — used for "Read more"/"Show less" toggle affordance, last-week hint, inline "Change" button, and inline error text. Weight 400 (or 700 only where semantically a label).
+
+Executors should treat both as 12px and differentiate visually via `text-transform` and `letter-spacing` only — not by assigning different sizes.
 
 Font feature settings: `'ss01', 'cv11'` (global; do not override in new components).
 Letter-spacing: headings use `-0.02em` (global `h1, h2, h3, h4` rule at line 48); do not add letter-spacing to body copy.
@@ -107,15 +113,15 @@ New components required for Phase 15. All use `.jsx` extension, PascalCase filen
 1. Role title — `<h1>` or `<h2>`, 28px, weight 700, `color: var(--red)`, letter-spacing `-0.02em`
 2. Self-quote — `<p>`, 15px, weight 400, `font-style: italic`, contained in a block with `border-left: 3px solid var(--red); padding-left: 16px; margin: 16px 0`
 3. Narrative preview — first sentence(s) truncated at first `. ` boundary yielding 80–120 char preview (exact truncation string determined per partner in `roles.js`); 15px, weight 400, line-height 1.55, `color: var(--text)`
-4. "Read more" toggle — inline text link, 14px, weight 400, `color: var(--muted)`, no underline by default, underline on hover; label toggles between "Read more" and "Show less". This is an inline affordance (not a section-level chevron) to differentiate it from section collapsibles per R-1.
+4. "Read more" toggle — inline text link, 12px, weight 400, `color: var(--muted)`, no underline by default, underline on hover; label toggles between "Read more" and "Show less". This is an inline affordance (not a section-level chevron) to differentiate it from section collapsibles per R-1.
 5. Narrative full — hidden until "Read more" is clicked; CSS `max-height` transition (same pattern as `.hub-collapsible`)
 
 **CSS classes (new):**
-- `.role-identity-section` — wrapper, `margin-bottom: 32px`
+- `.role-identity-section` — `margin-bottom: 32px`
 - `.role-title` — `font-size: 28px; font-weight: 700; color: var(--red); letter-spacing: -0.02em; margin-bottom: 12px`
 - `.role-self-quote` — `font-style: italic; border-left: 3px solid var(--red); padding-left: 16px; margin: 16px 0; line-height: 1.6; color: var(--text)`
 - `.role-narrative` — `font-size: 15px; line-height: 1.55; color: var(--text)`
-- `.role-read-more-btn` — `font-size: 14px; color: var(--muted); background: none; border: none; cursor: pointer; padding: 0; text-decoration: underline; margin-top: 8px`
+- `.role-read-more-btn` — `font-size: 12px; color: var(--muted); background: none; border: none; cursor: pointer; padding: 0; text-decoration: underline; margin-top: 8px`
 
 **State:** `narrativeExpanded` boolean via `useState(false)`. Declared before early returns in parent PartnerHub.jsx per D-24.
 
@@ -134,7 +140,7 @@ New components required for Phase 15. All use `.jsx` extension, PascalCase filen
 **Section header:**
 - `<button>` element (keyboard-accessible toggle), full width, flex row, `justify-content: space-between; align-items: center`
 - Label: 20px, weight 700 ("What You Focus On")
-- Chevron: Unicode `▾` / `▸`, `color: var(--muted)`, `font-size: 14px`
+- Chevron: Unicode `▾` / `▸`, `color: var(--muted)`, `font-size: 12px`
 
 **Focus area row:** One row per item, flex, gap 12px.
 - Label portion: `<strong>`, 15px, weight 700, `color: var(--text)`
@@ -160,7 +166,7 @@ Same section-header pattern as FocusAreasSection. Content is a `<ul>` of bullet 
 
 **CSS classes (new):**
 - `.day-in-life-list` — `display: flex; flex-direction: column; gap: 8px; list-style: none; padding: 0; margin: 0`
-- `.day-in-life-list li` — `font-size: 15px; color: var(--muted); line-height: 1.5; padding-left: 20px; position: relative`
+- `.day-in-life-list li` — `font-size: 15px; color: var(--muted); line-height: 1.5; padding-left: 24px; position: relative`
 - `.day-in-life-list li::before` — `content: '–'; position: absolute; left: 0; color: var(--muted-2)`
 
 ---
@@ -179,10 +185,10 @@ Same section-header pattern as FocusAreasSection. Content is a `<ul>` of bullet 
 - Row height: min 40px (touch-target safe for tablet glance)
 
 **Weekly-choice amber card (below mandatory list):**
-- `border-left: 3px solid var(--warning)`, `background: var(--surface-2)`, `border-radius: 10px`, `padding: 16px 20px`
+- `border-left: 3px solid var(--warning)`, `background: var(--surface-2)`, `border-radius: 10px`, `padding: 16px 24px`
 - When no selection exists: heading "Choose your KPI for this week" (15px, weight 700), `<Link to="/weekly-kpi/:partner">` CTA — real route link (Phase 16 builds the destination; link is active in Phase 15 per research recommendation)
 - When selection exists: heading = selected KPI label (15px, weight 700) + "Change" inline text button below (12px, muted, routes same `/weekly-kpi/:partner`); Phase 15 "Change" is display-only — does not write to DB
-- Last-week hint (always when previous exists): `"Last week you picked: {label}"` — 13px, weight 400, `color: var(--muted-2)`, rendered above the amber card as a quiet line
+- Last-week hint (always when previous exists): `"Last week you picked: {label}"` — 12px, weight 400, `color: var(--muted-2)`, rendered above the amber card as a quiet line
 
 **CSS classes (new):**
 - `.kpi-week-list` — `display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px`
@@ -191,8 +197,8 @@ Same section-header pattern as FocusAreasSection. Content is a `<ul>` of bullet 
 - `.kpi-status-dot--met` — `background: var(--success)`
 - `.kpi-status-dot--missed` — `background: var(--miss)`
 - `.kpi-status-dot--pending` — `background: var(--muted-2)`
-- `.weekly-choice-hint` — `font-size: 13px; color: var(--muted-2); margin-bottom: 8px`
-- `.weekly-choice-card` — `border-left: 3px solid var(--warning); background: var(--surface-2); border: 1px solid var(--border); border-left-width: 3px; border-radius: 10px; padding: 16px 20px`
+- `.weekly-choice-hint` — `font-size: 12px; color: var(--muted-2); margin-bottom: 8px`
+- `.weekly-choice-card` — `border-left: 3px solid var(--warning); background: var(--surface-2); border: 1px solid var(--border); border-left-width: 3px; border-radius: 10px; padding: 16px 24px`
 - `.weekly-choice-card h4` — `font-size: 15px; font-weight: 700; margin-bottom: 8px`
 - `.weekly-choice-card .change-btn` — `font-size: 12px; color: var(--muted); text-decoration: underline; background: none; border: none; cursor: pointer; padding: 0`
 
@@ -219,7 +225,7 @@ Same section-header pattern as FocusAreasSection. Content is a `<ul>` of bullet 
 - Textarea placeholder: "What personal growth are you committed to this season?"
 
 **CSS classes (new):**
-- `.growth-row` — `display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-bottom: 1px solid var(--border)`
+- `.growth-row` — `display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--border)`
 - `.growth-row:last-child` — `border-bottom: none`
 - `.growth-row-label` — `font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted)`
 - `.growth-row-text` — `font-size: 15px; line-height: 1.55; color: var(--text)`
@@ -267,7 +273,7 @@ Same section-header pattern as FocusAreasSection. Content is a `<ul>` of bullet 
 | Read more toggle: collapsed | "Read more" |
 | Read more toggle: expanded | "Show less" |
 | Textarea placeholder | "What personal growth are you committed to this season?" |
-| Save error (growth) | "Couldn't save your priority. Try again." (inline, below Save button, 13px, `color: var(--miss)`) |
+| Save error (growth) | "Couldn't save your priority. Try again." (inline, below Save button, 12px, `color: var(--miss)`) |
 | Admin label in UI | "Trace" — never "admin" in any new user-facing string (CONTEXT.md D-05, memory `feedback_admin_identity.md`) |
 
 Destructive actions in Phase 15: none. The Save action on growth entry is append-only and locks the value. No delete, no confirm dialog required.
@@ -365,3 +371,5 @@ No external component registries. No shadcn. All components are hand-authored va
 | No Framer Motion in hub | CONTEXT.md D-07, RESEARCH.md Standard Stack |
 | Hooks before early returns | CONTEXT.md D-24, REQUIREMENTS HUB-08 |
 | Weekly-choice CTA = real `<Link>` | RESEARCH.md §Discretion — recommended over disabled button |
+| Typography: 13px and 14px collapsed to 12px | Checker revision — typography max 4 sizes rule |
+| Spacing: gap 6px → 8px, padding 20px → 24px | Checker revision — spacing multiples-of-4 rule |
