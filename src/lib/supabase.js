@@ -473,3 +473,144 @@ export async function upsertMeetingNote({ meeting_id, agenda_stop_key, body }) {
   if (error) throw error;
   return data;
 }
+
+// --- Weekly KPI Selections + Counters (Phase 14, v2.0) ---
+// Binds to migration 009 (supabase/migrations/009_schema_v20.sql):
+//   - weekly_kpi_selections table with composite PK (partner, week_start_date)
+//   - trg_no_back_to_back trigger: ERRCODE P0001 + message prefix 'back_to_back_kpi_not_allowed'
+// Error contract documented in .planning/phases/14-schema-seed/14-01-SUMMARY.md.
+
+/**
+ * Typed exception thrown by upsertWeeklyKpiSelection when the no-back-to-back
+ * Postgres trigger rejects the write (same partner + same template as previous
+ * week). UI layer uses `e instanceof BackToBackKpiError` to render inline error.
+ */
+export class BackToBackKpiError extends Error {
+  constructor(message, partner, templateId) {
+    super(message);
+    this.name = 'BackToBackKpiError';
+    this.partner = partner;
+    this.templateId = templateId;
+  }
+}
+
+// Internal helper: detect trg_no_back_to_back trigger rejection.
+// Contract locked in Phase 14 Plan 01: error.code==='P0001' AND message begins
+// with 'back_to_back_kpi_not_allowed'.
+function isBackToBackViolation(error) {
+  return error && error.code === 'P0001'
+    && typeof error.message === 'string'
+    && error.message.startsWith('back_to_back_kpi_not_allowed');
+}
+
+/**
+ * Fetch the weekly_kpi_selections row for (partner, weekStartDate).
+ * Returns null if no row exists (pre-selection state is valid, not an error).
+ * @param {'theo'|'jerry'|'test'} partner
+ * @param {string} weekStartDate 'YYYY-MM-DD' Monday local string (use getMondayOf)
+ * @returns {Promise<object|null>}
+ */
+export async function fetchWeeklyKpiSelection(partner, weekStartDate) {
+  const { data, error } = await supabase
+    .from('weekly_kpi_selections')
+    .select('*')
+    .eq('partner', partner)
+    .eq('week_start_date', weekStartDate)
+    .maybeSingle();
+  if (error) throw error;
+  return data; // null if absent
+}
+
+/**
+ * Fetch the partner's prior-week weekly_kpi_selections row. Returns null if
+ * none exists (first-week edge case per D-23 / WEEKLY-03). Computes previous
+ * Monday in LOCAL time (y, m-1, d-7) to match getMondayOf conventions — never
+ * use UTC arithmetic here.
+ * @param {'theo'|'jerry'|'test'} partner
+ * @param {string} weekStartDate 'YYYY-MM-DD' Monday local string for the CURRENT week
+ * @returns {Promise<object|null>}
+ */
+export async function fetchPreviousWeeklyKpiSelection(partner, weekStartDate) {
+  const [y, m, d] = weekStartDate.split('-').map(Number);
+  const prev = new Date(y, m - 1, d - 7);
+  const yy = prev.getFullYear();
+  const mm = String(prev.getMonth() + 1).padStart(2, '0');
+  const dd = String(prev.getDate()).padStart(2, '0');
+  const prevStr = `${yy}-${mm}-${dd}`;
+  return fetchWeeklyKpiSelection(partner, prevStr);
+}
+
+/**
+ * Upsert the weekly KPI selection for (partner, weekStartDate).
+ * Throws BackToBackKpiError if the no-back-to-back trigger rejects the write.
+ * Preserves existing counter_value if the row already exists by NOT including
+ * counter_value in the update payload — the DB column default '{}' only applies
+ * on INSERT, and the upsert body omits the column so pre-existing counts survive.
+ * @param {'theo'|'jerry'|'test'} partner
+ * @param {string} weekStartDate 'YYYY-MM-DD' Monday local string (use getMondayOf)
+ * @param {string} templateId kpi_templates.id UUID
+ * @param {string} labelSnapshot label captured at selection time
+ * @returns {Promise<object>} the upserted row
+ */
+export async function upsertWeeklyKpiSelection(partner, weekStartDate, templateId, labelSnapshot) {
+  const { data, error } = await supabase
+    .from('weekly_kpi_selections')
+    .upsert(
+      { partner, week_start_date: weekStartDate, kpi_template_id: templateId, label_snapshot: labelSnapshot },
+      { onConflict: 'partner,week_start_date' }
+    )
+    .select()
+    .single();
+  if (error) {
+    if (isBackToBackViolation(error)) {
+      throw new BackToBackKpiError(error.message, partner, templateId);
+    }
+    throw error;
+  }
+  return data;
+}
+
+/**
+ * Increment counter_value->templateId by 1 for the (partner, weekStartDate) row.
+ * Auto-creates the row with kpi_template_id=NULL, label_snapshot=NULL if absent
+ * (D-19, D-21 auto-create path) — the trigger ignores NULL kpi_template_id rows
+ * so back-to-back cannot fire on counter-only rows (D-23).
+ *
+ * Read-modify-write pattern: acceptable for this 3-user app with debounced UI
+ * (Phase 16 COUNT-03 debouncing keeps the race window narrow).
+ *
+ * @param {'theo'|'jerry'|'test'} partner
+ * @param {string} weekStartDate 'YYYY-MM-DD' Monday local string
+ * @param {string} templateId kpi_templates.id UUID being counted
+ * @returns {Promise<object>} the upserted row (with updated counter_value)
+ */
+export async function incrementKpiCounter(partner, weekStartDate, templateId) {
+  const existing = await fetchWeeklyKpiSelection(partner, weekStartDate);
+  const currentCounters = existing?.counter_value ?? {};
+  const currentVal = Number(currentCounters[templateId] ?? 0);
+  const nextCounters = { ...currentCounters, [templateId]: currentVal + 1 };
+
+  const payload = {
+    partner,
+    week_start_date: weekStartDate,
+    counter_value: nextCounters,
+  };
+  if (!existing) {
+    // New row — leave kpi_template_id and label_snapshot NULL (D-19, D-21 auto-create path).
+    // Trigger ignores NULL kpi_template_id so back-to-back cannot fire here.
+    payload.kpi_template_id = null;
+    payload.label_snapshot = null;
+  }
+
+  const { data, error } = await supabase
+    .from('weekly_kpi_selections')
+    .upsert(payload, { onConflict: 'partner,week_start_date' })
+    .select()
+    .single();
+  if (error) {
+    // Defensive: surface typed error even though trigger ignores NULL template rows.
+    if (isBackToBackViolation(error)) throw new BackToBackKpiError(error.message, partner, templateId);
+    throw error;
+  }
+  return data;
+}
