@@ -126,82 +126,80 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 
 ## Traceability
 
-Populated by roadmapper during roadmap creation.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SCHEMA-01 | TBD | Pending |
-| SCHEMA-02 | TBD | Pending |
-| SCHEMA-03 | TBD | Pending |
-| SCHEMA-04 | TBD | Pending |
-| SCHEMA-05 | TBD | Pending |
-| SCHEMA-06 | TBD | Pending |
-| SCHEMA-07 | TBD | Pending |
-| SCHEMA-08 | TBD | Pending |
-| SCHEMA-09 | TBD | Pending |
-| SCHEMA-10 | TBD | Pending |
-| SCHEMA-11 | TBD | Pending |
-| ROLE-01 | TBD | Pending |
-| ROLE-02 | TBD | Pending |
-| ROLE-03 | TBD | Pending |
-| ROLE-04 | TBD | Pending |
-| ROLE-05 | TBD | Pending |
-| HUB-01 | TBD | Pending |
-| HUB-02 | TBD | Pending |
-| HUB-03 | TBD | Pending |
-| HUB-04 | TBD | Pending |
-| HUB-05 | TBD | Pending |
-| HUB-06 | TBD | Pending |
-| HUB-07 | TBD | Pending |
-| HUB-08 | TBD | Pending |
-| HUB-09 | TBD | Pending |
-| WEEKLY-01 | TBD | Pending |
-| WEEKLY-02 | TBD | Pending |
-| WEEKLY-03 | TBD | Pending |
-| WEEKLY-04 | TBD | Pending |
-| WEEKLY-05 | TBD | Pending |
-| WEEKLY-06 | TBD | Pending |
-| WEEKLY-07 | TBD | Pending |
-| SCORE-01 | TBD | Pending |
-| SCORE-02 | TBD | Pending |
-| SCORE-03 | TBD | Pending |
-| SCORE-04 | TBD | Pending |
-| SCORE-05 | TBD | Pending |
-| SCORE-06 | TBD | Pending |
-| SCORE-07 | TBD | Pending |
-| COUNT-01 | TBD | Pending |
-| COUNT-02 | TBD | Pending |
-| COUNT-03 | TBD | Pending |
-| COUNT-04 | TBD | Pending |
-| COUNT-05 | TBD | Pending |
-| GROWTH-01 | TBD | Pending |
-| GROWTH-02 | TBD | Pending |
-| GROWTH-03 | TBD | Pending |
-| GROWTH-04 | TBD | Pending |
-| GROWTH-05 | TBD | Pending |
-| MEET-01 | TBD | Pending |
-| MEET-02 | TBD | Pending |
-| MEET-03 | TBD | Pending |
-| MEET-04 | TBD | Pending |
-| MEET-05 | TBD | Pending |
-| MEET-06 | TBD | Pending |
-| ADMIN-01 | TBD | Pending |
-| ADMIN-02 | TBD | Pending |
-| ADMIN-03 | TBD | Pending |
-| ADMIN-04 | TBD | Pending |
-| ADMIN-05 | TBD | Pending |
-| ADMIN-06 | TBD | Pending |
-| COMP-01 | TBD | Pending |
-| COMP-02 | TBD | Pending |
-| COMP-03 | TBD | Pending |
-| COMP-04 | TBD | Pending |
-| COMP-05 | TBD | Pending |
+| SCHEMA-01 | Phase 14 | Pending |
+| SCHEMA-02 | Phase 14 | Pending |
+| SCHEMA-03 | Phase 14 | Pending |
+| SCHEMA-04 | Phase 14 | Pending |
+| SCHEMA-05 | Phase 14 | Pending |
+| SCHEMA-06 | Phase 14 | Pending |
+| SCHEMA-07 | Phase 14 | Pending |
+| SCHEMA-08 | Phase 14 | Pending |
+| SCHEMA-09 | Phase 14 | Pending |
+| SCHEMA-10 | Phase 14 | Pending |
+| SCHEMA-11 | Phase 14 | Pending |
+| ROLE-01 | Phase 15 | Pending |
+| ROLE-02 | Phase 15 | Pending |
+| ROLE-03 | Phase 15 | Pending |
+| ROLE-04 | Phase 15 | Pending |
+| ROLE-05 | Phase 15 | Pending |
+| HUB-01 | Phase 15 | Pending |
+| HUB-02 | Phase 15 | Pending |
+| HUB-03 | Phase 15 | Pending |
+| HUB-04 | Phase 15 | Pending |
+| HUB-05 | Phase 15 | Pending |
+| HUB-06 | Phase 15 | Pending |
+| HUB-07 | Phase 15 | Pending |
+| HUB-08 | Phase 15 | Pending |
+| HUB-09 | Phase 15 | Pending |
+| GROWTH-01 | Phase 15 | Pending |
+| GROWTH-02 | Phase 15 | Pending |
+| WEEKLY-01 | Phase 16 | Pending |
+| WEEKLY-02 | Phase 16 | Pending |
+| WEEKLY-03 | Phase 16 | Pending |
+| WEEKLY-04 | Phase 16 | Pending |
+| WEEKLY-05 | Phase 16 | Pending |
+| WEEKLY-06 | Phase 16 | Pending |
+| WEEKLY-07 | Phase 16 | Pending |
+| SCORE-01 | Phase 16 | Pending |
+| SCORE-02 | Phase 16 | Pending |
+| SCORE-03 | Phase 16 | Pending |
+| SCORE-04 | Phase 16 | Pending |
+| SCORE-05 | Phase 16 | Pending |
+| SCORE-06 | Phase 16 | Pending |
+| SCORE-07 | Phase 16 | Pending |
+| COUNT-01 | Phase 16 | Pending |
+| COUNT-02 | Phase 16 | Pending |
+| COUNT-03 | Phase 16 | Pending |
+| COUNT-04 | Phase 16 | Pending |
+| COUNT-05 | Phase 16 | Pending |
+| MEET-01 | Phase 17 | Pending |
+| MEET-02 | Phase 17 | Pending |
+| MEET-03 | Phase 17 | Pending |
+| MEET-04 | Phase 17 | Pending |
+| MEET-05 | Phase 17 | Pending |
+| MEET-06 | Phase 17 | Pending |
+| ADMIN-01 | Phase 17 | Pending |
+| ADMIN-02 | Phase 17 | Pending |
+| ADMIN-03 | Phase 17 | Pending |
+| ADMIN-04 | Phase 17 | Pending |
+| ADMIN-05 | Phase 17 | Pending |
+| ADMIN-06 | Phase 17 | Pending |
+| COMP-01 | Phase 18 | Pending |
+| COMP-02 | Phase 18 | Pending |
+| COMP-03 | Phase 18 | Pending |
+| COMP-04 | Phase 18 | Pending |
+| COMP-05 | Phase 18 | Pending |
+| GROWTH-03 | Phase 18 | Pending |
+| GROWTH-04 | Phase 18 | Pending |
+| GROWTH-05 | Phase 18 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 56 total
-- Mapped to phases: 0 (roadmapper pending)
-- Unmapped: 56 (to be mapped in next step)
+- Mapped to phases: 56
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-16*
-*Last updated: 2026-04-16 — initial v2.0 definition*
+*Last updated: 2026-04-16 — traceability populated by roadmapper*
