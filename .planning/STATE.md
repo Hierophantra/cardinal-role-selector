@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role Identity & Weekly KPI Rotation
-status: Ready to plan
-stopped_at: Completed 14-02-PLAN.md
-last_updated: "2026-04-16T08:14:27.552Z"
+status: Phase 15 context captured — ready to plan
+stopped_at: Completed 15-CONTEXT.md
+last_updated: "2026-04-16T14:30:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 1
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-04-16 — v2.0 milestone started)
 ## Current Position
 
 Phase: 15
-Plan: Not started
+Plan: Not started (context captured — awaiting `/gsd:plan-phase 15`)
 
 ## Shipped Milestones
 
@@ -63,11 +63,24 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 - [Phase 14]: Plan 14-02: BackToBackKpiError class + isBackToBackViolation internal matcher — UI uses instanceof check; matcher not exported to keep coupling tight
 - [Phase 14]: Plan 14-02: fetchGrowthPriorities/upsertGrowthPriority NOT modified — supabase-js pass-through already satisfies D-35 for v2.0 columns (subtype, approval_state, milestone_at, milestone_note)
 - [Phase 14]: Plan 14-02: incrementKpiCounter uses client-side read-modify-write (no server-side RPC) — acceptable for 3-user app with debounced UI per D-20 and COUNT-03
+- [Phase 15]: Role identity data lives in new src/data/roles.js (not content.js — already 700+ lines)
+- [Phase 15]: Narrative uses Cardinal_ClaudeCode_Spec.md §2 trimmed version verbatim with Read more toggle
+- [Phase 15]: Hub layout = stacked sections + card grid at bottom; remove KPI Selection card (v1.0 dead); Role Def card retitled "View Questionnaire"
+- [Phase 15]: Replace kpiLocked/locked_until gating with kpiReady = kpiSelections.length > 0 (P-S5); remove all locked_until branches repo-wide
+- [Phase 15]: Status dots = green/red/gray (met/not met/not yet answered); current week only
+- [Phase 15]: Weekly-choice amber card lives INSIDE This Week's KPIs section below mandatory list; CTA routes to Phase 16 placeholder
+- [Phase 15]: NO-APPROVAL self-chosen growth — user override of REQUIREMENTS GROWTH-02, PDF, Spec §4. Locks on save; Trace edits from admin (Phase 17)
+- [Phase 15]: REQUIREMENTS.md GROWTH-02 AND ADMIN-04 text edits land in Phase 15 commit series (D-20, D-21)
+- [Phase 15]: computeSeasonStats rewrite (P-B1) ships in Phase 15 BEFORE Phase 16 rotating IDs — iterate Object.entries(kpi_results) by entry.label
+- [Phase 15]: Cardinal_ClaudeCode_Spec.md added as second canonical source; supersedes PDF for hub-display content, PDF wins for KPI data
+- [Phase 15]: Mandatory vs self-chosen growth rendered as single list with no visual distinction (user override)
 
 ### Pending Todos
 
-- Update REQUIREMENTS.md SCHEMA-08 text during Phase 14 execution: "4 Theo role-mandatory + 4 Theo optional"
-- Phase 14 planning next: run /gsd:plan-phase 14
+- Phase 15 planning next: run /gsd:plan-phase 15
+- Within Phase 15 execution: surgical edits to REQUIREMENTS.md GROWTH-02 + ADMIN-04 (no-approval self-chosen model)
+- Within Phase 15 execution: create src/data/roles.js with ROLE_IDENTITY export (title, selfQuote, narrative, focusAreas[], dayInLifeBullets[])
+- DEF-1: Theo optional pool reconciliation (Spec 5 vs Phase 14 shipped 4) — deferred, would require migration 010
 
 ### Blockers/Concerns
 
@@ -76,9 +89,13 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 - P-B1: computeSeasonStats redesign (iterate JSONB entries directly by label) ships in Phase 15 BEFORE Phase 16 generates rotating IDs
 - P-M2: KPI_START_INDEX fix (derive from FRIDAY_STOPS.indexOf) lands in SAME commit as FRIDAY_STOPS update in Phase 17
 - P-U2: New useState declarations in PartnerHub must come BEFORE any early returns (hooks ordering)
+- R-1: Read-more toggle adds a third expander on the hub (P-U3) — accepted trade-off per D-02; differentiate visually from section toggles
+- R-2: Single-list growth rendering (D-19) risks confusion about which row is mandatory — use row labels, not tags
+- R-3: No-approval pivot (D-15) contradicts both canonical specs — must re-apply on any doc regeneration; memorialize in PROJECT.md
+- R-4: src/data/roles.js shape is new; downstream phases 16-18 import from it — lock shape in Phase 15
 
 ## Session Continuity
 
-Last session: 2026-04-16T08:02:37.027Z
-Stopped at: Completed 14-02-PLAN.md
-Resume file: None
+Last session: 2026-04-16T14:30:00.000Z
+Stopped at: Phase 15 context captured
+Resume file: .planning/phases/15-role-identity-hub-redesign/15-CONTEXT.md
