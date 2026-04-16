@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role Identity & Weekly KPI Rotation
-status: Ready to execute
-stopped_at: Completed 15-02-PLAN.md
-last_updated: "2026-04-16T20:39:37.636Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 15-03-PLAN.md
+last_updated: "2026-04-16T20:46:39.868Z"
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 5
-  percent: 83
+  completed_plans: 6
+  percent: 100
 ---
 
 # Project State
@@ -83,6 +83,10 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 - [Phase 15-role-identity-hub-redesign]: Plan 15-02: statusModifierClass exported as named helper from ThisWeekKpisSection (checker B1) — allows unit-testing pure status→class mapping
 - [Phase 15-role-identity-hub-redesign]: Plan 15-02: Rule 2 fix — added .growth-status-badge.pending to Phase 15 CSS block (checker N7 assumed it existed at lines 1353-1385 but it didn't; existing block unchanged)
 - [Phase 15-role-identity-hub-redesign]: Plan 15-02: Wave 3 MUST register placeholder /weekly-kpi/:partner route in App.jsx — ThisWeekKpisSection CTA depends on it
+- [Phase 15-role-identity-hub-redesign]: Plan 15-03: PartnerHub rewrite wires Wave 1 data + Wave 2 sections; 7-fetch Promise.all, 12 useState hooks before early return, kpiReady replaces kpiLocked/locked_until in hub + Scorecard
+- [Phase 15-role-identity-hub-redesign]: Plan 15-03: KPI_COPY import dropped from PartnerHub alongside KPI Selection card deletion (M6/N11 resolved)
+- [Phase 15-role-identity-hub-redesign]: Plan 15-03: handleSaveSelfChosen wraps post-save refetch in its own try/catch (N8) — refetch blip logs to console but does not invalidate a durable save
+- [Phase 15-role-identity-hub-redesign]: Plan 15-03: /weekly-kpi/:partner placeholder route registered inline in App.jsx so Phase 15 amber-card CTA does not fall through to Login (Research Q5, D-14)
 
 ### Pending Todos
 
@@ -105,6 +109,6 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 
 ## Session Continuity
 
-Last session: 2026-04-16T20:39:37.633Z
-Stopped at: Completed 15-02-PLAN.md
+Last session: 2026-04-16T20:46:39.865Z
+Stopped at: Completed 15-03-PLAN.md
 Resume file: None

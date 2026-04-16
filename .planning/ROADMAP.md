@@ -52,7 +52,7 @@
 **Milestone Goal:** Reframe the app around each partner's role identity and shift from seasonal KPI selection to a weekly-rotating accountability model grounded in real Cardinal role content.
 
 - [x] **Phase 14: Schema + Seed** - Migration 009 wipes Spring Season data, creates weekly rotation tables, and reseeds all v2.0 content (completed 2026-04-16)
-- [ ] **Phase 15: Role Identity + Hub Redesign** - Partners see their role identity on the hub and personal growth priorities with approval-state badges
+- [x] **Phase 15: Role Identity + Hub Redesign** - Partners see their role identity on the hub and personal growth priorities with approval-state badges (completed 2026-04-16)
 - [ ] **Phase 16: Weekly KPI Selection + Scorecard + Counters** - Partners select a weekly KPI from their pool, submit scorecards against 6 mandatory + 1 weekly choice, and log in-week counts
 - [ ] **Phase 17: Meeting Stops + Admin Controls** - Both meetings gain Role Check stop; Trace can toggle Jerry's conditional KPI and edit Theo's closing-rate threshold
 - [ ] **Phase 18: Comparison + Business Growth + Polish** - Side-by-side comparison shows role descriptions and shared business growth progress; Day-60 milestone badges visible
@@ -132,7 +132,7 @@
 | 12. Schema Migration | v1.3 | 1/1 | Complete | 2026-04-13 |
 | 13. Meeting Stop Redesign | v1.3 | 2/2 | Complete | 2026-04-13 |
 | 14. Schema + Seed | v2.0 | 3/3 | Complete    | 2026-04-16 |
-| 15. Role Identity + Hub Redesign | v2.0 | 2/3 | In Progress|  |
+| 15. Role Identity + Hub Redesign | v2.0 | 3/3 | Complete   | 2026-04-16 |
 | 16. Weekly KPI Selection + Scorecard + Counters | v2.0 | 0/? | Not started | - |
 | 17. Meeting Stops + Admin Controls | v2.0 | 0/? | Not started | - |
 | 18. Comparison + Business Growth + Polish | v2.0 | 0/? | Not started | - |

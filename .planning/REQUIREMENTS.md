@@ -32,14 +32,14 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 
 ### Partner Hub (desktop-first redesign)
 
-- [ ] **HUB-01**: Hub layout reordered top-to-bottom: header → role identity → focus areas → day-in-life → This Week's KPIs → workflow cards → personal growth
+- [x] **HUB-01**: Hub layout reordered top-to-bottom: header → role identity → focus areas → day-in-life → This Week's KPIs → workflow cards → personal growth
 - [x] **HUB-02**: "This Week's KPIs" section lists 6 mandatory KPIs with status dots (green=met, amber=partial, gray/red=not met) next to each name
 - [x] **HUB-03**: Weekly choice card uses amber accent (border-left) and shows current week's selection, with "Change" button when scorecard not yet submitted for the week
 - [x] **HUB-04**: If no weekly choice selected yet, card prompts "Choose your KPI for this week" and links to the weekly-selection flow
 - [x] **HUB-05**: Last-week quiet hint — "Last week: [previous KPI name]" — displayed below the weekly choice card
 - [x] **HUB-06**: Personal Growth section at bottom shows mandatory priority (always visible) and self-chosen priority with approval-state badge (pending/approved/rejected)
 - [x] **HUB-07**: If self-chosen personal growth not yet entered, section shows input CTA
-- [ ] **HUB-08**: Hub `useState` declarations for new collapsibles and counters come BEFORE any early returns (avoids v1.3-style hooks-ordering violation)
+- [x] **HUB-08**: Hub `useState` declarations for new collapsibles and counters come BEFORE any early returns (avoids v1.3-style hooks-ordering violation)
 - [x] **HUB-09**: `computeSeasonStats` redesigned to iterate `Object.entries(card.kpi_results)` directly using embedded `entry.label` (not current selection IDs), so rotating weekly-choice history remains visible
 
 ### Weekly KPI Selection Flow
@@ -144,14 +144,14 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 | ROLE-03 | Phase 15 | Complete |
 | ROLE-04 | Phase 15 | Complete |
 | ROLE-05 | Phase 15 | Complete |
-| HUB-01 | Phase 15 | Pending |
+| HUB-01 | Phase 15 | Complete |
 | HUB-02 | Phase 15 | Complete |
 | HUB-03 | Phase 15 | Complete |
 | HUB-04 | Phase 15 | Complete |
 | HUB-05 | Phase 15 | Complete |
 | HUB-06 | Phase 15 | Complete |
 | HUB-07 | Phase 15 | Complete |
-| HUB-08 | Phase 15 | Pending |
+| HUB-08 | Phase 15 | Complete |
 | HUB-09 | Phase 15 | Complete |
 | GROWTH-01 | Phase 15 | Complete |
 | GROWTH-02 | Phase 15 | Complete |
