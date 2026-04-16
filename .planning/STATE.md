@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: Planning next milestone
-status: Milestone v1.3 complete
-stopped_at: v1.3 shipped 2026-04-13
-last_updated: "2026-04-13T09:30:00.000Z"
+milestone: v2.0
+milestone_name: Role Identity & Weekly KPI Rotation
+status: Defining requirements
+stopped_at: Milestone v2.0 started 2026-04-16
+last_updated: "2026-04-16T00:00:00.000Z"
 progress:
   total_phases: 0
   completed_phases: 0
@@ -16,15 +16,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-13 after v1.3 milestone complete)
+See: .planning/PROJECT.md (updated 2026-04-16 — v2.0 milestone started)
 
 **Core value:** Partners have clear, locked-in accountability commitments they check in on weekly, with an admin who can track progress and facilitate structured conversations.
-**Current focus:** Planning next milestone
+**Current focus:** Milestone v2.0 — Role Identity & Weekly KPI Rotation (defining requirements)
 
 ## Current Position
 
-Phase: —
+Phase: Not started (defining requirements)
 Plan: —
+Status: Defining requirements
+Last activity: 2026-04-16 — Milestone v2.0 started
 
 ## Shipped Milestones
 
@@ -49,6 +51,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-13
-Stopped at: v1.3 milestone archive complete
+Last session: 2026-04-16
+Stopped at: v2.0 milestone initialization
 Resume file: None

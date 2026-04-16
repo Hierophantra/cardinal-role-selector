@@ -105,12 +105,23 @@ Partners have clear, locked-in accountability commitments they check in on weekl
 
 Cumulative: v1.0 + v1.1 + v1.2 + v1.3 = complete role-definition → KPI selection → weekly scorecard → season progress → dual-meeting-type accountability platform. 4 milestones, 13 phases, 22 plans shipped.
 
-## Next Milestone Goals
+## Current Milestone: v2.0 Role Identity & Weekly KPI Rotation
 
-No milestone currently planned. Candidate areas for future work:
-- **Testing/mocks**: TEST-01 was dropped with Phase 14 removal — admin test account mocks for Monday Prep could return if needed
-- **Export**: EXPORT-01 deferred from v1.2 — meeting notes and scorecard data export
-- **UX polish**: Any user-feedback items that emerge from live Monday Prep + Friday Review usage
+**Goal:** Reframe the app around each partner's role identity and shift from seasonal KPI selection to a weekly-rotating accountability model grounded in real Cardinal role content.
+
+**Target features:**
+
+- **Data model & content:** `weekly_kpi_selections` table with no-back-to-back rule; wipe + reseed KPI templates with spec content (2 shared mandatory + 4 role-mandatory per partner + optional pools); conditional Jerry sales KPI (admin-toggleable); personal growth priorities (1 mandatory + 1 self-chosen/approved); business growth priorities (2 shared, 90-day engagement, Day 60 milestone); category normalization to `sales/ops/client/team/finance`
+- **Partner Hub redesign (desktop-first):** role identity section (title, italic self-quote, narrative); collapsible "What You Focus On" (default expanded) and "Your Day Might Involve" (default collapsed); "This Week's KPIs" with mandatory list + amber weekly-choice card + last-week-disabled hint; personal growth section at bottom
+- **Flows & scorecard:** weekly KPI selection UI with previous-week grayed out; scorecard refactored for 6 mandatory + 1 weekly choice with baseline + growth clause per row; lightweight in-week `+1` counters for countable KPIs
+- **Admin & comparison:** toggle for Jerry's conditional sales KPI; adjustable closing-rate target for Theo; weekly KPI rotation history per partner; side-by-side comparison extended with role descriptions, mandatory KPIs, current weekly choices, business growth progress
+- **Meeting mode:** new "Role Check" stop after Clear the Air in both meetings; new "Weekly KPI Selection" stop in Monday Prep
+
+**Key context:**
+
+- **Breaking changes intentional:** wipe + reseed KPI templates and kpi_selections — Spring Season 2026 data superseded
+- **Desktop-first** for hub, scorecard entry, KPI selection; mobile preserved for glances and meeting mode
+- **Deferred / out of scope:** Build List feature (may return later, fully optional); dependency notes between partners (interdependence is real but not symmetric)
 
 ## Evolution
 
@@ -130,4 +141,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-13 after v1.3 milestone complete*
+*Last updated: 2026-04-16 — v2.0 milestone started (Role Identity & Weekly KPI Rotation)*
