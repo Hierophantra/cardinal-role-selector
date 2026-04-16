@@ -8,9 +8,24 @@
 -- Replayable on Supabase branches (idempotent DDL via DROP ... IF EXISTS + ADD CONSTRAINT).
 
 -- =============================================================================
+-- SECTION 0: Wipe in FK order FIRST (D-25, SCHEMA-01)
+-- =============================================================================
+-- Moved before all DDL so legacy rows cannot violate tightened CHECK constraints
+-- (notably partner_scope which drops 'test' in Section 1, and growth_priorities
+-- subtype/approval_state which gain NOT-NULL-ish CHECKs in Section 2).
+-- growth_priority_templates NOT wiped (D-26) — v2.0 rows added additively below.
+
+DELETE FROM meeting_notes;
+DELETE FROM meetings;
+DELETE FROM scorecards;
+DELETE FROM kpi_selections;
+DELETE FROM growth_priorities;
+DELETE FROM kpi_templates;
+
+-- =============================================================================
 -- SECTION 1: kpi_templates evolution (D-05, D-06, D-07)
 -- =============================================================================
--- Drop existing measure column (v1.1 carrier retired — all rows wiped below)
+-- Drop existing measure column (v1.1 carrier retired — all rows wiped above)
 ALTER TABLE kpi_templates DROP COLUMN IF EXISTS measure;
 
 -- Add v2.0 content columns
@@ -136,18 +151,9 @@ ALTER TABLE meeting_notes ADD CONSTRAINT meeting_notes_stop_key_check
   ));
 
 -- =============================================================================
--- SECTION 7: Wipe in FK order (D-25, SCHEMA-01)
+-- SECTION 7: Wipe (moved to Section 0 above — CHECK constraints in Sections 1/2
+-- need to run against empty tables so legacy rows cannot violate tightened CHECKs)
 -- =============================================================================
--- growth_priority_templates NOT wiped (D-26) — v2.0 rows added additively below.
-
-DELETE FROM meeting_notes;
-DELETE FROM meetings;
-DELETE FROM scorecards;
-DELETE FROM kpi_selections;
-DELETE FROM growth_priorities;
-DELETE FROM kpi_templates;
-
--- END OF SECTION 7 — continues in Task 2 (seed)
 
 -- =============================================================================
 -- SECTION 8: Seed kpi_templates — 18 rows (D-30)
@@ -356,20 +362,28 @@ INSERT INTO growth_priority_templates (type, description, sort_order, mandatory,
    'Identify, approach, and formalize relationships with institutional partners (property managers, HOAs, insurance adjusters).'),
   ('business', 'Onboard and integrate new salesmen effectively', 130, false, 'shared',
    'Create onboarding plan, define expectations, and set 30/60/90 day milestones.'),
+-- =============================================================================
+-- NOTE: ON CONFLICT (description) DO NOTHING appended to the final VALUES row
+-- below so this section is idempotent across replays (growth_priority_templates
+-- is NOT wiped per D-26 additive pattern, and has a UNIQUE index on description).
+-- =============================================================================
   ('business', 'Develop off-season revenue streams', 140, false, 'shared',
    'Identify and plan at least 1 off-season service with pricing, marketing, and launch timeline.'),
   ('business', 'Strengthen brand and marketing consistency', 150, false, 'shared',
    'Audit current brand presence, align messaging across all platforms, establish content and posting cadence.'),
   ('business', 'Custom priority', 160, false, 'shared',
-   'Entered by both partners jointly and approved by the Advisor.');
+   'Entered by both partners jointly and approved by the Advisor.')
+ON CONFLICT (description) DO NOTHING;
 
 -- =============================================================================
 -- SECTION 12: Seed admin_settings (D-13, 3 eager rows; flat JSONB scalars per D-12)
 -- =============================================================================
 
+-- ON CONFLICT (key) DO NOTHING keeps replays idempotent.
 INSERT INTO admin_settings (key, value) VALUES
   ('theo_close_rate_threshold', '40'::jsonb),
   ('jerry_conditional_close_rate_threshold', '25'::jsonb),
-  ('jerry_sales_kpi_active', 'false'::jsonb);
+  ('jerry_sales_kpi_active', 'false'::jsonb)
+ON CONFLICT (key) DO NOTHING;
 
 -- END OF MIGRATION 009
