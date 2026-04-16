@@ -1,13 +1,17 @@
-// Season stats computation helpers (Phase 11)
+// Season stats computation helpers (Phase 11 — rewritten Phase 15 per D-22 / P-B1)
 
 import { SEASON_START_DATE } from '../data/content.js';
 import { getMondayOf } from './week.js';
 
 /**
  * Computes cumulative season hit rate and per-KPI stats.
- * Null results are excluded from both numerator and denominator.
- * @param {Array} kpiSelections - Array of { id, label_snapshot, ... }
- * @param {Array} scorecards - Array of { week_of, committed_at, kpi_results: { [id]: { result } }, ... }
+ * v2.0 rewrite: iterates JSONB entries directly using entry.label (label-keyed),
+ * so historical scorecards with rotated weekly-choice IDs continue to contribute.
+ * See Phase 15 CONTEXT D-22 / pitfall P-B1.
+ *
+ * @param {Array} kpiSelections - Array of { id, label_snapshot, ... } — used only
+ *                                 to drive the current perKpiStats list ordering
+ * @param {Array} scorecards - Array of { week_of, committed_at, kpi_results: { [id]: { result, label } }, ... }
  * @returns {{ seasonHitRate: number|null, perKpiStats: Array }}
  */
 export function computeSeasonStats(kpiSelections, scorecards) {
@@ -15,23 +19,24 @@ export function computeSeasonStats(kpiSelections, scorecards) {
 
   let hits = 0;
   let possible = 0;
-  const perKpiMap = {};
-
-  for (const k of kpiSelections) {
-    perKpiMap[k.id] = { hits: 0, possible: 0, label: k.label_snapshot };
-  }
+  const perLabelMap = {};  // key = label (string); value = { hits, possible }
 
   for (const card of committed) {
-    for (const k of kpiSelections) {
-      const result = card.kpi_results?.[k.id]?.result;
-      if (result === 'yes') {
+    const results = card.kpi_results ?? {};
+    for (const [, entry] of Object.entries(results)) {
+      const label = entry?.label;
+      if (!label) continue;  // skip orphan/malformed entries (pre-Phase-4 rows)
+      if (!perLabelMap[label]) {
+        perLabelMap[label] = { hits: 0, possible: 0 };
+      }
+      if (entry.result === 'yes') {
         hits++;
         possible++;
-        perKpiMap[k.id].hits++;
-        perKpiMap[k.id].possible++;
-      } else if (result === 'no') {
+        perLabelMap[label].hits++;
+        perLabelMap[label].possible++;
+      } else if (entry.result === 'no') {
         possible++;
-        perKpiMap[k.id].possible++;
+        perLabelMap[label].possible++;
       }
       // null or missing: skip entirely
     }
@@ -39,11 +44,14 @@ export function computeSeasonStats(kpiSelections, scorecards) {
 
   const seasonHitRate = possible > 0 ? Math.round((hits / possible) * 100) : null;
 
+  // perKpiStats keyed to CURRENT selections (for hub sparkline order).
+  // Looks up each selection's label in the label-keyed map.
   const perKpiStats = kpiSelections.map((k) => {
-    const s = perKpiMap[k.id];
+    const label = k.label_snapshot;
+    const s = perLabelMap[label] ?? { hits: 0, possible: 0 };
     return {
       id: k.id,
-      label: k.label_snapshot,
+      label,
       hitRate: s.possible > 0 ? Math.round((s.hits / s.possible) * 100) : null,
       hits: s.hits,
       possible: s.possible,
@@ -55,6 +63,8 @@ export function computeSeasonStats(kpiSelections, scorecards) {
 
 /**
  * Computes consecutive miss streaks per KPI.
+ * v2.0 rewrite: matches scorecard entries by label_snapshot rather than id,
+ * so rotating weekly-choice IDs do not silently break streak detection.
  * Walks committed scorecards newest-first; breaks on 'yes' OR null (not just 'yes').
  * @param {Array} kpiSelections - Array of { id, label_snapshot, ... }
  * @param {Array} scorecards - Array sorted newest-first with committed_at filter
@@ -62,19 +72,20 @@ export function computeSeasonStats(kpiSelections, scorecards) {
  */
 export function computeStreaks(kpiSelections, scorecards) {
   const committed = scorecards.filter((c) => c.committed_at);
-
   return kpiSelections.map((k) => {
+    const label = k.label_snapshot;
     let streak = 0;
     for (const card of committed) {
-      const result = card.kpi_results?.[k.id]?.result;
-      if (result === 'no') {
+      const results = card.kpi_results ?? {};
+      // find the entry that matches this label (historical IDs won't match k.id)
+      const entry = Object.values(results).find((e) => e?.label === label);
+      if (entry?.result === 'no') {
         streak++;
       } else {
-        // 'yes' OR null OR missing — break streak
-        break;
+        break;  // 'yes' OR null OR missing — break streak
       }
     }
-    return { id: k.id, label: k.label_snapshot, streak };
+    return { id: k.id, label, streak };
   });
 }
 
