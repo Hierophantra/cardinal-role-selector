@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role Identity & Weekly KPI Rotation
 status: Ready to execute
-stopped_at: Completed 14-01-PLAN.md
-last_updated: "2026-04-16T07:55:39.794Z"
+stopped_at: Completed 14-02-PLAN.md
+last_updated: "2026-04-16T08:02:37.030Z"
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-04-16 — v2.0 milestone started)
 ## Current Position
 
 Phase: 14 (schema-seed) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Shipped Milestones
 
@@ -60,6 +60,9 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 - [Phase 14]: Migration 009 uses PDF verbatim strings for baseline_action/growth_clause; partner_scope='both' for shared templates; admin_settings stores flat JSONB scalars
 - [Phase 14]: trg_no_back_to_back error contract: ERRCODE P0001 + message prefix 'back_to_back_kpi_not_allowed' (consumed by plan 14-02 supabase.js wrappers)
 - [Phase 14]: NOT NULL on baseline_action/growth_clause enforced AFTER seed (initial ALTER tolerates NULL during wipe+seed cycle)
+- [Phase 14]: Plan 14-02: BackToBackKpiError class + isBackToBackViolation internal matcher — UI uses instanceof check; matcher not exported to keep coupling tight
+- [Phase 14]: Plan 14-02: fetchGrowthPriorities/upsertGrowthPriority NOT modified — supabase-js pass-through already satisfies D-35 for v2.0 columns (subtype, approval_state, milestone_at, milestone_note)
+- [Phase 14]: Plan 14-02: incrementKpiCounter uses client-side read-modify-write (no server-side RPC) — acceptable for 3-user app with debounced UI per D-20 and COUNT-03
 
 ### Pending Todos
 
@@ -76,6 +79,6 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 
 ## Session Continuity
 
-Last session: 2026-04-16T07:55:24.552Z
-Stopped at: Completed 14-01-PLAN.md
+Last session: 2026-04-16T08:02:37.027Z
+Stopped at: Completed 14-02-PLAN.md
 Resume file: None

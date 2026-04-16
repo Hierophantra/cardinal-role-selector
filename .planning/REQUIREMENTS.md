@@ -19,7 +19,7 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 - [x] **SCHEMA-07**: New `admin_settings` table (key text PK, value jsonb, updated_at) for runtime-editable toggles (Jerry sales KPI active flag, Theo closing rate threshold)
 - [x] **SCHEMA-08**: v2.0 reseed inserts 2 shared mandatory KPIs, 4 Theo role-mandatory + 4 Theo optional, 4 Jerry role-mandatory + 3 Jerry optional, 1 Jerry conditional sales KPI (inactive by default), plus mandatory personal growth priorities per partner and 7 business growth priority options
 - [x] **SCHEMA-09**: KPI categories normalized to the standard set: `sales`, `ops`, `client`, `team`, `finance`
-- [ ] **SCHEMA-10**: All required Supabase lib functions exported: `fetchWeeklyKpiSelection`, `fetchPreviousWeeklyKpiSelection`, `upsertWeeklyKpiSelection`, `incrementKpiCounter`, `fetchAdminSetting`, `upsertAdminSetting`, `fetchGrowthPriorities`, `upsertGrowthPriority`
+- [x] **SCHEMA-10**: All required Supabase lib functions exported: `fetchWeeklyKpiSelection`, `fetchPreviousWeeklyKpiSelection`, `upsertWeeklyKpiSelection`, `incrementKpiCounter`, `fetchAdminSetting`, `upsertAdminSetting`, `fetchGrowthPriorities`, `upsertGrowthPriority`
 - [x] **SCHEMA-11**: `locked_until` semantics simplified — always null in v2.0 (seasonal locking dropped in favor of weekly rotation; hub derives state from mandatory list + weekly-choice presence)
 
 ### Role Identity
@@ -137,7 +137,7 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 | SCHEMA-07 | Phase 14 | Complete |
 | SCHEMA-08 | Phase 14 | Complete |
 | SCHEMA-09 | Phase 14 | Complete |
-| SCHEMA-10 | Phase 14 | Pending |
+| SCHEMA-10 | Phase 14 | Complete |
 | SCHEMA-11 | Phase 14 | Complete |
 | ROLE-01 | Phase 15 | Pending |
 | ROLE-02 | Phase 15 | Pending |
