@@ -1,10 +1,11 @@
 ---
 phase: 15
 slug: role-identity-hub-redesign
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-04-16
+reviewed_at: 2026-04-16
 ---
 
 # Phase 15 — UI Design Contract
