@@ -34,6 +34,12 @@ Plan: 3 of 3
 - v1.2 Meeting & Insights Expansion (Phases 8-11) — 2026-04-13
 - v1.3 Monday Prep Redesign (Phases 12-13) — 2026-04-13
 
+## Quick Tasks Completed
+
+| Date | Slug | Commit | Summary |
+|------|------|--------|---------|
+| 2026-04-16 | drop-measure-column-from-kpi-templates-j | 11988c5 | Dropped `measure` from `kpi_templates` join in `fetchKpiSelections` — unblocked Phase 15 hub load (Phase 14 schema/code drift) |
+
 ## Accumulated Context
 
 ### Decisions
