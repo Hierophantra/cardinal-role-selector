@@ -2,14 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role Identity & Weekly KPI Rotation
-status: Phase 15 context captured — ready to plan
-stopped_at: Completed 15-CONTEXT.md
-last_updated: "2026-04-16T14:30:00.000Z"
+status: Ready to execute
+stopped_at: Completed 15-01-PLAN.md
+last_updated: "2026-04-16T20:32:02.250Z"
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 6
+  completed_plans: 4
+  percent: 67
 ---
 
 # Project State
@@ -19,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-16 — v2.0 milestone started)
 
 **Core value:** Partners have clear, locked-in accountability commitments they check in on weekly, with an admin who can track progress and facilitate structured conversations.
-**Current focus:** Phase 14 — schema-seed
+**Current focus:** Phase 15 — role-identity-hub-redesign
 
 ## Current Position
 
-Phase: 15
-Plan: Not started (context captured — awaiting `/gsd:plan-phase 15`)
+Phase: 15 (role-identity-hub-redesign) — EXECUTING
+Plan: 2 of 3
 
 ## Shipped Milestones
 
@@ -74,6 +75,9 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 - [Phase 15]: computeSeasonStats rewrite (P-B1) ships in Phase 15 BEFORE Phase 16 rotating IDs — iterate Object.entries(kpi_results) by entry.label
 - [Phase 15]: Cardinal_ClaudeCode_Spec.md added as second canonical source; supersedes PDF for hub-display content, PDF wins for KPI data
 - [Phase 15]: Mandatory vs self-chosen growth rendered as single list with no visual distinction (user override)
+- [Phase 15]: Plan 15-01: ROLE_IDENTITY shape locked in src/data/roles.js — downstream phases 16-18 must not mutate shape (R-4)
+- [Phase 15]: Plan 15-01: seasonStats now iterates Object.entries(kpi_results) by entry.label — rotating-ID safe (P-B1) before Phase 16 ships
+- [Phase 15]: Plan 15-01: REQUIREMENTS.md GROWTH-02 + ADMIN-04 synced to no-approval pivot (D-15/D-20/D-21) — Phase 16-18 research regen will reflect correct semantics
 
 ### Pending Todos
 
@@ -96,6 +100,6 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 
 ## Session Continuity
 
-Last session: 2026-04-16T14:30:00.000Z
-Stopped at: Phase 15 context captured
-Resume file: .planning/phases/15-role-identity-hub-redesign/15-CONTEXT.md
+Last session: 2026-04-16T20:31:53.267Z
+Stopped at: Completed 15-01-PLAN.md
+Resume file: None
