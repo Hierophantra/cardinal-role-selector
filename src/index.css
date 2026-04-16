@@ -1876,7 +1876,8 @@ textarea { resize: vertical; min-height: 120px; }
   margin: 0;
 }
 .hub-section-chevron {
-  font-size: 12px;
+  font-size: 20px;
+  line-height: 1;
   color: var(--muted);
   margin-left: 8px;
 }
