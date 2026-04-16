@@ -74,6 +74,9 @@ export async function deleteKpiSelection(id) {
   if (error) throw error;
 }
 
+// NOTE (v2.0, Phase 14): fetchGrowthPriorities and upsertGrowthPriority remain unchanged —
+// supabase-js passes through the 4 new columns (subtype, approval_state, milestone_at, milestone_note)
+// from the v2.0 schema without any code change required. See SCHEMA-10 / D-35.
 export async function fetchGrowthPriorities(partner) {
   const { data, error } = await supabase
     .from('growth_priorities')
@@ -612,5 +615,52 @@ export async function incrementKpiCounter(partner, weekStartDate, templateId) {
     if (isBackToBackViolation(error)) throw new BackToBackKpiError(error.message, partner, templateId);
     throw error;
   }
+  return data;
+}
+
+// --- Admin Settings (Phase 14, v2.0) ---
+// Binds to migration 009 admin_settings table. Keys follow flat snake_case
+// convention (D-14). Values are stored as flat JSONB scalars — number,
+// boolean, or string — NEVER wrapped in objects (D-12). All 3 v2.0 keys are
+// eager-seeded (theo_close_rate_threshold, jerry_conditional_close_rate_threshold,
+// jerry_sales_kpi_active) so fetchAdminSetting returning null on a known key
+// indicates a migration drift.
+
+/**
+ * Fetch a single admin_settings row by key. Returns null if the key does not
+ * exist (callers must handle — but per D-13 all 3 v2.0 keys are eager-seeded
+ * so null is unexpected for known keys and indicates a migration drift).
+ * @param {string} key flat snake_case key (e.g. 'theo_close_rate_threshold')
+ * @returns {Promise<{key:string,value:any,updated_at:string}|null>}
+ */
+export async function fetchAdminSetting(key) {
+  const { data, error } = await supabase
+    .from('admin_settings')
+    .select('*')
+    .eq('key', key)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Upsert a single admin_settings row. `value` MUST be a flat scalar
+ * (number, boolean, string); callers MUST NOT wrap in objects per D-12.
+ * updated_at is set explicitly on every write to guarantee staleness
+ * detection for downstream consumers.
+ * @param {string} key flat snake_case key
+ * @param {number|boolean|string} value flat JSONB scalar (no object wrappers)
+ * @returns {Promise<object>} the upserted row
+ */
+export async function upsertAdminSetting(key, value) {
+  const { data, error } = await supabase
+    .from('admin_settings')
+    .upsert(
+      { key, value, updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    )
+    .select()
+    .single();
+  if (error) throw error;
   return data;
 }
