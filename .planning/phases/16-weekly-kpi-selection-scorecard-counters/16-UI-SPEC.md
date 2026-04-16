@@ -47,10 +47,12 @@ Same 8-point scale as Phase 15. No new exceptions.
 
 Exceptions:
 - Container bottom padding: 80px (existing `.container` rule — preserve as-is)
-- `border-left` accent: 3px (existing pattern throughout codebase)
 - Sticky submit bar height: 64px (anchored to bottom of viewport; includes 16px top/bottom padding + button height)
 - Counter pill height: 28px (matches existing `.kpi-counter { height: 28px }` at `src/index.css:823`)
 - `scorecard-yn-btn` height: 44px (existing rule at `src/index.css:984` — touch-target minimum; preserve)
+
+**Border Widths (not spacing-grid values — documented here for reference):**
+- `border-left` accent: 3px — used on `.scorecard-commit-gate` and confirmation panel per existing codebase pattern (`src/index.css:930`). This is a stroke width, not a spacing value. Does not participate in the 8-point grid.
 
 Source: Phase 15 UI-SPEC; `src/index.css` lines 127–129, 706, 984.
 
@@ -63,7 +65,7 @@ Same 4-role type scale as Phase 15. No new sizes.
 | Role | Size | Weight | Line Height | Notes |
 |------|------|--------|-------------|-------|
 | Body | 15px | 400 | 1.55 | Scorecard baseline_action label, reflection textarea hint, confirmation modal body |
-| Label / Metadata | 12px | 700 | 1.4 | Growth clause prompt label (uppercase, 0.1em letter-spacing), counter value, "Used last week" tag, "Locked" state copy, modal sub-copy |
+| Label / Metadata | 12px | 700 | 1.4 | Growth clause prompt label (uppercase, 0.1em letter-spacing), counter value, "Used last week" tag, "Locked" state copy, modal sub-copy, inline error text |
 | Heading (section) | 20px | 700 | 1.3 | Page section headings ("Choose Your KPI This Week", "Your Scorecard") |
 | Display | 28px | 700 | 1.2 | Not used in Phase 16; reserved for role title (Phase 15) |
 
@@ -76,6 +78,9 @@ Same 4-role type scale as Phase 15. No new sizes.
 - Modal heading: 20px, weight 700
 - KPI label within heading: 20px, weight 700, `color: var(--text)` (not red — red is reserved for role title per Phase 15)
 - Modal body copy: 15px, weight 400, `color: var(--muted)`
+
+**Inline error text:**
+- 12px, weight 400, `color: var(--miss)` — errors are metadata-tier copy; fits the Label / Metadata role at the bottom of the 4-role scale.
 
 Source: Phase 15 UI-SPEC typography section; `src/index.css` lines 53, 70, 968–974.
 
@@ -144,15 +149,15 @@ Card grid: vertical stack using `.kpi-list` + `.kpi-card` (both existing classes
 **Inline error (WEEKLY-05 — back-to-back rejection):**
 - Rendered below the card list, above the CTA
 - Copy: `"This KPI was used last week. Choose a different one."`
-- Style: 13px, `color: var(--miss)`, no background — plain inline text error (same pattern as Login error at `src/index.css:183`)
+- Style: 12px, `color: var(--miss)`, no background — plain inline text error (same pattern as Login error at `src/index.css:183`). 12px is the Label / Metadata tier — inline errors are metadata-level copy.
 
 **Confirmation step (D-01):**
 - Modal-style panel rendered in-flow (not a floating overlay) — same surface pattern as `.scorecard-commit-gate` (existing, `src/index.css:930`)
-- Background: `linear-gradient(180deg, rgba(196,30,58,0.08), rgba(196,30,58,0.02))`, border `rgba(196,30,58,0.25)`, border-left `3px solid var(--red)`, border-radius 14px, padding 24px
+- Background: `linear-gradient(180deg, rgba(196,30,58,0.08), rgba(196,30,58,0.02))`, border `rgba(196,30,58,0.25)`, border-left `3px solid var(--red)` (stroke width — see Border Widths note in Spacing section), border-radius 14px, padding 24px
 - Heading: `"Lock in [KPI label] for this week?"` — 20px, weight 700
 - Body copy: `"After confirming, only Trace can change your selection before next week."` — 15px, weight 400, `color: var(--muted)`
-- Two buttons: "Confirm" (`.btn-primary`) + "Go back" (`.btn-ghost`)
-- Button row: `.nav-row` (existing) — "Go back" left, "Confirm" right
+- Two buttons: "Confirm Selection" (`.btn-primary`) + "Go back" (`.btn-ghost`)
+- Button row: `.nav-row` (existing) — "Go back" left, "Confirm Selection" right
 
 **Success step:**
 - Heading: `"You're locked in."` — 20px, weight 700
@@ -162,7 +167,7 @@ Card grid: vertical stack using `.kpi-list` + `.kpi-card` (both existing classes
 **New CSS classes:**
 - `.weekly-selection-subtext` — `font-size: 15px; color: var(--muted); line-height: 1.55; margin-bottom: 24px`
 - `.weekly-kpi-disabled-label` — `font-size: 12px; color: var(--muted-2); font-style: italic; margin-top: 4px; display: block`
-- `.weekly-selection-error` — `font-size: 13px; color: var(--miss); margin-top: 8px`
+- `.weekly-selection-error` — `font-size: 12px; color: var(--miss); margin-top: 8px`
 
 **Reused CSS classes (no changes needed):**
 - `.eyebrow`, `.kpi-list`, `.kpi-card`, `.kpi-card.selected`, `.kpi-card.capped`, `.kpi-card-label`, `.kpi-category-tag`, `.scorecard-commit-gate`, `.btn-primary`, `.btn-ghost`, `.nav-row`
@@ -329,7 +334,7 @@ One rating field:
 | Inline error (back-to-back rejection) | "This KPI was used last week. Choose a different one." |
 | Confirmation heading | "Lock in [KPI label] for this week?" |
 | Confirmation body | "After confirming, only Trace can change your selection before next week." |
-| Confirm CTA | "Confirm" |
+| Confirm CTA | "Confirm Selection" |
 | Back button (confirmation step) | "Go back" |
 | Success heading | "You're locked in." |
 | Success sub-copy | "[KPI label] is your choice for this week." |
@@ -464,3 +469,6 @@ No external component registries. No shadcn. All components hand-authored vanill
 | Read-only post-submit view | CONTEXT.md D-07 |
 | Counter pre-populates scorecard count field | REQUIREMENTS COUNT-04 |
 | Jerry conditional KPI row count dynamic | REQUIREMENTS SCORE-07; CONTEXT.md D-05 note on 7 or 8 rows |
+| Inline error font-size 12px (Label/Metadata tier) | UI-SPEC revision — checker Dimension 4 BLOCK fix (2026-04-16) |
+| 3px border-left moved out of Spacing section | UI-SPEC revision — checker Dimension 5 BLOCK fix (2026-04-16); border widths are stroke values, not spacing-grid values |
+| "Confirm Selection" CTA (verb + noun) | UI-SPEC revision — checker Dimension 1 FLAG fix (2026-04-16) |
