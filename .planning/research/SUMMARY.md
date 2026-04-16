@@ -1,126 +1,172 @@
 # Project Research Summary
 
-**Project:** Cardinal Partner Accountability System — v1.2 Meeting & Insights Expansion
-**Domain:** Internal two-partner business accountability tool with guided meeting facilitation and KPI tracking
-**Researched:** 2026-04-12
+**Project:** Cardinal Partner Accountability System — v2.0 Role Identity & Weekly KPI Rotation
+**Domain:** Internal accountability platform (3-user partnership tool)
+**Researched:** 2026-04-16
 **Confidence:** HIGH
 
 ## Executive Summary
 
-The v1.2 milestone is a brownfield expansion of a fully-built, constrained system. The architecture is fixed — React 18 + Vite + Supabase + Framer Motion + vanilla CSS — and the right approach is to extend what exists rather than introduce new patterns. All four v1.2 features (season overview, meeting history, dual meeting mode, and data export) can be built with minimal new infrastructure: one npm package (`recharts` for KPI trend charts), one new utility file (`src/lib/exportUtils.js`), one new component (`MeetingHistory.jsx`), and one DB migration (adding `meeting_type` to the `meetings` table). Every other change is a modification to an existing component.
+v2.0 adds three interlocking systems to an existing live tool: a role identity display anchoring each partner's hub in their defined function, a weekly-rotating KPI model that replaces season-long optional picks with a one-per-week selection governed by a no-back-to-back rule, and new meeting stops that embed both role reflection and KPI selection inside the facilitated agenda. All four research streams converge on the same build order: schema and seed first, then static content and hub redesign, then the selection flow and scorecard, then meeting stops and admin tooling. Every phase gate is a data dependency — no UI work should begin before the tables it reads exist.
 
-The recommended build order is schema-first. One confirmed live defect — the STOPS array is copy-pasted across four files and has already diverged, causing `kpi_6`/`kpi_7` meeting notes to silently disappear from the partner-facing summary — must be resolved before any meeting history work begins. The dual meeting mode migration must ship with its `DEFAULT 'friday_review'` and `UNIQUE (week_of, meeting_type)` constraints intact, and the `agenda_stop_key` CHECK constraint must be expanded to include Monday Prep stop keys before any component code is written. These schema gates are not optional sequencing preferences — they prevent data loss and broken meeting creation.
+The recommended approach requires **zero new npm packages**. The entire v2.0 feature set is implementable through DB migrations, additions to `src/lib/supabase.js`, a new `src/data/roles.js` file, extensions to `src/data/content.js`, and new React components following established codebase patterns. The only judgment call with medium confidence is counter storage (`kpi_counters` table vs. JSONB on scorecards) — both work at 3-user scale; the decision must be made before Phase 16 and documented.
 
-The season overview is the lowest-risk feature: no schema changes, no new components, and the data is already loaded into `PartnerHub.jsx` state on mount. It can be built in parallel with or after meeting history with no dependencies. Export is similarly self-contained — pure client-side blob generation from already-loaded state. The meeting history and dual meeting mode features share the most interdependencies and should be sequenced together.
+The critical risk is the wipe-and-reseed of Spring Season 2026 data. `scorecards.kpi_results` is JSONB keyed by `kpi_selections.id` UUIDs. Wiping `kpi_templates` without also wiping `kpi_selections` and `scorecards` leaves orphaned keys that silently break season stats, hub scorecard counts, and meeting history labels. Migration 009 must wipe all four tables together. The second critical risk is `KPI_START_INDEX = 2` hardcoded in `AdminMeetingSession.jsx`: inserting `role_check` at `FRIDAY_STOPS[1]` shifts `kpi_1` to index 3 — every KPI stop in Friday Review renders wrong content until this is fixed. The fix must land in the same commit that updates `FRIDAY_STOPS`.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The existing stack handles everything v1.2 requires. The only new npm package is `recharts 3.8.1`, which is the correct charting library for this codebase: its React-native declarative API fits the existing JSX patterns, it is confirmed compatible with React 18.3.1 (peer dep: `react: '^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0'`), and its chart primitives accept inline style props (`fill="var(--accent)"`) that work with the Cardinal CSS variable system without a theme provider. Chart.js was rejected because its imperative canvas API conflicts with the functional component model. Export needs no library — a 15-line vanilla JS helper handles CSV generation and `window.print()` handles meeting notes.
+**Zero new npm packages.** All additions are DB migrations, `supabase.js` function additions, `week.js` one-liner helper, `content.js` constant additions, new `roles.js` data file, and `index.css` class additions. See `.planning/research/STACK.md`.
 
-**Core technologies:**
-- `recharts` 3.8.1: KPI hit-rate bar charts and season trend lines — only new dependency; React-native API, confirmed React 18 compatible
-- `src/lib/exportUtils.js` (new file, no library): CSV and print export — PapaParse is overkill for short admin-entered text
-- Migration 007 (`meetings.meeting_type`): DB gate for dual meeting mode — one column, one constraint, one default
-- `MONDAY_PREP_COPY` in `content.js`: Content-driven meeting mode differentiation — existing architecture handles this as a string swap, not a component branch
+**Core technologies (existing):**
+- React 18.3.1 + Vite 5.4.0 — continues as SPA substrate
+- Supabase PostgreSQL — extends with `weekly_kpi_selections`, `kpi_counters`, `admin_settings` tables; new `trg_no_back_to_back` trigger
+- Vanilla CSS — continues; no Tailwind, no CSS-in-JS
+- Existing `src/lib/week.js` `getMondayOf()` — timezone-safe, reusable as base for `week_start_date`
 
-**What not to add:** `@tanstack/react-query`, `date-fns`/`dayjs`, `react-table`, any CSS-in-JS library, TypeScript.
+**Key stack decisions:**
+- `src/data/roles.js` (new file, not `content.js`) — `content.js` is already 700+ lines; partner-keyed role narrative belongs isolated
+- Postgres trigger `trg_no_back_to_back` on `weekly_kpi_selections` — DB is the authoritative guard; UI gray-out is UX assist only
+- `admin_settings` table for runtime-editable toggles — env vars and `content.js` require code deploy; Trace needs on-demand control
+- CSS `max-height` transition for collapsibles — `useState` + class toggle; no Framer Motion for two binary toggles
 
 ### Expected Features
 
-All v1.2 features are P1 or P2. No feature requires a new data model beyond the `meeting_type` column.
+See `.planning/research/FEATURES.md`.
 
-**Must have (table stakes — P1):**
-- Season KPI hit-rate on partner hub — partners have no cumulative view after 8+ weeks of data; all data already exists
-- Season week progress indicator — contextualizes hit rate ("Week 8 of ~26"); constants already exported from `content.js`
-- Meeting history for admin — admin built and ended meetings with no read-only replay route; data exists but is unreachable
-- Meeting history for partner — `MeetingSummary.jsx` hardcodes the most-recently-ended meeting; all prior meetings are a silent data hole
-- Dual meeting mode (Monday Prep) — required per milestone spec; one migration + copy variant; same 12-stop structure
+**Must have (table stakes):**
+- Role identity section — title, italic self-quote, narrative — renders from static content before fetch resolves
+- "What You Focus On" collapsible (default expanded)
+- Weekly KPI choice card with amber accent + no-back-to-back gray-out
+- Scorecard refactored for 6 mandatory + 1 weekly choice with baseline + growth clause per row
+- `role_check` stop in both meeting types (Monday Prep + Friday Review)
 
-**Should have (differentiators — P2):**
-- Export: meeting notes as plaintext/print — meeting decisions are trapped in the tool; `window.print()` + print CSS is zero-dependency
-- Export: scorecard CSV — seasonal archive; useful at season close; requires JSONB unwrapping per KPI per week
-- Per-KPI miss streak indicator — surfaces recurring patterns ("missed Revenue KPI 4 weeks in a row"); additive to season overview
+**Should have (differentiators):**
+- In-week `+1` counters for countable KPIs (feeds into Monday scorecard)
+- Personal growth approval flow (pending/approved/rejected badges)
+- Business growth Day 60 milestone badge
+- Monday Prep `KpiSelectionStop` for weekly choice (highest complexity new component — build last)
+- Admin conditional KPI toggle (Jerry's sales KPI) and adjustable closing rate threshold (Theo)
+- Weekly KPI rotation history view in admin
 
-**Defer to v1.3+:**
-- Admin cross-partner season summary — builds naturally once per-partner overview is stable
-- Partner progress dedicated page — hub season card may be sufficient; build only if it feels cramped
-
-**Confirmed anti-features:** charting library heavier than recharts, PDF generation library, real-time sync for Monday Prep, separate Monday meetings table, auto-generated trend analysis text.
+**Defer (out of scope for v2.0):**
+- Build List feature (fully optional, may return)
+- Dependency notes between partners (interdependence is real but not symmetric)
+- Export capability (previously deferred from v1.2)
 
 ### Architecture Approach
 
-Every v1.2 feature plugs into the existing architecture without structural change. Season overview is a `useMemo` derivation in `PartnerHub.jsx` using data already on the page. Dual meeting mode is `meeting.type` selecting a copy object — not a new component. Meeting history is a new list component (`MeetingHistory.jsx`) paired with a modified detail component (`MeetingSummary.jsx`) that reads a `?id=` query param. Export is pure lib functions that accept already-loaded state and trigger Blob downloads.
+8 new components, 7 modified components. See `.planning/research/ARCHITECTURE.md`.
 
-**Major components — new or modified:**
-1. `PartnerHub.jsx` (modified) — season overview section via `useMemo`; meeting history nav link
-2. `MeetingHistory.jsx` (new) — partner-facing list of ended meetings at `/meeting-history/:partner`
-3. `MeetingSummary.jsx` (modified) — reads `?id=` query param to load any specific meeting
-4. `AdminMeetingSession.jsx` (modified) — copy switching on `meeting.type`; read-only mode when `ended_at` is set
-5. `AdminMeeting.jsx` (modified) — meeting type selector (Friday Review / Monday Prep) before start
-6. `src/lib/exportUtils.js` (new) — pure download helpers; no Supabase calls
-7. `content.js` (modified) — `MONDAY_PREP_COPY`, `SEASON_OVERVIEW_COPY`, `MEETING_HISTORY_COPY`
-8. `supabase.js` (modified) — `createMeeting(weekOf, type = 'friday_review')`
-9. Migration 007 (new) — `meeting_type` column + `UNIQUE (week_of, meeting_type)` constraint
+**New components by complexity:**
+- **LOW:** `RoleIdentitySection.jsx`, `RoleCheckStop.jsx`
+- **MODERATE:** `WeeklyChoiceCard.jsx`, `WeeklyKpiSelectionFlow.jsx`, `ThisWeekKpisSection.jsx`, `PersonalGrowthSection.jsx`, `KpiCounterWidget.jsx`
+- **HIGH:** `KpiSelectionStop.jsx` — embeds selection state machine inside meeting session; build standalone first, integrate second
+
+**Modified:** `PartnerHub.jsx`, `Scorecard.jsx`, `AdminMeetingSession.jsx`, `AdminComparison.jsx`, `AdminKpi.jsx`, `content.js`, `supabase.js`, `App.jsx`
+
+**New data module:** `src/data/roles.js` (role title, self-quote, narrative, focus areas, day-in-life per partner)
 
 ### Critical Pitfalls
 
-1. **STOPS array diverged across four files (confirmed live defect)** — `AdminMeetingSession.jsx` has 12 stops; `MeetingSummary.jsx`, `AdminMeetingSessionMock.jsx`, `MeetingSummaryMock.jsx` still have the old 10-stop version. `kpi_6`/`kpi_7` notes silently disappear for partners. Fix: extract `AGENDA_STOPS` to `content.js` as a named export; all files import from one source. Must resolve before meeting history phase.
+See `.planning/research/PITFALLS.md`.
 
-2. **`meeting_type` as NOT NULL without DEFAULT breaks `createMeeting` immediately** — migration runs before deploy; window where meeting creation is completely broken. Fix: `NOT NULL DEFAULT 'friday_review'`. Migration and `createMeeting` update ship together.
-
-3. **`agenda_stop_key` CHECK constraint rejects any Monday Prep stop key** — notes silently fail to save; only trace is `console.error`. Fix: finalize all Monday Prep stop key names, expand CHECK constraint in migration before writing any component code.
-
-4. **`MeetingSummary.jsx` always shows the latest ended meeting** — `meetings.find(m => m.ended_at != null)` ignores any ID. Fix: add `/:meetingId` to route and load via `fetchMeeting(meetingId)`.
-
-5. **Season hit-rate counts `null` results as misses** — `kpi_results` initializes as `{ result: null }`; naive counting makes early-season weeks look all-miss. Fix: exclude `result === null` from both numerator and denominator.
-
-6. **CSV export serializes JSONB `kpi_results` as a raw JSON blob** — one unreadable cell per scorecard row. Fix: one output row per KPI per week using `Object.entries(row.kpi_results)`; use embedded `label` field.
-
-7. **No duplicate-meeting guard on `createMeeting`** — double-click creates two meeting rows; notes split across IDs. Fix: `UNIQUE (week_of, meeting_type)` DB constraint + UI "Resume" button.
+1. **P-S1 (CRITICAL)** — Migration 009 must wipe `scorecards` + `kpi_selections` + `growth_priorities` + `kpi_templates` together. Wiping templates alone orphans JSONB keys and silently breaks season stats, hub counts, and meeting-history labels.
+2. **P-S3 (CRITICAL)** — No-back-to-back requires a Postgres trigger (`BEFORE INSERT OR UPDATE`), not UI-only gray-out. CHECK constraints cannot reference other rows. First-week edge case: `previousWeekSelection?.template_id ?? null` means no restriction.
+3. **P-B1 (CRITICAL for stats)** — `computeSeasonStats` iterates current selection IDs to look up historical JSONB entries. Weekly-choice IDs rotate — historical entries become invisible. Fix: iterate `Object.entries(card.kpi_results)` directly using embedded `entry.label`. Must ship before hub redesign.
+4. **P-M2 (CRITICAL for meeting mode)** — `KPI_START_INDEX = 2` hardcoded in `AdminMeetingSession.jsx`. After `role_check` insertion, `kpi_1` moves to index 3. Derive as `FRIDAY_STOPS.indexOf('kpi_1')` — fix in same commit as `FRIDAY_STOPS` update.
+5. **P-U2 (MODERATE)** — v1.3 already fixed a hooks-ordering violation in `PartnerHub.jsx`. New `useState` calls for collapsibles must be declared before `if (loading) return null`.
 
 ## Implications for Roadmap
 
-### Phase 1: Schema Foundation + STOPS Consolidation
-**Rationale:** STOPS divergence is a confirmed live defect that corrupts meeting history output if not fixed first. The `meeting_type` migration gates all dual meeting mode work. Both must ship before anything else.
-**Delivers:** Shared `AGENDA_STOPS` constant in `content.js`; `meetings.meeting_type` column with `DEFAULT 'friday_review'` and `UNIQUE (week_of, meeting_type)`; CHECK constraint expanded for Monday Prep stop keys; `createMeeting(weekOf, type)` updated; `MONDAY_PREP_COPY` and `MEETING_HISTORY_COPY` added to `content.js`.
-**Addresses:** Pitfalls 1, 2, 3, 7 (prevention)
+Based on research, suggested phase structure (continues from Phase 13):
 
-### Phase 2: Dual Meeting Mode
-**Rationale:** Uses Phase 1 schema foundation. Unlocks read-only session mode in `AdminMeetingSession.jsx`, which Phase 3 (meeting history) also depends on.
-**Delivers:** Meeting type selector in `AdminMeeting.jsx`; copy switching in `AdminMeetingSession.jsx`; read-only view when `meeting.ended_at` is set.
+### Phase 14: Schema + Seed (Migration 009)
+**Rationale:** Every subsequent phase depends on new tables. Schema-first eliminates blocked UI work and aggregates all breaking changes into one audited migration.
+**Delivers:** `weekly_kpi_selections` + `kpi_counters` + `admin_settings` tables; `trg_no_back_to_back` trigger; `kpi_templates` column additions (`conditional`, `countable`, `partner_overrides`); `growth_priorities` column additions (`subtype`, `approval_state`, `milestone_at`); expanded `meeting_notes` CHECK (adds `role_check`, `weekly_kpi_selection`); wipe of Spring Season 2026 data (kpi_templates + kpi_selections + scorecards + growth_priorities); v2.0 reseed with spec content; all new `supabase.js` exports.
+**Addresses:** Data-model & content requirements.
+**Avoids:** P-S1, P-S2, P-S3, P-S5, P-M1, P-T1.
 
-### Phase 3: Meeting History (Admin + Partner)
-**Rationale:** Uses read-only session mode from Phase 2. Fixing `MeetingSummary.jsx` to accept `?id=` is required before the history list can link to specific meetings.
-**Delivers:** `MeetingHistory.jsx` at `/meeting-history/:partner`; `MeetingSummary.jsx` modified to load by ID; meeting history link from `PartnerHub.jsx`.
+### Phase 15: Role Identity Content + Hub Redesign
+**Rationale:** Static content has no DB dependency. Hub structure must be established before Phase 16 adds the weekly-choice section. Carries `computeSeasonStats` redesign — must land before rotating IDs exist.
+**Delivers:** `src/data/roles.js` (title, quote, narrative, focus areas, day-in-life per partner), `RoleIdentitySection.jsx`, `PersonalGrowthSection.jsx`, `PartnerHub.jsx` restructure with collapsibles, redesigned `computeSeasonStats` iterating JSONB directly.
+**Uses:** Vanilla CSS `max-height` collapsible pattern, existing content-module convention.
+**Implements:** Role identity display, collapsible sections, personal growth display.
+**Avoids:** P-U1, P-U2, P-U3, P-B1, P-P1, P-P3, P-T2.
 
-### Phase 4: Season Overview
-**Rationale:** Zero schema changes; no new components; data already in `PartnerHub.jsx` state. Lowest-risk phase, can run in parallel with Phase 3.
-**Delivers:** `useMemo` season hit-rate derivation; recharts `BarChart` for per-KPI weekly rates; season week progress indicator.
-**Uses:** `recharts` 3.8.1 (only new npm install for the entire milestone)
+### Phase 16: Weekly KPI Selection Flow + Scorecard + Counters
+**Rationale:** Requires Phase 14 tables and Phase 15 hub structure. Core partner-facing interaction of the milestone.
+**Delivers:** `WeeklyChoiceCard.jsx`, `WeeklyKpiSelectionFlow.jsx` at `/weekly-kpi/:partner`, `ThisWeekKpisSection.jsx` (mandatory list + amber weekly-choice card), `Scorecard.jsx` refactor (6 mandatory + 1 weekly fetch, baseline + growth clause per row, counter context), `KpiCounterWidget.jsx` with debounced writes.
+**Uses:** Existing `KpiSelection.jsx` view-state pattern, `scorecard-saved` flash, debounce pattern from `Scorecard.jsx`.
+**Implements:** Weekly rotation, no-back-to-back (app-layer + DB trigger), scorecard refactor, in-week counters.
+**Avoids:** P-S3 app-layer null guard, P-S4 (getMondayOf exclusively), P-B2 (dynamic KPI count in copy), P-P2 (debounced counter writes), P-U4 (amber card outside grid).
 
-### Phase 5: Export
-**Rationale:** Fully independent — client-side blob generation from already-loaded state; no schema changes. Ships after Phase 3 is stable.
-**Delivers:** `src/lib/exportUtils.js`; export buttons on `AdminMeetingSession.jsx` and `MeetingSummary.jsx`; `@media print` CSS; optional scorecard CSV in `AdminScorecards.jsx`.
+### Phase 17: Meeting Stops + Admin Toggles
+**Rationale:** Requires Phase 14 CHECK expansion, Phase 15 `roles.js` for Role Check content, Phase 16 weekly selections for KPI Selection stop context.
+**Delivers:** Updated `FRIDAY_STOPS`/`MONDAY_STOPS` arrays, `RoleCheckStop.jsx`, `KpiSelectionStop.jsx` (display-only in meeting, links to `/weekly-kpi/:partner`), `AdminMeetingSession.jsx` with `KPI_START_INDEX` derived, `AdminKpi.jsx` conditional toggle + adjustable threshold UI, weekly KPI rotation history view.
+**Uses:** Existing Clear the Air stop pattern, existing `AdminKpi.jsx` form pattern.
+**Implements:** Role Check stop, Weekly KPI Selection stop, admin toggles.
+**Avoids:** P-M2 (KPI_START_INDEX derivation), P-M3 (display-only stop).
+
+### Phase 18: Side-by-Side Comparison Extension + Polish
+**Rationale:** Presentation-layer work depending on all prior phases. Approval flow completes the personal growth loop.
+**Delivers:** `AdminComparison.jsx` extended with role descriptions, mandatory KPIs side-by-side, current weekly choices, business growth progress; growth priority approval UI (Trace approves self-chosen); Day 60 milestone badges; accessibility pass; production smoke test.
+**Implements:** Comparison updates, approval flow UI, business growth milestone signal.
+**Avoids:** P-U5 (column CSS audit before content added).
+
+### Phase Ordering Rationale
+
+- **Data dependencies determine order.** Schema → content-backed hub → selection flow → meeting integration → comparison polish.
+- **Three critical fixes (`computeSeasonStats`, `KPI_START_INDEX`, hooks ordering) are scheduled in the phase that necessitates them**, not as separate cleanup phases.
+- **Migration 009 is the single breaking-change vector** — all wipes and CHECK expansions occur there, no mid-milestone schema surprises.
+- **`KpiSelectionStop.jsx` in Phase 17 is display-only** (links to the standalone flow built in Phase 16), not a second implementation of selection state — avoids duplicated logic risk.
+
+### Research Flags
+
+Phases likely needing deeper research during planning:
+- **Phase 14:** KPI template spec content — labels, countable flags, conditional flag, personal/business growth priorities — must be authored from section 3–5 of milestone spec before migration 009 seed SQL can be finalized. This is the critical-path blocker.
+- **Phase 16:** Counter storage decision (`kpi_counters` table vs. JSONB on scorecards) — both designed; must be decided during phase planning and documented.
+
+Phases with standard patterns (skip research-phase):
+- **Phase 15:** `useState` + CSS collapsibles + static content from data file — trivial.
+- **Phase 17:** Role Check stop follows Clear the Air pattern exactly; admin toggle extends existing `AdminKpi.jsx` form.
+- **Phase 18:** CSS layout audit and Day 60 date arithmetic are mechanical.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Recharts peer deps verified against npm registry; existing package.json confirmed; all other decisions are no-new-library |
-| Features | HIGH (P1) / MEDIUM (domain) | P1 features anchored to direct codebase inspection; EOS/OKR domain patterns from training knowledge |
-| Architecture | HIGH | Derived from full codebase read — all components, migrations, lib, data files |
-| Pitfalls | HIGH | Several pitfalls are confirmed live defects from direct file inspection, not hypothetical risks |
+| Stack | HIGH | All additions verified against existing files. Zero new packages confirmed. |
+| Features | HIGH (table stakes), MEDIUM (UX patterns) | Table stakes from codebase + PROJECT.md. Rotation/counter UX from analogous tools. |
+| Architecture | HIGH | All findings from direct inspection of all 8 migrations and all relevant source files. |
+| Pitfalls | HIGH | Derived from actual data contracts in the codebase — not generic SaaS assumptions. |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Monday Prep copy not yet authored:** `MONDAY_PREP_COPY` needs actual meeting copy (eyebrows, prompts, headings) before Phase 2 can begin. Content decision, not technical. Must be resolved in planning or early Phase 1.
-- **Monday Prep stop key names:** Exact string identifiers must be decided before writing the CHECK constraint expansion in Migration 007.
-- **Per-KPI miss streak algorithm:** Not specified in detail. The streak logic is straightforward but needs a clear spec to avoid off-by-one errors at season start. Resolve during Phase 4 planning.
+- **KPI template spec content (Phase 14 blocker):** Labels, countable flags, conditional flag, mandatory-vs-choice status from milestone spec section 3 must be authored before migration SQL can be written. Resolve during Phase 14 discussion.
+- **Counter storage (Phase 16):** `kpi_counters` table vs. JSONB on scorecards — decide during Phase 16 planning based on rotation semantics and admin visibility needs.
+- **`locked_until` v2.0 semantics (Phase 14/15):** Hub derives `kpiLocked` from this column; v2.0 has no season-lock event. Decide new derivation during Phase 14 and document in migration comment.
+- **Weekly KPI selection entry point (Phase 16/17):** Hub-only, meeting-only, or both — affects `WeeklyChoiceCard` CTA and KpiSelectionStop behavior.
+- **Self-chosen personal growth submission timing (Phase 15/16):** Setup flow, hub CTA, or meeting stop — not fully specified in milestone spec.
+
+## Sources
+
+### Primary (HIGH confidence)
+- Direct codebase inspection — all v1.0–v1.3 source files, migrations 001–008, supabase.js
+- `.planning/PROJECT.md` — milestone specification
+- `.planning/MILESTONES.md` — prior milestone outcomes and known gaps
+- `.planning/milestones/v1.1-MILESTONE-AUDIT.md` — prior audit lessons
+- CLAUDE.md — stack, conventions, architectural layers
+
+### Secondary (MEDIUM confidence)
+- UX pattern derivation (rotation gray-out, counter widgets, approval badges) — analogous habit-tracking / IDP / OKR tool conventions
+
+### Tertiary (LOW confidence)
+- None required — milestone spec is precise enough that no unverifiable claims remain
 
 ---
-*Research completed: 2026-04-12*
+*Research completed: 2026-04-16*
 *Ready for roadmap: yes*

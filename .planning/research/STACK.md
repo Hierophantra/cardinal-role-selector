@@ -1,9 +1,9 @@
-# Stack Research — v1.2 Meeting & Insights Expansion
+# Stack Research — v2.0 Role Identity & Weekly KPI Rotation
 
 **Project:** Cardinal Partner Accountability System
-**Researched:** 2026-04-12
+**Researched:** 2026-04-16
 **Confidence:** HIGH
-**Scope:** Additions only — what new libraries/patterns are needed for season overview, meeting history, data export, and dual meeting mode. Existing stack (React 18 + Vite + Supabase + Framer Motion + vanilla CSS) is a hard constraint.
+**Scope:** Additions only — what new libraries, DB patterns, and code patterns are needed for weekly KPI rotation, role identity display, growth priority tracking, in-week counters, and admin toggles. Existing stack is a hard constraint.
 
 ---
 
@@ -15,7 +15,8 @@
 | React Router DOM | 6.26.0 | Client-side routing |
 | Framer Motion | 11.3.0 | Page/screen animations |
 | Vite | 5.4.0 | Build + dev server |
-| @supabase/supabase-js | ^2.45.0 (latest: 2.103.0) | Database client |
+| @supabase/supabase-js | ^2.45.0 | Database client |
+| recharts | ^3.8.1 | KPI trend charts (added v1.2) |
 | Vanilla CSS | — | Styling (Cardinal dark theme) |
 | JavaScript (ESM) | — | No TypeScript |
 
@@ -23,140 +24,310 @@
 
 ## Feature-by-Feature Stack Decisions
 
-### Season Overview Dashboard (KPI hit-rate trends)
+### weekly_kpi_selections Table + No-Back-to-Back Rule
 
-**Decision: Add `recharts` 3.8.1**
+**Decision: DB migration only — no new library**
 
-The previous milestone deliberately excluded charting libraries because "historical trend charts are explicitly out of scope." They are now explicitly in scope. Season overview requires rendering per-KPI hit-rate bars and a cumulative season trend line from 12–26 weeks of scorecard data.
+The weekly KPI rotation model needs a new table to record which optional KPI each partner picks per week. The no-back-to-back rule (you cannot pick the same optional KPI two weeks in a row) is enforced at the Postgres level, not in React.
 
-Recharts is the correct choice for this codebase because:
+**Schema:**
 
-1. **React-native API** — renders as React components (`<LineChart>`, `<BarChart>`, `<ResponsiveContainer>`), fitting directly into the existing JSX patterns without a separate imperative init step. Chart.js requires a canvas ref and imperative `new Chart()` call, which conflicts with the React functional component model used throughout this codebase.
+```sql
+CREATE TABLE weekly_kpi_selections (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  partner text NOT NULL CHECK (partner IN ('theo', 'jerry')),
+  week_start_date date NOT NULL,         -- Monday 'YYYY-MM-DD', same convention as scorecards.week_of
+  template_id uuid NOT NULL REFERENCES kpi_templates(id) ON DELETE RESTRICT,
+  selected_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (partner, week_start_date)      -- one optional pick per partner per week
+);
+```
 
-2. **Compatible peer dependencies** — recharts 3.8.1 declares `react: '^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0'`. No version conflicts with the existing React 18.3.1.
+**No-back-to-back enforcement** belongs in a Postgres function or CHECK + trigger, not in React. The correct pattern is a trigger that compares the new row's `template_id` to the previous week's `template_id` for the same partner:
 
-3. **No D3 tree-shaking complexity** — nivo charts (`@nivo/line`) require coordinating multiple `@nivo/*` packages (e.g., `@nivo/core`, `@nivo/line`, `@nivo/bar`) and have a harder theming surface. For two chart types (bar + line), recharts is one package with a simpler API.
+```sql
+CREATE OR REPLACE FUNCTION enforce_no_back_to_back()
+RETURNS trigger AS $$
+DECLARE
+  prev_template_id uuid;
+BEGIN
+  SELECT template_id INTO prev_template_id
+    FROM weekly_kpi_selections
+   WHERE partner = NEW.partner
+     AND week_start_date = (NEW.week_start_date - INTERVAL '7 days')::date;
 
-4. **Dark theme compatible** — recharts exposes `stroke`, `fill`, `style` props on all primitives. Cardinal's `var(--accent)` red and `var(--gold)` can be passed directly. No theme provider wrapping required.
+  IF prev_template_id IS NOT NULL AND prev_template_id = NEW.template_id THEN
+    RAISE EXCEPTION 'back_to_back_kpi: Cannot select the same optional KPI two weeks in a row';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-5. **Size is acceptable** — recharts unpacked size is 6.8 MB (npm registry). For a 3-user internal tool loaded over LAN during meetings, bundle weight is not a concern. The charts are only rendered on the season overview and partner progress views, not the weekly scorecard flow.
+CREATE TRIGGER trg_no_back_to_back
+  BEFORE INSERT OR UPDATE ON weekly_kpi_selections
+  FOR EACH ROW EXECUTE FUNCTION enforce_no_back_to_back();
+```
 
-**What to use inside recharts:**
-- `<BarChart>` with `<Bar>` for per-KPI weekly hit-rate bars (the primary season overview view)
-- `<LineChart>` with `<Line>` for cumulative hit-rate trend across the season
-- `<ResponsiveContainer width="100%" height={200}>` wrapping all charts so they fill CSS-defined parent widths without explicit pixel dimensions
-- `<Tooltip>` for hover detail — styled via `contentStyle` prop to match Cardinal dark theme
-- `<XAxis>` with week labels, `<YAxis>` with 0–100% domain for hit rates
+The React layer catches the raised exception by string-matching the error message (`err.message.includes('back_to_back_kpi')`) and displays a user-friendly inline message. No validation library needed.
 
-**Confidence:** HIGH — peer deps verified from npm registry, React 18 compatibility confirmed.
+**Previous-week hint on KPI selection UI** — the React component fetches the prior week's selection (one query: `eq('partner').eq('week_start_date', prevMonday)`) and passes `prevTemplateId` as a prop to the selector. Any option matching `prevTemplateId` is rendered with an amber "Used last week" label and `pointer-events: none; opacity: 0.5`. No library required.
+
+**week_start_date is already solved** — `getMondayOf()` in `src/lib/week.js` returns the correct local-time Monday string. Use it directly. No new date utility needed.
+
+**Confidence:** HIGH — pattern follows existing `scorecards` unique constraint on `(partner, week_of)` and Postgres trigger pattern is standard.
 
 ---
 
-### Data Export (Meeting Notes + Scorecard CSV)
+### Collapsible UI Sections (Partner Hub Desktop-First)
 
-**Decision: Vanilla JavaScript — no library**
+**Decision: Vanilla CSS + React useState — no library**
 
-CSV export for this use case is two browser-native operations: string construction and a `<a href="blob:">` download trigger. PapaParse (5.5.3, 264 KB unpacked) is a CSV *parser* — its unparse utility handles edge cases in user-generated strings, but meeting notes and KPI labels in this system are admin-entered, short-form text without embedded commas or newlines that would require RFC 4180 escaping.
+The hub needs two collapsible sections: "What You Focus On" (default expanded) and "Your Day Might Involve" (default collapsed). For a 3-user internal tool with two states per section, a dedicated accordion library (react-collapse, Radix Collapsible, headless-ui Disclosure) adds zero real value over the existing pattern.
 
-The vanilla pattern is:
+**The correct vanilla pattern:**
+
+```jsx
+const [focusOpen, setFocusOpen] = useState(true);   // default expanded
+const [dayOpen, setDayOpen] = useState(false);       // default collapsed
+
+// CSS: max-height transition on a wrapper div
+// .collapsible-body { overflow: hidden; transition: max-height 0.25s ease; }
+// .collapsible-body.open { max-height: 600px; }   /* large enough to clear content */
+// .collapsible-body.closed { max-height: 0; }
+```
+
+```jsx
+<div className="collapsible-section">
+  <button
+    className="collapsible-header"
+    onClick={() => setFocusOpen(v => !v)}
+    aria-expanded={focusOpen}
+  >
+    What You Focus On
+    <span className={`collapsible-chevron ${focusOpen ? 'open' : ''}`}>›</span>
+  </button>
+  <div className={`collapsible-body ${focusOpen ? 'open' : 'closed'}`}>
+    {/* content */}
+  </div>
+</div>
+```
+
+The `max-height` CSS transition is the correct approach here — it animates smoothly and requires zero JS for the animation itself. Framer Motion's `AnimatePresence` with `height: 'auto'` is an alternative but introduces a `layoutId` and layout measurement overhead that is not warranted for a simple toggle that fires at most twice per page load.
+
+**Desktop-first sizing** — the hub collapsible sections use `max-width: 900px` containers in CSS (same as existing admin views). No responsive library needed.
+
+**Confidence:** HIGH — `max-height` CSS transition is a documented browser pattern with full cross-browser support. Pattern is simpler than any library alternative for this exact use case.
+
+---
+
+### Lightweight In-Week Counters (+1 for Countable KPIs)
+
+**Decision: Supabase JSONB increment — no library, no websocket**
+
+Countable KPIs (e.g., calls made, jobs closed) need a `+1` tap on the hub and scorecard. The counter persists to Supabase as part of the scorecard's `kpi_results` JSONB. No separate counter table is needed.
+
+**Schema extension to existing kpi_results JSONB entry:**
 
 ```js
-function exportCsv(filename, rows) {
-  const csv = rows.map(r => r.map(cell =>
-    typeof cell === 'string' && (cell.includes(',') || cell.includes('"') || cell.includes('\n'))
-      ? `"${cell.replace(/"/g, '""')}"`
-      : cell
-  ).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
+// Existing shape (v1.x):
+{ result: null, reflection: '', label: 'Calls Made' }
+
+// Extended shape (v2.0) — add count field for countable KPIs:
+{ result: null, reflection: '', label: 'Calls Made', count: 0 }
+```
+
+The `count` field is only present when the KPI template has `measure` containing a countable type. All existing JSONB entries without `count` are treated as `undefined → 0` in display logic — backward compatible, no migration needed for old rows.
+
+**The +1 Supabase pattern** uses a client-side optimistic update followed by a `supabase.rpc('increment_kpi_count', { ... })` or a read-then-write:
+
+```js
+// Preferred: read current row, update JSONB, upsert back
+// This is safe at 3 users with no concurrent writes
+export async function incrementKpiCount(partner, weekOf, kpiId) {
+  const row = await fetchScorecard(partner, weekOf);
+  const current = row?.kpi_results ?? {};
+  const entry = current[kpiId] ?? {};
+  const updated = {
+    ...current,
+    [kpiId]: { ...entry, count: (entry.count ?? 0) + 1 },
+  };
+  return upsertScorecard({ partner, week_of: weekOf, kpi_results: updated });
 }
 ```
 
-This handles the only real edge case (commas in reflection text) with a 10-line helper. Adding PapaParse for this would be using a sledgehammer on a thumbtack.
+For 3 users with no real-time concurrent writes, read-then-write is safe. A Postgres `jsonb_set` RPC would be marginally more atomic but adds a migration and stored procedure with no practical benefit at this scale.
 
-**Print export** (meeting notes for reading in-person) is `window.print()` with a `@media print` CSS block that hides navigation and shows a clean layout. Zero library involvement.
+**UI pattern** — the `+1` button is a small `<button className="counter-btn">+1</button>` adjacent to the KPI row. On tap it calls `incrementKpiCount` and updates local state optimistically (`setCount(c => c + 1)`). If the DB call fails, an error is set and the optimistic increment is reverted. Standard `useState` + `try/catch` — no library.
 
-**What to build:**
-- A `exportCsv(filename, rows)` utility function in `src/lib/export.js` — new file, no library dependency
-- Print CSS in `src/index.css` under `@media print` — hide `.app-shell nav`, `.btn-ghost`, show `.print-only` elements
-- Export buttons on AdminMeeting (history view) and a future AdminScorecards view
-
-**Confidence:** HIGH — browser APIs are stable, pattern is verified common practice.
+**Confidence:** HIGH — JSONB partial update pattern is already established in `adminOverrideScorecardEntry` in `supabase.js`. Same read-then-write approach already in production.
 
 ---
 
-### Meeting History Views (Partner + Admin)
+### week_start_date Identifier Logic
 
-**Decision: No new library — Supabase queries + existing component patterns**
+**Decision: Extend existing src/lib/week.js — zero new code**
 
-The `meetings` and `meeting_notes` tables already exist with the correct schema. `fetchMeetings()` and `fetchMeetingNotes(meetingId)` are already implemented in `src/lib/supabase.js`. The only work is:
+`getMondayOf()` already returns `'YYYY-MM-DD'` in local time (the correct timezone-safe approach, explicitly documented in `week.js` with a CRITICAL warning about UTC ISO slicing). The `weekly_kpi_selections` table uses `date` type, same column convention as `scorecards.week_of`.
 
-1. A new `MeetingHistory.jsx` partner-facing component (read-only list of past meetings with notes)
-2. Extension of `AdminMeeting.jsx` to show past meetings with a "view" action linking to a read-only summary
+The only addition needed is a `getPreviousMondayOf(mondayStr)` helper:
 
-The `MeetingSummary.jsx` component already exists and renders a past meeting for a partner. It fetches by the most recent meeting. It needs a route that accepts a `meetingId` param to make it linkable from the history list.
+```js
+// src/lib/week.js — add this function
+export function getPreviousMondayOf(mondayStr) {
+  const [y, m, d] = mondayStr.split('-').map(Number);
+  const prev = new Date(y, m - 1, d - 7);
+  return getMondayOf(prev);
+}
+```
 
-No new Supabase query patterns are needed. `fetchMeetings()` already returns all meetings ordered by `held_at DESC`. The missing piece is UI to surface them.
+No date library (`date-fns`, `dayjs`, `luxon`) is warranted. The codebase has a clear, battle-tested local-time arithmetic approach. Introducing a library here would create two competing date patterns in the same file.
 
-**Confidence:** HIGH — verified by reading `src/lib/supabase.js` and `src/components/MeetingSummary.jsx`.
-
----
-
-### Dual Meeting Mode (Friday Review + Monday Prep)
-
-**Decision: DB migration for `meeting_type` column + content-driven UI differentiation**
-
-The `meetings` table currently has no `meeting_type` column. The existing `AdminMeetingSession.jsx` runs a single fixed 12-stop agenda. Dual meeting mode requires:
-
-1. **Schema addition** — `ALTER TABLE meetings ADD COLUMN meeting_type text NOT NULL DEFAULT 'friday_review' CHECK (meeting_type IN ('friday_review', 'monday_prep'));` This is migration 007.
-
-2. **Content-driven agenda framing** — the 12 agenda stops are the same for both meeting types (intro, kpi_1..7, growth stops, wrap), but the prompts, framing text, and question copy differ. Add a `MONDAY_MEETING_COPY` object to `src/data/content.js` parallel to the existing `MEETING_COPY`. `AdminMeetingSession.jsx` selects which copy object to use based on the `meeting.meeting_type` field.
-
-3. **Mode selection in `AdminMeeting.jsx`** — the "Start Meeting" form gains a mode selector (two buttons or a radio group) before launching. `createMeeting()` in `supabase.js` gains a `meeting_type` parameter.
-
-**No new library is needed.** The existing Framer Motion transitions, React Router params, and content-from-`content.js` pattern handle this entirely. The dual mode is a data and copy change, not an architecture change.
-
-**agenda_stop_key CHECK constraint** — the 12-stop constraint in `meeting_notes` already covers both meeting types (same stops, different framing). No migration needed for `meeting_notes`.
-
-**Confidence:** HIGH — verified by reading existing migration files, `meetings` table schema, and `AdminMeetingSession.jsx`.
+**Confidence:** HIGH — verified `week.js` handles all existing date arithmetic without a library. The `-7 days` offset is trivial `Date` arithmetic.
 
 ---
 
-## Recommended Additions Summary
+### Business Growth Priorities — 90-Day / Day 60 Milestone Tracking
+
+**Decision: Extend growth_priorities table with milestone fields — no new table, no new library**
+
+The existing `growth_priorities` table stores partner growth commitments with `status` and `admin_note` columns. Business growth priorities need two additional tracking fields: `milestone_60_status` (did they hit the Day 60 check-in target?) and `milestone_90_status` (did they complete the 90-day goal?).
+
+**Migration:**
+
+```sql
+ALTER TABLE growth_priorities
+  ADD COLUMN IF NOT EXISTS milestone_60_status text
+    CHECK (milestone_60_status IN ('pending', 'hit', 'missed')),
+  ADD COLUMN IF NOT EXISTS milestone_60_note text,
+  ADD COLUMN IF NOT EXISTS milestone_90_status text
+    CHECK (milestone_90_status IN ('pending', 'hit', 'missed')),
+  ADD COLUMN IF NOT EXISTS milestone_90_note text,
+  ADD COLUMN IF NOT EXISTS due_date date;  -- 90-day deadline from season start
+```
+
+The milestone deadline is computed client-side from `due_date` using the existing `getMondayOf()` and native `Date` arithmetic. No countdown library needed.
+
+The admin UI for milestone status uses the same `<select>` + `updateGrowthPriorityStatus` pattern already implemented for the main growth priority status. A new `updateGrowthMilestoneStatus(id, milestone, status, note)` function is added to `supabase.js` following the existing pattern.
+
+**2 shared business priorities** are seeded as `growth_priority_templates` rows with `type = 'business'` and `partner_scope = 'both'`. No schema change needed — existing template structure accommodates this.
+
+**Confidence:** HIGH — verified by reading the existing `growth_priorities` queries in `supabase.js`. Column addition is additive and backward compatible.
+
+---
+
+### Admin Toggles (Jerry's Conditional Sales KPI, Theo's Closing Rate Target)
+
+**Decision: Supabase `admin_settings` table — no config file, no env var**
+
+Admin-adjustable settings that can change mid-season (Jerry's conditional sales KPI enabled/disabled, Theo's closing-rate threshold) must not be hardcoded in content.js or env vars. They need to be editable at runtime by Trace from the admin panel.
+
+**Schema:**
+
+```sql
+CREATE TABLE admin_settings (
+  key text PRIMARY KEY,
+  value jsonb NOT NULL,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  updated_by text NOT NULL DEFAULT 'trace'
+);
+
+-- Initial seeds
+INSERT INTO admin_settings (key, value) VALUES
+  ('jerry_sales_kpi_enabled', 'true'),
+  ('theo_closing_rate_target', '40');
+```
+
+**Fetch pattern** — a single `fetchAdminSettings()` function that returns all rows as a key→value map:
+
+```js
+export async function fetchAdminSettings() {
+  const { data, error } = await supabase
+    .from('admin_settings')
+    .select('key, value');
+  if (error) throw error;
+  return Object.fromEntries(data.map(r => [r.key, r.value]));
+}
+
+export async function upsertAdminSetting(key, value) {
+  const { error } = await supabase
+    .from('admin_settings')
+    .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  if (error) throw error;
+}
+```
+
+The admin control panel fetches settings on mount (small table, fast) and renders toggles/number inputs using existing form patterns. No state management library needed — `useState` holds the settings map after fetch, same as every other admin component.
+
+**Why not an env var:** Env vars require a Vercel redeploy to change. Trace needs to toggle Jerry's sales KPI on-demand between seasons without a code deployment.
+
+**Why not content.js:** content.js is static data that requires a code change and deploy. Same problem.
+
+**Confidence:** HIGH — Supabase `upsert` on a primary-key table is the cleanest runtime config pattern. Already used for scorecards, meetings. JSONB `value` field accommodates boolean, number, and future string settings without schema changes.
+
+---
+
+### Role Identity Display (Hub Redesign)
+
+**Decision: Static content in content.js + CSS — no library**
+
+Role identity (title, italic self-quote, narrative paragraph, focus areas list, day-involvement list) is static per partner. It belongs in `content.js` as a `ROLE_IDENTITY` object:
+
+```js
+// src/data/content.js
+export const ROLE_IDENTITY = {
+  theo: {
+    title: 'Revenue & Growth Lead',
+    quote: '"I bring in the work and push us toward what\'s next."',
+    narrative: '...',
+    focusAreas: ['...', '...'],
+    dayInvolves: ['...', '...'],
+  },
+  jerry: {
+    title: 'Operations & Finance Lead',
+    quote: '"I make sure the machine runs and the money\'s right."',
+    narrative: '...',
+    focusAreas: ['...', '...'],
+    dayInvolves: ['...', '...'],
+  },
+};
+```
+
+The quote renders as `<em>` inside the hub card. CSS italic is native — no typography library. The narrative paragraph uses existing `var(--text-muted)` color class. Focus areas and day-involvement items use `<ul>` with existing `list-item` patterns.
+
+No new library. No new pattern. This is the exact content-from-`content.js` pattern the codebase already uses for `purposeOptions`, `salesOptions`, etc.
+
+**Confidence:** HIGH — pattern is the codebase's primary abstraction for all static copy.
+
+---
+
+## No New npm Packages Required
+
+**All v2.0 features can be implemented with the existing npm dependency set.** The complete feature list — weekly KPI rotation, no-back-to-back enforcement, collapsible hub sections, in-week counters, role identity display, 90-day growth tracking, and admin toggles — requires only:
+
+1. DB migrations (new table, column additions)
+2. New functions in `src/lib/supabase.js` (following existing patterns)
+3. New/extended content in `src/data/content.js`
+4. One helper addition in `src/lib/week.js`
+5. New React components using existing `useState` + `useEffect` + direct Supabase call patterns
+
+---
+
+## Summary of Additions
 
 | Addition | Type | Why |
 |----------|------|-----|
-| `recharts` 3.8.1 | npm package | KPI hit-rate bars + season trend line. React-native API, React 18 compatible, dark-theme styleable via props. |
-| `src/lib/export.js` | New file (no library) | CSV + print export as vanilla JS helper. PapaParse is overkill for admin-entered short text. |
-| Migration 007: `meetings.meeting_type` | DB migration | Required for dual meeting mode. No library involvement. |
-| `MONDAY_MEETING_COPY` in `content.js` | Content addition | Framing copy for Monday Prep mode. Existing content-driven architecture handles this. |
-
----
-
-## Installation
-
-```bash
-# Only one new package for the entire v1.2 milestone
-npm install recharts@3.8.1
-```
-
-All other additions are files or DB migrations, not npm packages.
-
----
-
-## Alternatives Considered
-
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Charts | recharts 3.8.1 | @nivo/line + @nivo/bar | Multiple packages to coordinate, harder theme surface, more complex API for two chart types |
-| Charts | recharts 3.8.1 | chart.js + react-chartjs-2 | Imperative canvas API requires refs; conflicts with React functional component model |
-| Charts | recharts 3.8.1 | victory 37.3.x | 2.3 MB unpacked vs recharts' React-native declarative API; recharts is more widely used in React ecosystem |
-| CSV export | Vanilla JS (`src/lib/export.js`) | papaparse 5.5.3 | PapaParse is a CSV parser; its unparse feature is overkill for short admin-entered text without complex embedded delimiters |
-| Print export | CSS `@media print` | PDF generation library (jsPDF, etc.) | `window.print()` is zero-dependency, produces clean output from existing HTML; a PDF library adds 200+ KB for identical visual output |
-| Dual meeting mode | `meeting_type` DB column + content objects | Separate `monday_meetings` table | Same schema, same stops, same notes table — a type discriminator is the correct relational pattern |
+| `weekly_kpi_selections` table | DB migration | Weekly optional KPI pick, one per partner per week |
+| No-back-to-back trigger | DB migration | Enforces rule at Postgres level, not in React |
+| `admin_settings` table | DB migration | Runtime-editable toggles for Jerry's sales KPI and Theo's threshold |
+| `growth_priorities` milestone columns | DB migration (additive) | Day 60 + Day 90 milestone tracking for business priorities |
+| `getPreviousMondayOf()` | `src/lib/week.js` addition | One-liner helper for no-back-to-back UI hint |
+| `fetchWeeklyKpiSelection()` + `upsertWeeklyKpiSelection()` | `src/lib/supabase.js` additions | Follows existing fetch+upsert pattern exactly |
+| `incrementKpiCount()` | `src/lib/supabase.js` addition | Read-then-write JSONB update, same as `adminOverrideScorecardEntry` |
+| `fetchAdminSettings()` + `upsertAdminSetting()` | `src/lib/supabase.js` additions | Key-value settings fetch |
+| `updateGrowthMilestoneStatus()` | `src/lib/supabase.js` addition | Milestone column update, same pattern as `updateGrowthPriorityStatus` |
+| `ROLE_IDENTITY` constant | `src/data/content.js` addition | Static role copy per partner |
+| Collapsible section CSS classes | `src/index.css` additions | `.collapsible-body`, `.collapsible-header`, `.collapsible-chevron` |
+| Counter button CSS classes | `src/index.css` additions | `.counter-btn`, `.counter-value` |
 
 ---
 
@@ -164,93 +335,151 @@ All other additions are files or DB migrations, not npm packages.
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| `@tanstack/react-query` | The existing `useState` + `useEffect` + direct Supabase async pattern is consistent throughout 9,000+ LOC. Splitting data-fetching style mid-project creates cognitive overhead for no benefit at 3 users. | Continue existing `fetchX()` pattern in `src/lib/supabase.js` |
-| `date-fns` / `dayjs` | Season date range and week arithmetic is already handled by `src/lib/week.js` with native `Date`. No new date complexity enters with v1.2. | `src/lib/week.js` (existing) |
-| `react-table` / `@tanstack/react-table` | Meeting history and scorecard history are simple ordered lists, not sortable/filterable data grids. | Vanilla `<ul>` / `<div>` with existing CSS patterns |
-| Any CSS-in-JS library | Styling is vanilla CSS in `src/index.css`. New chart containers and history views add CSS classes to the same file. | `src/index.css` (extend, don't replace) |
+| `date-fns` / `dayjs` / `luxon` | `src/lib/week.js` already handles all date arithmetic in local time. Adding a library creates two competing date patterns. The `getPreviousMondayOf` addition is a one-liner. | Extend `src/lib/week.js` |
+| Radix UI / headless-ui / react-collapse | Collapsible sections with two states and `max-height` CSS transition need zero library involvement. | `useState` + `.collapsible-body.open { max-height: 600px }` in CSS |
+| Framer Motion for collapsibles | AnimatePresence layout measurement overhead is not warranted for simple show/hide toggles on a 3-user internal tool. | CSS `max-height` transition |
+| `@tanstack/react-query` | The `useState` + `useEffect` + direct `supabase.js` function call pattern runs throughout 9,000+ LOC. Splitting data-fetching style mid-project creates cognitive overhead. | Continue existing pattern |
+| Zustand / Jotai / Context API for settings | Settings are fetched once per admin page load. `useState` holding a key-value object is sufficient. | `useState` in admin component |
+| Postgres RPC for counter increment | Read-then-write on JSONB is already in production (`adminOverrideScorecardEntry`). RPC adds a stored procedure migration with no practical benefit at 3 users. | `incrementKpiCount()` read-then-write pattern |
+| Tailwind / CSS modules | Styling is vanilla CSS in `src/index.css`. New classes follow existing BEM-adjacent naming. | Extend `src/index.css` |
 | TypeScript | The codebase is JavaScript. No change. | — |
-
----
-
-## Version Compatibility
-
-| Package | Compatible With | Notes |
-|---------|-----------------|-------|
-| recharts 3.8.1 | React 18.3.1 | Peer dep: `react: '^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0'` — confirmed compatible |
-| recharts 3.8.1 | Vite 5.4.0 | No Vite-specific config needed; recharts ships ESM and CJS, Vite tree-shakes correctly |
-| recharts 3.8.1 | Framer Motion 11.3.0 | No interaction; recharts renders SVG, Framer wraps the container div |
+| `react-hook-form` / `formik` | Admin toggle forms are 2–3 inputs. Existing controlled `useState` + `onChange` pattern handles this. | Existing form pattern |
 
 ---
 
 ## Integration Points
 
-### recharts in Season Overview Component
-
-```jsx
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-
-// data: [{ week: 'Jan 5', hitRate: 71 }, ...]
-<ResponsiveContainer width="100%" height={180}>
-  <BarChart data={weeklyData} margin={{ top: 4, right: 8, bottom: 4, left: -20 }}>
-    <XAxis dataKey="week" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
-    <YAxis domain={[0, 100]} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
-    <Tooltip
-      contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
-      formatter={(v) => [`${v}%`, 'Hit rate']}
-    />
-    <Bar dataKey="hitRate" fill="var(--accent)" radius={[3, 3, 0, 0]} />
-  </BarChart>
-</ResponsiveContainer>
-```
-
-### CSV Export Utility
+### weekly_kpi_selections Supabase Functions
 
 ```js
-// src/lib/export.js
-export function exportCsv(filename, rows) {
-  const escape = (cell) => {
-    const s = String(cell ?? '');
-    return s.includes(',') || s.includes('"') || s.includes('\n')
-      ? `"${s.replace(/"/g, '""')}"`
-      : s;
+// src/lib/supabase.js — new additions
+export async function fetchWeeklyKpiSelection(partner, weekStartDate) {
+  const { data, error } = await supabase
+    .from('weekly_kpi_selections')
+    .select('*, kpi_templates(label, category, measure)')
+    .eq('partner', partner)
+    .eq('week_start_date', weekStartDate)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertWeeklyKpiSelection(record) {
+  // record: { partner, week_start_date, template_id }
+  // DB trigger raises 'back_to_back_kpi' exception if rule violated
+  const { data, error } = await supabase
+    .from('weekly_kpi_selections')
+    .upsert(record, { onConflict: 'partner,week_start_date' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// Caller catches back-to-back violation:
+// try { await upsertWeeklyKpiSelection(record) }
+// catch (err) {
+//   if (err.message?.includes('back_to_back_kpi')) setError('You used this KPI last week. Pick a different one.');
+//   else setError('Something went wrong. Please try again.');
+// }
+```
+
+### Collapsible Section CSS
+
+```css
+/* src/index.css — add to hub section */
+.collapsible-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 10px 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.collapsible-chevron {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-style: normal;
+  color: var(--text-muted);
+}
+.collapsible-chevron.open {
+  transform: rotate(90deg);
+}
+.collapsible-body {
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+.collapsible-body.open  { max-height: 600px; }
+.collapsible-body.closed { max-height: 0; }
+```
+
+### In-Week Counter
+
+```js
+// src/lib/supabase.js — new addition
+export async function incrementKpiCount(partner, weekOf, kpiId) {
+  const row = await fetchScorecard(partner, weekOf);
+  const current = row?.kpi_results ?? {};
+  const entry = current[kpiId] ?? {};
+  const updated = {
+    ...current,
+    [kpiId]: { ...entry, count: (entry.count ?? 0) + 1 },
   };
-  const csv = rows.map(r => r.map(escape).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement('a'), { href: url, download: filename });
-  a.click();
-  URL.revokeObjectURL(url);
+  return upsertScorecard({ partner, week_of: weekOf, kpi_results: updated });
 }
 ```
 
-### Meeting Type Column (Migration 007)
+### Admin Settings Fetch
 
-```sql
-ALTER TABLE meetings
-  ADD COLUMN IF NOT EXISTS meeting_type text NOT NULL DEFAULT 'friday_review';
+```js
+// src/lib/supabase.js — new additions
+export async function fetchAdminSettings() {
+  const { data, error } = await supabase
+    .from('admin_settings')
+    .select('key, value');
+  if (error) throw error;
+  return Object.fromEntries(data.map(r => [r.key, r.value]));
+}
 
-ALTER TABLE meetings
-  ADD CONSTRAINT meetings_type_check
-  CHECK (meeting_type IN ('friday_review', 'monday_prep'));
+export async function upsertAdminSetting(key, value) {
+  const { error } = await supabase
+    .from('admin_settings')
+    .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  if (error) throw error;
+}
 ```
 
-`createMeeting()` in `supabase.js` updated to accept `meeting_type` parameter. Existing meetings (all `friday_review`) retain their default value.
+---
+
+## Version Compatibility
+
+No new npm packages — no version compatibility concerns. All additions are:
+- DB migrations (Supabase PostgreSQL — existing project)
+- `src/lib/supabase.js` function additions (following existing patterns)
+- `src/lib/week.js` one helper addition
+- `src/data/content.js` constant additions
+- `src/index.css` class additions
+
+The existing stack handles v2.0 entirely.
 
 ---
 
 ## Sources
 
 - `package.json` — existing dependency versions (verified by file read)
-- `supabase/migrations/005_admin_meeting_phase4.sql` — meetings + meeting_notes schema (verified)
-- `supabase/migrations/006_schema_v11.sql` — meeting_notes CHECK constraint expansion (verified)
-- `src/lib/supabase.js` — existing Supabase function patterns (verified by file read)
-- `src/components/admin/AdminMeetingSession.jsx` — 12-stop STOPS array, existing meeting mode (verified)
-- `src/components/MeetingSummary.jsx` — existing partner-facing meeting view (verified)
-- npm registry: `npm info recharts` — version 3.8.1, peer deps React 16–19, unpacked 6.8 MB (verified)
-- npm registry: `npm info papaparse` — version 5.5.3, 264 KB (verified; rejected as overkill)
-- npm registry: `npm info @nivo/line` — version 0.99.0 (verified; rejected for multi-package complexity)
+- `src/lib/supabase.js` — existing Supabase function patterns, `adminOverrideScorecardEntry` read-then-write JSONB pattern (verified by file read)
+- `src/lib/week.js` — existing local-time date arithmetic, `getMondayOf()` implementation (verified by file read)
+- `src/data/content.js` — existing content pattern, `CATEGORY_LABELS` and option array exports (verified by file read)
+- `.planning/PROJECT.md` — v2.0 feature requirements, breaking change intent, desktop-first constraint (verified by file read)
+- `.planning/research/STACK.md` (v1.2) — established `max-height` CSS collapsible pattern was not needed then; it is correct for v2.0 (pattern confirmed from prior research)
+- Postgres documentation: trigger functions for constraint enforcement — standard pattern, HIGH confidence
 
 ---
 
-*Stack research for: Cardinal Partner Accountability System v1.2*
-*Researched: 2026-04-12*
+*Stack research for: Cardinal Partner Accountability System v2.0*
+*Researched: 2026-04-16*
