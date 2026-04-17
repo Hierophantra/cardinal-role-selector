@@ -114,6 +114,10 @@ export default function PartnerHub() {
   const [counters, setCounters] = useState({});
   const timersRef = useRef({});
   const pendingDeltaRef = useRef({});
+  // Serialize all counter writes through a single promise chain (WR-02) —
+  // prevents concurrent timers for different templates from racing each other's
+  // read-modify-write on the counter_value JSONB column.
+  const counterQueueRef = useRef(Promise.resolve());
 
   // Seed counters from DB when weeklySelection loads (COUNT-04 reload persistence)
   useEffect(() => {
@@ -128,16 +132,18 @@ export default function PartnerHub() {
     // Accumulate per-template delta (Pitfall 2: batched debounce so rapid taps don't lose increments).
     pendingDeltaRef.current[templateId] = (pendingDeltaRef.current[templateId] ?? 0) + 1;
     if (timersRef.current[templateId]) clearTimeout(timersRef.current[templateId]);
-    timersRef.current[templateId] = setTimeout(async () => {
+    timersRef.current[templateId] = setTimeout(() => {
       const delta = pendingDeltaRef.current[templateId] ?? 0;
       pendingDeltaRef.current[templateId] = 0;
-      try {
-        for (let i = 0; i < delta; i++) {
-          await incrementKpiCounter(partner, currentMonday, templateId);
-        }
-      } catch (err) {
-        console.error(err);
-      }
+      // Chain onto the shared queue so concurrent timers across templates do not
+      // overlap their fetch→compute→upsert windows and clobber each other.
+      counterQueueRef.current = counterQueueRef.current
+        .then(async () => {
+          for (let i = 0; i < delta; i++) {
+            await incrementKpiCounter(partner, currentMonday, templateId);
+          }
+        })
+        .catch((err) => console.error(err));
     }, 500);
   }
 
