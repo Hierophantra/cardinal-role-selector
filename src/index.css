@@ -2050,3 +2050,123 @@ textarea { resize: vertical; min-height: 120px; }
   color: var(--miss);
   margin: 0;
 }
+
+/* ===== Phase 16: Weekly KPI Selection + Scorecard + Counters ===== */
+
+/* WeeklyKpiSelectionFlow */
+.weekly-selection-subtext {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin-bottom: 24px;
+}
+
+.weekly-kpi-disabled-label {
+  font-size: 12px;
+  color: var(--muted-2);
+  font-style: italic;
+  margin-top: 4px;
+  display: block;
+}
+
+.weekly-selection-error {
+  font-size: 12px;
+  color: var(--miss);
+  margin-top: 8px;
+}
+
+/* Hub weekly-choice locked label */
+.weekly-choice-locked-label {
+  font-size: 12px;
+  color: var(--muted-2);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Counter pill — +1 button + has-count modifier */
+.kpi-counter-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 0 4px;
+  min-width: 32px;
+  text-align: center;
+}
+
+.kpi-counter-btn:hover {
+  color: var(--text);
+}
+
+.kpi-counter.has-count .kpi-counter-number {
+  color: var(--gold);
+}
+
+/* Scorecard v2.0 row internals */
+.scorecard-baseline-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.scorecard-growth-clause {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.scorecard-count-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.scorecard-count-input {
+  width: 80px;
+}
+
+.scorecard-reflection-block {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.scorecard-reflection-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scorecard-rating-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* Sticky submit bar */
+.scorecard-sticky-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: rgba(10, 10, 10, 0.88);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}

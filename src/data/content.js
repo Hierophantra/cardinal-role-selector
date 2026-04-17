@@ -316,7 +316,7 @@ export const HUB_COPY = {
       roleCompleteKpisInProgress: 'Role Definition complete \u00b7 KPI selection in progress',
       roleNotComplete: 'Role Definition not yet completed',
       scorecardNotCommitted: 'This week: not committed',
-      scorecardInProgress: (n) => `This week: ${n} of 5`,
+      scorecardInProgress: (n, total) => `This week: ${n} of ${total}`,
       scorecardComplete: 'This week complete',
     },
     cards: {
@@ -445,6 +445,33 @@ export const KPI_COPY = {
   },
 };
 
+// --- Phase 16: Weekly KPI Selection copy ---
+
+export const WEEKLY_KPI_COPY = {
+  selection: {
+    eyebrow: 'Weekly KPI',
+    heading: 'Choose Your KPI This Week',
+    subtext: "You can change your mind until you confirm. After confirming, only Trace can update your selection.",
+    disabledLabel: 'Used last week',
+    emptyPool: 'No optional KPIs available — contact Trace.',
+  },
+  confirmation: {
+    headingTemplate: (kpiLabel) => `Lock in ${kpiLabel} for this week?`,
+    body: 'After confirming, only Trace can change your selection before next week.',
+    confirmCta: 'Confirm Selection',
+    backCta: 'Go back',
+  },
+  success: {
+    heading: "You're locked in.",
+    subtextTemplate: (kpiLabel) => `${kpiLabel} is your choice for this week.`,
+    cta: 'Back to Hub',
+  },
+  errorBackToBack: 'This KPI was used last week. Choose a different one.',
+  errorGeneric: "Couldn't save. Try again.",
+  hubLockedLabel: 'Locked',
+  hubLockedHeadingTemplate: (kpiLabel) => `This week: ${kpiLabel}`,
+};
+
 // --- Weekly Scorecard copy (Phase 3) ---
 
 export const SCORECARD_COPY = {
@@ -454,7 +481,7 @@ export const SCORECARD_COPY = {
   headingEditing: "This week's check-in",
   commitCta: 'Commit to this week',
   committingCta: 'Committing\u2026',
-  submitCta: 'Submit check-in',
+  submitCta: 'Submit Scorecard',
   submitNote: 'Answer all KPIs and add your weekly win to submit',
   prompts: {
     success: 'What made this work?',
@@ -485,6 +512,23 @@ export const SCORECARD_COPY = {
   weekRatingLabel: 'How was your week overall?',
   weekRatingLeft: '1 = Rough',
   weekRatingRight: '5 = Great',
+  // --- Phase 16 extensions (new Scorecard v2.0 keys) ---
+  growthPrefix: 'GROWTH:',
+  countLabel: 'Count',
+  reflectionLabel: 'Reflection',
+  reflectionPlaceholder: 'What happened this week? What did you notice?',
+  weeklyReflectionHeading: 'Weekly Reflection',
+  biggestWinLabel: 'Biggest win',
+  biggestWinPlaceholder: 'What are you proud of?',
+  learningLabel: 'Learning this week',
+  learningPlaceholder: 'What did you discover or improve?',
+  stickyNote: "This can't be undone.",
+  submitErrorIncomplete: 'Rate each KPI as Met or Not Met before submitting.',
+  submitErrorDb: "Couldn't save your scorecard. Try again.",
+  submittedNotice: 'Submitted — nice work.',
+  emptyGuardHeading: 'No weekly KPI selected yet.',
+  emptyGuardBody: 'Head back to the hub and choose your KPI for this week first.',
+  emptyGuardCta: 'Go to Hub',
   hubCard: {
     title: 'Weekly Scorecard',
     description: 'Check in on your 7 KPIs each week and track your progress over time.',
