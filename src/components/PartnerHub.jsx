@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   fetchSubmission,
@@ -9,6 +9,7 @@ import {
   fetchPreviousWeeklyKpiSelection,
   fetchGrowthPriorities,
   upsertGrowthPriority,
+  incrementKpiCounter,
 } from '../lib/supabase.js';
 import { getMondayOf } from '../lib/week.js';
 import { computeSeasonStats, computeStreaks, computeWeekNumber, getPerformanceColor } from '../lib/seasonStats.js';
@@ -107,6 +108,48 @@ export default function PartnerHub() {
   const thisWeekCard = useMemo(
     () => scorecards.find((s) => s.week_of === currentMonday) ?? null,
     [scorecards, currentMonday]
+  );
+
+  // ---- Counter state + 500ms batched debounce (Phase 16 COUNT-01..03; RESEARCH Pitfall 2) ----
+  const [counters, setCounters] = useState({});
+  const timersRef = useRef({});
+  const pendingDeltaRef = useRef({});
+
+  // Seed counters from DB when weeklySelection loads (COUNT-04 reload persistence)
+  useEffect(() => {
+    if (weeklySelection?.counter_value) {
+      setCounters(weeklySelection.counter_value);
+    }
+  }, [weeklySelection]);
+
+  function handleIncrementCounter(templateId) {
+    // Optimistic local update — UI reflects all taps immediately.
+    setCounters((prev) => ({ ...prev, [templateId]: (prev[templateId] ?? 0) + 1 }));
+    // Accumulate per-template delta (Pitfall 2: batched debounce so rapid taps don't lose increments).
+    pendingDeltaRef.current[templateId] = (pendingDeltaRef.current[templateId] ?? 0) + 1;
+    if (timersRef.current[templateId]) clearTimeout(timersRef.current[templateId]);
+    timersRef.current[templateId] = setTimeout(async () => {
+      const delta = pendingDeltaRef.current[templateId] ?? 0;
+      pendingDeltaRef.current[templateId] = 0;
+      try {
+        for (let i = 0; i < delta; i++) {
+          await incrementKpiCounter(partner, currentMonday, templateId);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }, 500);
+  }
+
+  // Cleanup all pending timers on unmount
+  useEffect(() => () => {
+    Object.values(timersRef.current).forEach(clearTimeout);
+  }, []);
+
+  // Locked-flag derivation (Pitfall 6 — no schema change; derived from submitted_at presence)
+  const weeklyChoiceLocked = useMemo(
+    () => Boolean(thisWeekCard?.submitted_at),
+    [thisWeekCard]
   );
 
   // Save handler for self-chosen growth (D-15, D-16). Called from PersonalGrowthSection.
@@ -220,6 +263,9 @@ export default function PartnerHub() {
                   thisWeekCard={thisWeekCard}
                   weeklySelection={weeklySelection}
                   previousSelection={previousSelection}
+                  counters={counters}
+                  onIncrementCounter={handleIncrementCounter}
+                  weeklyChoiceLocked={weeklyChoiceLocked}
                 />
               )}
 
