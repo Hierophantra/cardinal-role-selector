@@ -171,7 +171,7 @@ export default function PartnerHub() {
       ? (scorecardState === 'complete'
           ? copy.status.scorecardComplete
           : scorecardState === 'inProgress'
-            ? copy.status.scorecardInProgress(scorecardAnsweredCount)
+            ? copy.status.scorecardInProgress(scorecardAnsweredCount, kpiSelections.length)
             : copy.status.scorecardNotCommitted)
       : (submission
           ? copy.status.roleCompleteNoKpis
