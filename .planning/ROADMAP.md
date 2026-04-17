@@ -97,7 +97,12 @@
   3. Scorecard renders 6 mandatory KPI rows plus the weekly choice row, each showing the KPI label, baseline action text, and growth clause prompt; partner enters Met/Not Met, count (if countable), and reflection text per row
   4. Counter widget on the hub shows current count next to applicable KPI names with a +1 button; rapid taps do not flood the database (debounce active); counter value pre-populates the matching scorecard field
   5. After scorecard submission for the week, the weekly KPI selection is locked and the Change button is no longer shown
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 16-01-PLAN.md — Copy + CSS foundation (WEEKLY_KPI_COPY, SCORECARD_COPY extensions, new Phase 16 CSS classes)
+- [ ] 16-02-PLAN.md — REQUIREMENTS.md WEEKLY-06 surgical edit (D-02 commit-time lock semantic)
+- [ ] 16-03-PLAN.md — WeeklyKpiSelectionFlow.jsx new component + App.jsx route swap (WEEKLY-01..07)
+- [ ] 16-04-PLAN.md — Scorecard.jsx v2.0 retrofit (SCORE-01..07: composite fetch, baseline/growth/count/reflection rows, sticky bar, empty guard)
+- [ ] 16-05-PLAN.md — Hub counter wiring: PartnerHub.jsx debounce hook + ThisWeekKpisSection.jsx +1 pills + locked weekly-choice card (COUNT-01..05, D-03)
 **UI hint**: yes
 
 ### Phase 17: Meeting Stops + Admin Controls
