@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role Identity & Weekly KPI Rotation
-status: Phase complete — ready for verification
-stopped_at: Phase 16 context gathered
-last_updated: "2026-04-16T23:14:14.731Z"
+status: Executing Phase 16
+stopped_at: Phase 16 UI-SPEC approved
+last_updated: "2026-04-17T01:07:10.637Z"
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 6
+  total_plans: 11
   completed_plans: 6
-  percent: 100
+  percent: 55
 ---
 
 # Project State
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-16 — v2.0 milestone started)
 
 **Core value:** Partners have clear, locked-in accountability commitments they check in on weekly, with an admin who can track progress and facilitate structured conversations.
-**Current focus:** Phase 15 — role-identity-hub-redesign
+**Current focus:** Phase 16 — weekly-kpi-selection-scorecard-counters
 
 ## Current Position
 
-Phase: 15 (role-identity-hub-redesign) — EXECUTING
-Plan: 3 of 3
+Phase: 16 (weekly-kpi-selection-scorecard-counters) — EXECUTING
+Plan: 1 of 5
 
 ## Shipped Milestones
 
@@ -115,6 +115,6 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 
 ## Session Continuity
 
-Last session: 2026-04-16T23:14:14.727Z
-Stopped at: Phase 16 context gathered
-Resume file: .planning/phases/16-weekly-kpi-selection-scorecard-counters/16-CONTEXT.md
+Last session: 2026-04-16T23:33:15.663Z
+Stopped at: Phase 16 UI-SPEC approved
+Resume file: .planning/phases/16-weekly-kpi-selection-scorecard-counters/16-UI-SPEC.md
