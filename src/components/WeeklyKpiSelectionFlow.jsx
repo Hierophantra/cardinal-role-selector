@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -33,8 +33,11 @@ export default function WeeklyKpiSelectionFlow() {
   const [saving, setSaving] = useState(false);
   const [inlineError, setInlineError] = useState(null);
 
-  // Week anchor — LOCAL time via getMondayOf (Pitfall 3)
-  const currentMonday = getMondayOf();
+  // Week anchor — LOCAL time via getMondayOf (Pitfall 3).
+  // Anchored in a ref so a midnight-Monday rollover mid-session doesn't change
+  // the fetch effect's captured week (matches the Scorecard.jsx pattern). WR-03.
+  const currentMondayRef = useRef(getMondayOf());
+  const currentMonday = currentMondayRef.current;
 
   useEffect(() => {
     if (!VALID_PARTNERS.includes(partner)) {
@@ -60,6 +63,7 @@ export default function WeeklyKpiSelectionFlow() {
         setLoadError(true);
       })
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partner]);
 
   // Derived values (inline — no hook dependency on these)
