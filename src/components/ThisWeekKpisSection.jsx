@@ -1,9 +1,11 @@
-// src/components/ThisWeekKpisSection.jsx — Phase 15 Wave 2
+// src/components/ThisWeekKpisSection.jsx — Phase 15 Wave 2 (extended Phase 16 Wave 3)
 // Presentation-only. Hub (Wave 3) supplies all data via props.
 // See .planning/phases/15-role-identity-hub-redesign/15-UI-SPEC.md.
+// Phase 16 extension: inline +1 counter pill per countable KPI row + locked weekly-choice card.
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { WEEKLY_KPI_COPY } from '../data/content.js';
 
 /**
  * Maps scorecard entry result to status-dot color class.
@@ -25,6 +27,10 @@ export default function ThisWeekKpisSection({
   thisWeekCard,
   weeklySelection,
   previousSelection,
+  counters = {},
+  onIncrementCounter,
+  // eslint-disable-next-line no-unused-vars -- accepted for forward compat; D-03 always shows locked label when hasSelection
+  weeklyChoiceLocked = false,
 }) {
   const hasSelection = Boolean(weeklySelection);
   const hasPrevious = Boolean(previousSelection);
@@ -33,10 +39,12 @@ export default function ThisWeekKpisSection({
     <section className="this-week-kpis-section hub-section">
       <h3>This Week's KPIs</h3>
 
-      {/* Mandatory KPI list with status dots (HUB-02) */}
+      {/* Mandatory KPI list with status dots (HUB-02) + inline +1 counter pill (COUNT-01) */}
       <ul className="kpi-week-list">
         {mandatorySelections.map((k) => {
           const result = thisWeekCard?.kpi_results?.[k.id]?.result ?? null;
+          const isCountable = Boolean(k.kpi_templates?.countable);
+          const count = counters?.[k.template_id] ?? 0;
           return (
             <li key={k.id} className="kpi-week-row">
               <span
@@ -44,6 +52,17 @@ export default function ThisWeekKpisSection({
                 aria-hidden="true"
               />
               <span className="kpi-week-label">{k.label_snapshot}</span>
+              {isCountable && onIncrementCounter && (
+                <div className={`kpi-counter${count > 0 ? ' has-count' : ''}`}>
+                  <span className="kpi-counter-number">{count}</span>
+                  <button
+                    type="button"
+                    className="kpi-counter-btn"
+                    onClick={() => onIncrementCounter(k.template_id)}
+                    aria-label={`Increment ${k.label_snapshot || 'counter'}`}
+                  >+1</button>
+                </div>
+              )}
             </li>
           );
         })}
@@ -56,12 +75,13 @@ export default function ThisWeekKpisSection({
         </p>
       )}
 
-      {/* Weekly-choice amber card (HUB-03, HUB-04, D-12) */}
+      {/* Weekly-choice amber card (HUB-03, HUB-04, D-12) + post-commit locked state (D-03) */}
       <div className="weekly-choice-card">
         {hasSelection ? (
           <>
-            <h4>{weeklySelection.label_snapshot}</h4>
-            <Link to={`/weekly-kpi/${partner}`} className="change-btn">Change</Link>
+            <h4>{WEEKLY_KPI_COPY.hubLockedHeadingTemplate(weeklySelection.label_snapshot)}</h4>
+            <span className="weekly-choice-locked-label">{WEEKLY_KPI_COPY.hubLockedLabel}</span>
+            {/* D-03: no Change link; selection locks at confirm per D-01 */}
           </>
         ) : (
           <>
