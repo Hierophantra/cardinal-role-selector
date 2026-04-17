@@ -201,8 +201,13 @@ export async function resetPartnerKpis(partner) {
 
 export async function resetPartnerScorecards(partner) {
   assertResettable(partner);
-  const { error } = await supabase.from('scorecards').delete().eq('partner', partner);
-  if (error) throw error;
+  // Phase 16: weekly_kpi_selections is the per-week choice row feeding Scorecard.
+  // A true reset must clear it too, otherwise the partner's "this week's pick"
+  // survives and re-seeds the next Scorecard visit with stale state.
+  const { error: e1 } = await supabase.from('scorecards').delete().eq('partner', partner);
+  if (e1) throw e1;
+  const { error: e2 } = await supabase.from('weekly_kpi_selections').delete().eq('partner', partner);
+  if (e2) throw e2;
 }
 
 // Test-specific aliases (used by existing AdminTest.jsx)
