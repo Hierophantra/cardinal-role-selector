@@ -327,6 +327,16 @@ export default function PartnerHub() {
                   </Link>
                 )}
 
+                {/* Set Up KPIs — shown only when role is done but season KPIs aren't
+                    picked yet. Otherwise the hub has no forward path into /kpi/:partner. */}
+                {submission && !kpiReady && (
+                  <Link to={`/kpi/${partner}`} className="hub-card">
+                    <h3>Set up your KPIs</h3>
+                    <p>Choose the mandatory and optional KPIs you'll commit to this season.</p>
+                    <span className="hub-card-cta">Start KPI setup {'\u2192'}</span>
+                  </Link>
+                )}
+
                 {/* View Questionnaire (was "Role Definition", retitled D-08) */}
                 <Link to={`/q/${partner}`} className="hub-card">
                   <h3>{copy.cards.roleDefinition.title}</h3>
