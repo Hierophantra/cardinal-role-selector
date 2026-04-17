@@ -42,7 +42,8 @@ export default function ThisWeekKpisSection({
       {/* Mandatory KPI list with status dots (HUB-02) + inline +1 counter pill (COUNT-01) */}
       <ul className="kpi-week-list">
         {mandatorySelections.map((k) => {
-          const result = thisWeekCard?.kpi_results?.[k.id]?.result ?? null;
+          // kpi_results is keyed by kpi_templates.id (v2.0 Scorecard write shape) — read by k.template_id
+          const result = thisWeekCard?.kpi_results?.[k.template_id]?.result ?? null;
           const isCountable = Boolean(k.kpi_templates?.countable);
           const count = counters?.[k.template_id] ?? 0;
           return (
