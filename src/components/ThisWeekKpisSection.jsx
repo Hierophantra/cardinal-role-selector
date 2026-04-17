@@ -32,7 +32,10 @@ export default function ThisWeekKpisSection({
   // eslint-disable-next-line no-unused-vars -- accepted for forward compat; D-03 always shows locked label when hasSelection
   weeklyChoiceLocked = false,
 }) {
-  const hasSelection = Boolean(weeklySelection);
+  // A weekly_kpi_selections row can exist with kpi_template_id=NULL when the counter
+  // auto-create path (incrementKpiCounter) seeded it before the partner picked a KPI.
+  // Treat only rows with a non-null template as a real selection (D-19 / D-21).
+  const hasSelection = Boolean(weeklySelection?.kpi_template_id);
   const hasPrevious = Boolean(previousSelection);
 
   return (
