@@ -49,7 +49,7 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 - [ ] **WEEKLY-03**: First-week edge case handled: if no previous-week row exists, no options are disabled
 - [ ] **WEEKLY-04**: Selection creates a `weekly_kpi_selections` row with `label_snapshot` captured at selection time
 - [ ] **WEEKLY-05**: Duplicate selection (same template as previous week) is rejected by the DB trigger; the UI catches the typed exception and displays an inline error
-- [ ] **WEEKLY-06**: Partner can change the weekly choice until the scorecard for that week is submitted; after submission, selection is locked
+- [ ] **WEEKLY-06**: Partner commits their weekly KPI via a confirmation step; after commit, the partner cannot change the selection for that week — only Trace (admin) can override mid-week. Rationale: D-02 user override of the original pre-commit-change semantic (Phase 15 D-20/D-21 precedent — see Phase 16 CONTEXT).
 - [ ] **WEEKLY-07**: Entry point for selection is the hub weekly-choice card (hub-only; no meeting-mode interactive selection in v2.0)
 
 ### Scorecard
