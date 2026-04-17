@@ -9,7 +9,7 @@ import {
   BackToBackKpiError,
 } from '../lib/supabase.js';
 import { getMondayOf } from '../lib/week.js';
-import { VALID_PARTNERS, PARTNER_DISPLAY, WEEKLY_KPI_COPY, CATEGORY_LABELS } from '../data/content.js';
+import { VALID_PARTNERS, PARTNER_DISPLAY, WEEKLY_KPI_COPY, CATEGORY_LABELS, effectivePartnerScope } from '../data/content.js';
 
 // Motion props shared by all three views — matches questionnaire + KpiSelection pattern
 const motionProps = {
@@ -67,9 +67,10 @@ export default function WeeklyKpiSelectionFlow() {
   }, [partner]);
 
   // Derived values (inline — no hook dependency on these)
+  const scope = effectivePartnerScope(partner);
   const optionalPool = templates.filter(
     (t) =>
-      (t.partner_scope === partner ||
+      (t.partner_scope === scope ||
         t.partner_scope === 'both' ||
         t.partner_scope === 'shared') &&
       t.mandatory === false &&

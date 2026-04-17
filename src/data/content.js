@@ -306,6 +306,13 @@ export const VALID_PARTNERS = ['theo', 'jerry', 'test'];
 
 export const PARTNER_DISPLAY = { theo: 'Theo', jerry: 'Jerry', test: 'Test' };
 
+// The 'test' partner has no seeded kpi_templates of its own — it shadows Theo's
+// scope so QA can exercise the full weekly-KPI / scorecard flow without seeding
+// duplicate content. Use this anywhere a kpi_templates filter keys on partner_scope.
+export function effectivePartnerScope(partner) {
+  return partner === 'test' ? 'theo' : partner;
+}
+
 export const HUB_COPY = {
   partner: {
     eyebrow: 'YOUR WORKSPACE',

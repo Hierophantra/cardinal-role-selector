@@ -9,7 +9,7 @@ import {
   upsertScorecard,
 } from '../lib/supabase.js';
 import { getMondayOf, isWeekClosed, formatWeekRange } from '../lib/week.js';
-import { VALID_PARTNERS, PARTNER_DISPLAY, SCORECARD_COPY } from '../data/content.js';
+import { VALID_PARTNERS, PARTNER_DISPLAY, SCORECARD_COPY, effectivePartnerScope } from '../data/content.js';
 
 // Motion props shared by all views — matches KpiSelection.jsx pattern
 const motionProps = {
@@ -106,10 +106,11 @@ export default function Scorecard() {
         }
 
         // Compose rows (Pattern 5): mandatory (non-conditional) + conditional (if jerry+active) + weekly choice
+        const scope = effectivePartnerScope(partner);
         const mandatory = templates.filter(
           (t) =>
             t.mandatory === true &&
-            (t.partner_scope === partner || t.partner_scope === 'both' || t.partner_scope === 'shared') &&
+            (t.partner_scope === scope || t.partner_scope === 'both' || t.partner_scope === 'shared') &&
             t.conditional === false
         );
         const conditional =
