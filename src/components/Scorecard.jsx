@@ -179,7 +179,9 @@ export default function Scorecard() {
       return;
     }
     if (weekClosed || view === 'submitted') return;
-    persistDraft(kpiResults);
+    // WR-04: call without arg so persistDraft reads the current kpiResults state
+    // rather than a potentially stale closure snapshot.
+    persistDraft();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekRating]);
 
@@ -205,8 +207,14 @@ export default function Scorecard() {
   }
 
   // Draft persist — same shape as submit but without final submitted_at semantics.
+  // Callers may pass an explicit `nextKpiResults` when they have already computed
+  // the next value (e.g. `setResult` — React state hasn't flushed yet). When no
+  // argument is supplied, we fall back to the closed-over `kpiResults` state.
+  // WR-04: this keeps the single source of truth consistent — the weekRating
+  // effect calls `persistDraft()` with no arg so it reads the latest state.
   async function persistDraft(nextKpiResults) {
     if (weekClosed || view === 'submitted') return;
+    const draft = nextKpiResults ?? kpiResults;
     setSaving(true);
     setSaveError(null);
     try {
@@ -214,7 +222,7 @@ export default function Scorecard() {
       const row = await upsertScorecard({
         partner,
         week_of: currentWeekOf,
-        kpi_results: buildKpiResultsPayload(nextKpiResults),
+        kpi_results: buildKpiResultsPayload(draft),
         committed_at: committedAt ?? nowIso,
         tasks_completed: tasksCompleted,
         tasks_carried_over: tasksCarriedOver,
@@ -227,6 +235,9 @@ export default function Scorecard() {
         const without = prev.filter((s) => s.week_of !== row.week_of);
         return [row, ...without].sort((a, b) => b.week_of.localeCompare(a.week_of));
       });
+      // Saved-indicator debounce: wait 800ms after the last persist before showing
+      // "Saved" so rapid typing doesn't flash the indicator on every keystroke.
+      // Then auto-hide 2000ms later for a brief confirmation pulse.
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
       if (savedFadeRef.current) clearTimeout(savedFadeRef.current);
       savedTimerRef.current = setTimeout(() => {
