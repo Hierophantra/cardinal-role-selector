@@ -53,7 +53,7 @@
 
 - [x] **Phase 14: Schema + Seed** - Migration 009 wipes Spring Season data, creates weekly rotation tables, and reseeds all v2.0 content (completed 2026-04-16)
 - [x] **Phase 15: Role Identity + Hub Redesign** - Partners see their role identity on the hub and personal growth priorities with approval-state badges (completed 2026-04-16)
-- [ ] **Phase 16: Weekly KPI Selection + Scorecard + Counters** - Partners select a weekly KPI from their pool, submit scorecards against 6 mandatory + 1 weekly choice, and log in-week counts
+- [x] **Phase 16: Weekly KPI Selection + Scorecard + Counters** - Partners select a weekly KPI from their pool, submit scorecards against 6 mandatory + 1 weekly choice, and log in-week counts (completed 2026-04-17)
 - [ ] **Phase 17: Meeting Stops + Admin Controls** - Both meetings gain Role Check stop; Trace can toggle Jerry's conditional KPI and edit Theo's closing-rate threshold
 - [ ] **Phase 18: Comparison + Business Growth + Polish** - Side-by-side comparison shows role descriptions and shared business growth progress; Day-60 milestone badges visible
 
@@ -101,8 +101,8 @@
 - [x] 16-01-PLAN.md — Copy + CSS foundation (WEEKLY_KPI_COPY, SCORECARD_COPY extensions, new Phase 16 CSS classes)
 - [x] 16-02-PLAN.md — REQUIREMENTS.md WEEKLY-06 surgical edit (D-02 commit-time lock semantic)
 - [x] 16-03-PLAN.md — WeeklyKpiSelectionFlow.jsx new component + App.jsx route swap (WEEKLY-01..07)
-- [ ] 16-04-PLAN.md — Scorecard.jsx v2.0 retrofit (SCORE-01..07: composite fetch, baseline/growth/count/reflection rows, sticky bar, empty guard)
-- [ ] 16-05-PLAN.md — Hub counter wiring: PartnerHub.jsx debounce hook + ThisWeekKpisSection.jsx +1 pills + locked weekly-choice card (COUNT-01..05, D-03)
+- [x] 16-04-PLAN.md — Scorecard.jsx v2.0 retrofit (SCORE-01..07: composite fetch, baseline/growth/count/reflection rows, sticky bar, empty guard)
+- [x] 16-05-PLAN.md — Hub counter wiring: PartnerHub.jsx debounce hook + ThisWeekKpisSection.jsx +1 pills + locked weekly-choice card (COUNT-01..05, D-03)
 **UI hint**: yes
 
 ### Phase 17: Meeting Stops + Admin Controls
@@ -138,6 +138,6 @@
 | 13. Meeting Stop Redesign | v1.3 | 2/2 | Complete | 2026-04-13 |
 | 14. Schema + Seed | v2.0 | 3/3 | Complete    | 2026-04-16 |
 | 15. Role Identity + Hub Redesign | v2.0 | 3/3 | Complete   | 2026-04-16 |
-| 16. Weekly KPI Selection + Scorecard + Counters | v2.0 | 3/5 | In Progress|  |
+| 16. Weekly KPI Selection + Scorecard + Counters | v2.0 | 5/5 | Complete   | 2026-04-17 |
 | 17. Meeting Stops + Admin Controls | v2.0 | 0/? | Not started | - |
 | 18. Comparison + Business Growth + Polish | v2.0 | 0/? | Not started | - |
