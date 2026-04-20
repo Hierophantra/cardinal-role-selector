@@ -297,6 +297,13 @@ export default function Scorecard() {
 
   async function handleSubmit() {
     if (submitting) return;
+    // Defensive: rows must exist before submit. Array.some() on [] returns
+    // false, so without this guard an empty-rows state would pass the
+    // incomplete check and write a submitted row with kpi_results={}.
+    if (rows.length === 0) {
+      setSubmitError(SCORECARD_COPY.submitErrorIncomplete);
+      return;
+    }
     const incomplete = rows.some((tpl) => {
       const r = kpiResults[tpl.id]?.result;
       return r !== 'yes' && r !== 'no';
