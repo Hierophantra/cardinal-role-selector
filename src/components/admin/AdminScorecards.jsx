@@ -242,7 +242,7 @@ export default function AdminScorecards() {
                                   </button>
                                 ) : (
                                   <span className="muted" style={{ fontSize: 13 }}>
-                                    {reopened ? 'Editable' : 'Editable'}
+                                    {reopened ? 'Reopened' : 'Editable'}
                                   </span>
                                 )}
                               </div>

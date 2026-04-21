@@ -7,6 +7,8 @@ import {
   fetchScorecards,
   resetPartnerSubmission,
   resetPartnerKpis,
+  resetPartnerWeeklyKpiSelections,
+  resetPartnerGrowthPriorities,
   resetPartnerScorecards,
   updateGrowthPriorityStatus,
   updateGrowthPriorityAdminNote,
@@ -144,7 +146,13 @@ function PartnerSection({ partner }) {
       if (kind === 'submission' || kind === 'all') {
         await resetPartnerSubmission(partner);
       }
-      if (kind === 'kpis' || kind === 'all') {
+      if (kind === 'weeklyKpi') {
+        await resetPartnerWeeklyKpiSelections(partner);
+      }
+      if (kind === 'growthPriorities') {
+        await resetPartnerGrowthPriorities(partner);
+      }
+      if (kind === 'all') {
         await resetPartnerKpis(partner);
       }
       if (kind === 'scorecards' || kind === 'all') {
@@ -343,9 +351,17 @@ function PartnerSection({ partner }) {
                 onClick={handleResetClick}
               />
               <ResetButton
-                label="Reset KPIs & Growth Priorities"
-                armedLabel="Click again to delete KPIs and growth priorities"
-                kind="kpis"
+                label="Reset Weekly KPI"
+                armedLabel="Click again to delete this week's KPI pick"
+                kind="weeklyKpi"
+                pending={pendingReset}
+                resetting={resetting}
+                onClick={handleResetClick}
+              />
+              <ResetButton
+                label="Reset Growth Priorities"
+                armedLabel="Click again to delete growth priorities"
+                kind="growthPriorities"
                 pending={pendingReset}
                 resetting={resetting}
                 onClick={handleResetClick}

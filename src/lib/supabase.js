@@ -191,12 +191,27 @@ export async function resetPartnerSubmission(partner) {
   if (error) throw error;
 }
 
-export async function resetPartnerKpis(partner) {
+export async function resetPartnerKpiSelections(partner) {
   assertResettable(partner);
-  const { error: e1 } = await supabase.from('kpi_selections').delete().eq('partner', partner);
-  if (e1) throw e1;
-  const { error: e2 } = await supabase.from('growth_priorities').delete().eq('partner', partner);
-  if (e2) throw e2;
+  const { error } = await supabase.from('kpi_selections').delete().eq('partner', partner);
+  if (error) throw error;
+}
+
+export async function resetPartnerWeeklyKpiSelections(partner) {
+  assertResettable(partner);
+  const { error } = await supabase.from('weekly_kpi_selections').delete().eq('partner', partner);
+  if (error) throw error;
+}
+
+export async function resetPartnerGrowthPriorities(partner) {
+  assertResettable(partner);
+  const { error } = await supabase.from('growth_priorities').delete().eq('partner', partner);
+  if (error) throw error;
+}
+
+export async function resetPartnerKpis(partner) {
+  await resetPartnerKpiSelections(partner);
+  await resetPartnerGrowthPriorities(partner);
 }
 
 export async function resetPartnerScorecards(partner) {
