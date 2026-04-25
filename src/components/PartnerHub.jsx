@@ -394,7 +394,7 @@ export default function PartnerHub() {
                   </Link>
                 )}
 
-                {/* Side-by-Side Comparison (kept, D-08) */}
+                {/* Role Questionnaire Submissions (renamed Batch D D5; was Side-by-Side Comparison) */}
                 {comparisonReady ? (
                   <Link
                     to="/comparison"
