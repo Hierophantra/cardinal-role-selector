@@ -116,7 +116,11 @@
   4. Monday Prep meeting renders a `saturday_recap` stop (after `clear_the_air`) only when last week had at least one Pending row, showing each Pending KPI and whether it converted to Yes by Saturday close
   5. Both meeting types include a `kpi_review_optional` gate stop before any kpi_* stops; choosing No skips kpi_* stops entirely and proceeds to the next non-KPI stop; the gate state persists per-meeting so resume replays the chosen path
   6. Existing Phase 16 scorecard rows render correctly under the new 3-state shape — 2-state rows (no Pending entries) display as before with no migration required
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 17-01-PLAN.md — Wave 0: src/lib/week.js Saturday-close semantics + effectiveResult helper + Phase 3 RESEARCH.md doc update
+- [ ] 17-02-PLAN.md — Wave 1: Migration 010 CHECK extension + content.js stop arrays + copy families + KPI_START_INDEX P-M2 fix
+- [ ] 17-03-PLAN.md — Wave 2: Scorecard.jsx tri-state row + Pending textarea + submit gate + post-submit re-open + Phase 17 CSS appendix
+- [ ] 17-04-PLAN.md — Wave 3: AdminMeetingSession KpiReviewOptionalStop + SaturdayRecapStop renderers + goNext skip override + effectiveResult consumer audit (7 files)
 **UI hint**: yes
 
 ### Phase 18: Shared Business Priorities Display
@@ -141,5 +145,5 @@
 | 14. Schema + Seed | v2.0 | 3/3 | Complete    | 2026-04-16 |
 | 15. Role Identity + Hub Redesign | v2.0 | 3/3 | Complete   | 2026-04-16 |
 | 16. Weekly KPI Selection + Scorecard + Counters | v2.0 | 5/5 | Complete   | 2026-04-17 |
-| 17. Friday-Checkpoint / Saturday-Close Cycle | v2.0 | 0/? | Not started | - |
+| 17. Friday-Checkpoint / Saturday-Close Cycle | v2.0 | 0/4 | Planned    | - |
 | 18. Shared Business Priorities Display | v2.0 | 0/? | Not started | - |
