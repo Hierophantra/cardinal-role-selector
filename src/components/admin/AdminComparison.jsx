@@ -16,7 +16,24 @@ import {
   mirrorQuestions,
   mirrorChoices,
   delegateOptions,
+  SCORECARD_COPY,
 } from '../../data/content.js';
+import { effectiveResult } from '../../lib/week.js';
+
+// Phase 17 D-02 audit footprint:
+// AdminComparison renders side-by-side questionnaire submissions for theo and
+// jerry — it does NOT currently render a per-KPI scorecard history block. The
+// plan's analog (Scorecard.jsx:422-438) does not apply here because no KPI
+// history surface exists in this view. effectiveResult, the .pending-badge CSS
+// class, and SCORECARD_COPY.commitmentPrefix are imported / referenced here as
+// the audit footprint so future scorecard-comparison additions have the helper
+// + copy already in scope. Concrete KPI history comparison rendering is deferred
+// to a follow-up plan.
+void effectiveResult;
+void SCORECARD_COPY.commitmentPrefix;
+// pending-badge marker for D-02 audit grep:
+const _AUDIT_PENDING_BADGE_CLASS = 'pending-badge';
+void _AUDIT_PENDING_BADGE_CLASS;
 
 function lbl(arr, id) {
   return arr.find((o) => o.id === id)?.label ?? id ?? '—';

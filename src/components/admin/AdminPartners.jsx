@@ -14,6 +14,7 @@ import {
   updateGrowthPriorityAdminNote,
 } from '../../lib/supabase.js';
 import { PARTNER_DISPLAY, GROWTH_STATUS_COPY, ADMIN_GROWTH_COPY, ADMIN_ACCOUNTABILITY_COPY } from '../../data/content.js';
+import { effectiveResult } from '../../lib/week.js';
 
 const MANAGED = ['theo', 'jerry'];
 
@@ -187,9 +188,15 @@ function PartnerSection({ partner }) {
   const latestWeek = scorecards.length > 0 ? scorecards[0].week_of : null;
   const name = PARTNER_DISPLAY[partner] ?? partner;
 
+  // Phase 17 D-02: read entry.result through effectiveResult so post-Saturday-close
+  // pending entries coerce to 'no' and contribute to the miss total. Without this,
+  // closed-week pendings (auto-coerced everywhere else) would silently skip the
+  // PIP-trigger threshold.
   const missCount = scorecards.reduce((total, card) => {
     const results = card.kpi_results ?? {};
-    return total + Object.values(results).filter((entry) => entry?.result === 'no').length;
+    return total + Object.values(results).filter(
+      (entry) => effectiveResult(entry?.result, card.week_of) === 'no'
+    ).length;
   }, 0);
   const submittedWeekCount = scorecards.filter((s) => s.committed_at).length;
   const pipTriggered = missCount >= 5;

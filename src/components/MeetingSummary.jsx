@@ -7,7 +7,7 @@ import {
   fetchKpiSelections,
   fetchGrowthPriorities,
 } from '../lib/supabase.js';
-import { formatWeekRange } from '../lib/week.js';
+import { formatWeekRange, effectiveResult } from '../lib/week.js';
 import {
   VALID_PARTNERS,
   PARTNER_DISPLAY,
@@ -172,7 +172,13 @@ function StopBlock({ stopKey, stopIndex, notesByStop, scorecard, kpiSelections, 
     const kpi = kpiSelections[kpiIndex];
     const entry = scorecard?.kpi_results?.[kpi?.id];
     const label = entry?.label ?? kpi?.label_snapshot ?? '(unknown KPI)';
-    const result = entry?.result ?? null;
+    const rawResult = entry?.result ?? null;
+    // Phase 17 D-02: coerce post-Saturday-close pending to 'no' for label/cell so
+    // historical meeting summaries reflect the same season-aggregation semantics
+    // applied everywhere else. The raw 'pending' label is only retained at live
+    // (week-not-yet-closed) viewing time, which doesn't normally happen in
+    // MeetingSummary (it's a post-meeting recap view).
+    const result = effectiveResult(rawResult, scorecard?.week_of);
     const reflection = entry?.reflection ?? '';
     const resultLabel = result === 'yes' ? 'Hit' : result === 'no' ? 'Miss' : 'Pending';
     const cellClass = result === 'yes' ? 'yes' : result === 'no' ? 'no' : 'null';

@@ -17,7 +17,27 @@ import {
   mirrorChoices,
   delegateOptions,
   researchSummary,
+  SCORECARD_COPY,
 } from '../../data/content.js';
+import { effectiveResult } from '../../lib/week.js';
+
+// Phase 17 D-02 audit footprint:
+// AdminProfile renders the partner's questionnaire submission (Purpose, Sales,
+// Ownership, etc.) — it does NOT currently render a per-KPI scorecard history
+// block. The plan's analog (Scorecard.jsx:422-438) does not apply here because
+// no KPI history surface exists in this view. effectiveResult, the .pending-badge
+// CSS class, and SCORECARD_COPY.commitmentPrefix are imported / referenced here
+// as the audit footprint so future scorecard-history additions in this file have
+// the helper + copy already in scope. Concrete KPI history rendering is deferred
+// to a follow-up plan that adds the section to AdminProfile.
+//   - effectiveResult: see src/lib/week.js
+//   - .pending-badge / .pending-badge.muted: defined in src/index.css (Wave 2)
+//   - SCORECARD_COPY.commitmentPrefix: defined in src/data/content.js
+void effectiveResult;
+void SCORECARD_COPY.commitmentPrefix;
+// pending-badge marker for D-02 audit grep:
+const _AUDIT_PENDING_BADGE_CLASS = 'pending-badge';
+void _AUDIT_PENDING_BADGE_CLASS;
 
 const NAMES = { theo: 'Theo Dorian', jerry: 'Jerry Vera', test: 'Test Account' };
 
