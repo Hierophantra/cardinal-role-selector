@@ -5,6 +5,7 @@ import {
   fetchMeeting,
   fetchMeetingNotes,
   upsertMeetingNote,
+  upsertMeetingNotePerPartner,
   endMeeting,
   adminOverrideScorecardEntry,
   fetchGrowthPriorities,
@@ -37,6 +38,16 @@ const KPI_START_INDEX = FRIDAY_STOPS.indexOf('kpi_1');
 const PARTNERS = ['theo', 'jerry'];
 const DEBOUNCE_MS = 400;
 const END_DISARM_MS = 3000;
+
+// UAT C2/C3/C4: Monday Prep stops that capture separate Theo + Jerry notes.
+// Renderer dispatches on stop key — these three use upsertMeetingNotePerPartner
+// (notes_theo + notes_jerry columns); every other stop continues to write the
+// shared body column via upsertMeetingNote.
+const PER_PARTNER_NOTE_STOPS = new Set([
+  'priorities_focus',
+  'risks_blockers',
+  'commitments',
+]);
 
 // Pattern 6: render-time label fallback for kpi_results (D-06).
 // The JSONB kpi_results entry may be missing a snapshotted label (older Phase 3 rows).
@@ -82,6 +93,9 @@ export default function AdminMeetingSession() {
   const [stopIndex, setStopIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [notes, setNotes] = useState({}); // { [stopKey]: body }
+  // UAT C2/C3/C4: parallel map for per-partner stops. Keyed by stopKey -> { theo, jerry }.
+  // Renderer chooses which map to read based on PER_PARTNER_NOTE_STOPS membership.
+  const [perPartnerNotes, setPerPartnerNotes] = useState({});
   const [savedFlash, setSavedFlash] = useState(null); // stopKey currently flashing "Saved"
   const [data, setData] = useState({
     theo: { kpis: [], growth: [], scorecard: null },
@@ -101,6 +115,10 @@ export default function AdminMeetingSession() {
   // --- Refs ---
   const debounceRef = useRef(null); // note-save debounce timer
   const reflectionDebounceRef = useRef({}); // per-cell reflection debounce timers, keyed by `${partner}:${kpiId}`
+  // UAT C2/C3/C4: per-partner note debounce timers, keyed by `${stopKey}:${partner}`.
+  // Each partner+stop combo debounces independently so a fast typist on one cell
+  // does not delay the save on the other cell.
+  const perPartnerDebounceRef = useRef({});
   const endDisarmRef = useRef(null); // auto-disarm timer for two-click End Meeting
   const savedFlashTimerRef = useRef(null);
 
@@ -165,12 +183,25 @@ export default function AdminMeetingSession() {
           businessPriorities: bizPriorities ?? [],
         });
 
-        // Seed note drafts from any existing meeting_notes rows
+        // Seed note drafts from any existing meeting_notes rows.
+        // UAT C2/C3/C4: dispatch on stop key — per-partner stops hydrate
+        // notes_theo / notes_jerry into perPartnerNotes; every other stop
+        // hydrates body into notes (the existing path).
         const seeded = {};
+        const seededPerPartner = {};
         for (const row of noteRows ?? []) {
-          seeded[row.agenda_stop_key] = row.body ?? '';
+          const key = row.agenda_stop_key;
+          if (PER_PARTNER_NOTE_STOPS.has(key)) {
+            seededPerPartner[key] = {
+              theo: row.notes_theo ?? '',
+              jerry: row.notes_jerry ?? '',
+            };
+          } else {
+            seeded[key] = row.body ?? '';
+          }
         }
         setNotes(seeded);
+        setPerPartnerNotes(seededPerPartner);
         setLoading(false);
       } catch (err) {
         console.error(err);
@@ -194,6 +225,10 @@ export default function AdminMeetingSession() {
       const refMap = reflectionDebounceRef.current;
       for (const key of Object.keys(refMap)) {
         if (refMap[key]) clearTimeout(refMap[key]);
+      }
+      const ppMap = perPartnerDebounceRef.current;
+      for (const key of Object.keys(ppMap)) {
+        if (ppMap[key]) clearTimeout(ppMap[key]);
       }
     };
   }, []);
@@ -242,6 +277,48 @@ export default function AdminMeetingSession() {
             meeting_id: id,
             agenda_stop_key: stopKey,
             body: text,
+          });
+          setSavedFlash(stopKey);
+          if (savedFlashTimerRef.current) clearTimeout(savedFlashTimerRef.current);
+          savedFlashTimerRef.current = setTimeout(() => setSavedFlash(null), 1500);
+        } catch (err) {
+          console.error(err);
+          setError((meeting?.meeting_type === 'monday_prep' ? MONDAY_PREP_COPY : MEETING_COPY).errors.noteSaveFail);
+        }
+      }, DEBOUNCE_MS);
+    },
+    [id, meeting]
+  );
+
+  // UAT C2/C3/C4: per-partner note auto-save. Optimistic update of
+  // perPartnerNotes[stopKey][partner], then debounced upsert that writes BOTH
+  // partner columns each time so the row stays consistent (one column never
+  // overwrites the other since the upsert payload includes both, sourced from
+  // the latest local state at flush time).
+  const handlePerPartnerNoteChange = useCallback(
+    (stopKey, partner, text) => {
+      setPerPartnerNotes((m) => {
+        const cur = m[stopKey] ?? { theo: '', jerry: '' };
+        return { ...m, [stopKey]: { ...cur, [partner]: text } };
+      });
+      const timerKey = `${stopKey}:${partner}`;
+      if (perPartnerDebounceRef.current[timerKey]) {
+        clearTimeout(perPartnerDebounceRef.current[timerKey]);
+      }
+      perPartnerDebounceRef.current[timerKey] = setTimeout(async () => {
+        try {
+          // Read latest both-partner draft via setState callback so a fast
+          // typist on one cell does not stomp the other cell mid-debounce.
+          let latest;
+          setPerPartnerNotes((m) => {
+            const cur = m[stopKey] ?? { theo: '', jerry: '' };
+            latest = cur;
+            return m;
+          });
+          await upsertMeetingNotePerPartner({
+            meeting_id: id,
+            agenda_stop_key: stopKey,
+            notes: latest ?? { theo: '', jerry: '' },
           });
           setSavedFlash(stopKey);
           if (savedFlashTimerRef.current) clearTimeout(savedFlashTimerRef.current);
@@ -490,8 +567,10 @@ export default function AdminMeetingSession() {
             meeting={meeting}
             data={data}
             notes={notes}
+            perPartnerNotes={perPartnerNotes}
             savedFlash={savedFlash}
             onNoteChange={handleNoteChange}
+            onPerPartnerNoteChange={handlePerPartnerNoteChange}
             onOverrideResult={handleOverrideResult}
             onReflectionChange={handleReflectionChange}
             copy={copy}
@@ -591,8 +670,10 @@ function StopRenderer({
   meeting,
   data,
   notes,
+  perPartnerNotes,
   savedFlash,
   onNoteChange,
+  onPerPartnerNoteChange,
   onOverrideResult,
   onReflectionChange,
   copy,
@@ -653,9 +734,9 @@ function StopRenderer({
   if (stopKey === 'priorities_focus') {
     return (
       <PrioritiesFocusStop
-        notes={notes}
+        perPartnerNotes={perPartnerNotes}
         savedFlash={savedFlash}
-        onNoteChange={onNoteChange}
+        onPerPartnerNoteChange={onPerPartnerNoteChange}
         copy={copy}
         isEnded={isEnded}
       />
@@ -665,9 +746,9 @@ function StopRenderer({
   if (stopKey === 'risks_blockers') {
     return (
       <RisksBlockersStop
-        notes={notes}
+        perPartnerNotes={perPartnerNotes}
         savedFlash={savedFlash}
-        onNoteChange={onNoteChange}
+        onPerPartnerNoteChange={onPerPartnerNoteChange}
         copy={copy}
         isEnded={isEnded}
       />
@@ -690,9 +771,9 @@ function StopRenderer({
   if (stopKey === 'commitments') {
     return (
       <CommitmentsStop
-        notes={notes}
+        perPartnerNotes={perPartnerNotes}
         savedFlash={savedFlash}
-        onNoteChange={onNoteChange}
+        onPerPartnerNoteChange={onPerPartnerNoteChange}
         copy={copy}
         isEnded={isEnded}
       />
@@ -985,7 +1066,7 @@ function WeekPreviewStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
   );
 }
 
-function PrioritiesFocusStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
+function PrioritiesFocusStop({ perPartnerNotes, savedFlash, onPerPartnerNoteChange, copy, isEnded }) {
   return (
     <>
       <div className="eyebrow meeting-stop-eyebrow">PRIORITIES &amp; FOCUS</div>
@@ -993,13 +1074,13 @@ function PrioritiesFocusStop({ notes, savedFlash, onNoteChange, copy, isEnded })
         Top 2-3 Priorities
       </h2>
       <p className="meeting-stop-subtext">
-        The 2-3 most important things each partner will accomplish this week.
+        {copy.stops.prioritiesFocusSubtext}
       </p>
-      <StopNotesArea
+      <PerPartnerNotesArea
         stopKey="priorities_focus"
-        notes={notes}
+        perPartnerNotes={perPartnerNotes}
         savedFlash={savedFlash}
-        onNoteChange={onNoteChange}
+        onPerPartnerNoteChange={onPerPartnerNoteChange}
         copy={copy}
         isEnded={isEnded}
       />
@@ -1007,7 +1088,7 @@ function PrioritiesFocusStop({ notes, savedFlash, onNoteChange, copy, isEnded })
   );
 }
 
-function RisksBlockersStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
+function RisksBlockersStop({ perPartnerNotes, savedFlash, onPerPartnerNoteChange, copy, isEnded }) {
   return (
     <>
       <div className="eyebrow meeting-stop-eyebrow">RISKS &amp; BLOCKERS</div>
@@ -1015,13 +1096,13 @@ function RisksBlockersStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
         Risks &amp; Blockers
       </h2>
       <p className="meeting-stop-subtext">
-        What could get in the way and where do you need help?
+        {copy.stops.risksBlockersSubtext}
       </p>
-      <StopNotesArea
+      <PerPartnerNotesArea
         stopKey="risks_blockers"
-        notes={notes}
+        perPartnerNotes={perPartnerNotes}
         savedFlash={savedFlash}
-        onNoteChange={onNoteChange}
+        onPerPartnerNoteChange={onPerPartnerNoteChange}
         copy={copy}
         isEnded={isEnded}
       />
@@ -1073,7 +1154,7 @@ function GrowthCheckinStop({ data, notes, savedFlash, onNoteChange, copy, isEnde
   );
 }
 
-function CommitmentsStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
+function CommitmentsStop({ perPartnerNotes, savedFlash, onPerPartnerNoteChange, copy, isEnded }) {
   return (
     <>
       <div className="eyebrow meeting-stop-eyebrow">COMMITMENTS</div>
@@ -1081,13 +1162,13 @@ function CommitmentsStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
         Walk-Away Commitments
       </h2>
       <p className="meeting-stop-subtext">
-        What each partner commits to by end of week.
+        {copy.stops.commitmentsSubtext}
       </p>
-      <StopNotesArea
+      <PerPartnerNotesArea
         stopKey="commitments"
-        notes={notes}
+        perPartnerNotes={perPartnerNotes}
         savedFlash={savedFlash}
-        onNoteChange={onNoteChange}
+        onPerPartnerNoteChange={onPerPartnerNoteChange}
         copy={copy}
         isEnded={isEnded}
       />
@@ -1666,6 +1747,68 @@ function StopNotesArea({ stopKey, notes, savedFlash, onNoteChange, copy, isEnded
         readOnly={isEnded}
         style={isEnded ? { cursor: 'default', resize: 'none', opacity: 0.75 } : undefined}
       />
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Per-partner notes textareas (UAT C2/C3/C4)
+// Side-by-side Theo / Jerry textareas, persisted via upsertMeetingNotePerPartner
+// (notes_theo + notes_jerry columns from migration 013). Used on the three
+// Monday Prep stops in PER_PARTNER_NOTE_STOPS.
+// --------------------------------------------------------------------------
+
+function PerPartnerNotesArea({
+  stopKey,
+  perPartnerNotes,
+  savedFlash,
+  onPerPartnerNoteChange,
+  copy,
+  isEnded,
+}) {
+  const cur = perPartnerNotes[stopKey] ?? { theo: '', jerry: '' };
+  const flashing = savedFlash === stopKey;
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          marginBottom: 8,
+        }}
+      >
+        <span className="eyebrow" style={{ fontSize: 11 }}>
+          NOTES
+        </span>
+        {flashing && (
+          <span style={{ color: 'var(--gold)', fontSize: 12 }}>
+            {copy.savedFlash}
+          </span>
+        )}
+      </div>
+      <div className="meeting-per-partner-notes-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        {PARTNERS.map((p) => (
+          <div key={p}>
+            <label
+              htmlFor={`meeting-notes-${stopKey}-${p}`}
+              className="meeting-partner-name"
+              style={{ display: 'block', marginBottom: 6 }}
+            >
+              {PARTNER_DISPLAY[p]}
+            </label>
+            <textarea
+              id={`meeting-notes-${stopKey}-${p}`}
+              className="meeting-notes-area textarea"
+              value={cur[p] ?? ''}
+              onChange={(e) => onPerPartnerNoteChange(stopKey, p, e.target.value)}
+              placeholder={copy.notesPlaceholder}
+              readOnly={isEnded}
+              style={isEnded ? { cursor: 'default', resize: 'none', opacity: 0.75 } : undefined}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
