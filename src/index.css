@@ -2457,3 +2457,32 @@ textarea { resize: vertical; min-height: 120px; }
 .meeting-shell .meeting-result-badge { font-size: 14px; }
 .meeting-shell .meeting-shell-header .muted { font-size: 16px; }
 
+/* =============================================================================
+   UAT Batch D D3 — A+ visual polish (conservative; documented per change)
+   Each rule below is a small accessibility / interaction win that does not
+   change layout, palette, animation, or BEM modifiers. Reverting any single
+   block restores prior behavior.
+   ========================================================================== */
+
+/* D3-a: ghost buttons gain a subtle 1px lift on hover so they feel as
+   responsive as primary buttons (which already have translateY(-1px)).
+   Border-color/text-color change is unchanged. */
+.btn-ghost:hover { transform: translateY(-1px); }
+
+/* D3-b: hub-cards lift slightly on hover with a faint background shift in
+   addition to the existing border-color/transform tweak. Reinforces the
+   "this is a clickable card" affordance without altering the dark theme. */
+.hub-card:hover:not([disabled]):not(.hub-card--disabled) {
+  background: var(--surface-2);
+}
+
+/* D3-c: keyboard focus rings. Anyone tabbing through the hub or meeting nav
+   currently gets the browser default outline (or none on some browsers).
+   Add a brand-aligned red focus ring matching the existing input focus style.
+   :focus-visible only triggers for keyboard navigation, not mouse clicks. */
+.btn:focus-visible,
+.hub-card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.45);
+}
+
