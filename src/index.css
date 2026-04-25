@@ -2175,3 +2175,141 @@ textarea { resize: vertical; min-height: 120px; }
   justify-content: flex-end;
   gap: 16px;
 }
+
+/* === Phase 17 — Pending state + Saturday close === */
+
+/* Tri-state row picker — Pending button */
+.scorecard-yn-btn.pending {
+  color: var(--muted);
+}
+.scorecard-yn-btn.pending.active {
+  background: rgba(212, 168, 67, 0.18);
+  border-color: var(--gold);
+  color: var(--text);
+}
+
+/* Gate-stop "skip" button neutral active state (used by KpiReviewOptionalStop in Wave 3) */
+.scorecard-yn-btn.skip.active {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* Scorecard row — live-pending and post-close-pending modifiers */
+.scorecard-kpi-row.pending {
+  border-color: rgba(212, 168, 67, 0.4);
+  border-left: 3px solid var(--gold);
+}
+.scorecard-kpi-row.pending.muted {
+  border-color: rgba(119, 119, 119, 0.4);
+  border-left: 3px solid var(--muted-2);
+}
+
+/* Pending textarea inline reveal */
+.scorecard-pending-reveal {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.22s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.scorecard-pending-reveal.expanded {
+  max-height: 200px;
+  margin-top: 12px;
+}
+
+/* Pending badge — used inline next to result in read-only renders */
+.pending-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--gold);
+  background: rgba(212, 168, 67, 0.10);
+  border: 1px solid rgba(212, 168, 67, 0.30);
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.pending-badge.muted {
+  color: var(--muted-2);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+/* Pending row update note (post-submit re-open mode) */
+.scorecard-pending-update-note {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--muted-2);
+  margin-bottom: 8px;
+}
+
+/* Friday-meeting kpi cell — Pending state (consumed by Wave 3 KpiStop renderer) */
+.meeting-kpi-cell.pending {
+  border-left: 3px solid var(--gold);
+  border-color: rgba(212, 168, 67, 0.4);
+}
+
+/* Friday-meeting per-row commitment block (consumed by Wave 3) */
+.kpi-mtg-pending-block {
+  border-left: 3px solid var(--gold);
+  padding-left: 12px;
+  margin-top: 8px;
+  font-size: 15px;
+  font-style: italic;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+/* Hub status dot — live amber Pending state (consumed by Wave 3 ThisWeekKpisSection update) */
+.kpi-status-dot--pending-active {
+  background: var(--gold);
+}
+
+/* Saturday-recap stop (consumed by Wave 3 SaturdayRecapStop renderer) */
+.saturday-recap-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.saturday-recap-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.saturday-recap-empty {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+.saturday-recap-commitment {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.saturday-recap-conversion {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.saturday-recap-conversion.met {
+  color: var(--success);
+}
+.saturday-recap-conversion.not-converted {
+  color: var(--miss);
+}
