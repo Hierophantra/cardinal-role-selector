@@ -53,9 +53,9 @@
 
 - [x] **Phase 14: Schema + Seed** - Migration 009 wipes Spring Season data, creates weekly rotation tables, and reseeds all v2.0 content (completed 2026-04-16)
 - [x] **Phase 15: Role Identity + Hub Redesign** - Partners see their role identity on the hub and personal growth priorities with approval-state badges (completed 2026-04-16)
-- [x] **Phase 16: Weekly KPI Selection + Scorecard + Counters** - Partners select a weekly KPI from their pool, submit scorecards against 6 mandatory + 1 weekly choice, and log in-week counts (completed 2026-04-17)
-- [ ] **Phase 17: Meeting Stops + Admin Controls** - Both meetings gain Role Check stop; Trace can toggle Jerry's conditional KPI and edit Theo's closing-rate threshold
-- [ ] **Phase 18: Comparison + Business Growth + Polish** - Side-by-side comparison shows role descriptions and shared business growth progress; Day-60 milestone badges visible
+- [x] **Phase 16: Weekly KPI Selection + Scorecard + Counters** - Partners select a weekly KPI from their pool, submit scorecards against 6 mandatory + 1 weekly choice, and log in-week counts (completed 2026-04-17)
+- [ ] **Phase 17: Friday-Checkpoint / Saturday-Close Cycle** - 3-state KPI results (Yes / No / Pending-Saturday), Saturday 23:59 auto-close, Saturday recap stop on Monday meetings, optional KPI review gate on both meeting types
+- [ ] **Phase 18: Shared Business Priorities Display** - business_priorities table with two seeded shared priorities (Lead Abatement Activation, Salesmen Onboarding); both partners see both priorities on their profile views alongside personal growth, and growth_business_1/2 meeting stops display the priority content (notes captured via existing meeting agenda_notes)
 
 ## Phase Details
 
@@ -105,28 +105,30 @@
 - [x] 16-05-PLAN.md — Hub counter wiring: PartnerHub.jsx debounce hook + ThisWeekKpisSection.jsx +1 pills + locked weekly-choice card (COUNT-01..05, D-03)
 **UI hint**: yes
 
-### Phase 17: Meeting Stops + Admin Controls
-**Goal**: Both meeting types include a Role Check stop after Clear the Air, KPI_START_INDEX is derived from the array (not hardcoded), and Trace has toggle + threshold controls for Jerry's conditional KPI and Theo's closing-rate target
+### Phase 17: Friday-Checkpoint / Saturday-Close Cycle
+**Goal**: Decouple the Friday accountability conversation from the final weekly tally so partners can mark KPIs as Pending-Saturday with a follow-through commitment, week auto-closes Saturday 23:59 local, Monday meetings recap last-Friday's Saturday commitments, and either meeting type can opt in or out of reviewing KPIs.
 **Depends on**: Phase 16
-**Requirements**: MEET-01, MEET-02, MEET-03, MEET-04, MEET-05, MEET-06, ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-04, ADMIN-05, ADMIN-06
+**Requirements** (new for this phase): WEEK-01 (Sat 23:59 close), KPI-01 (3-state result), KPI-02 (Pending requires follow-through text), MEET-07 (optional KPI review gate), MEET-08 (Monday Sat-recap stop)
 **Success Criteria** (what must be TRUE):
-  1. Both Friday Review (14 stops) and Monday Prep (6 stops) display a Role Check stop as the second stop, after Clear the Air — notes for role_check persist and replay in meeting history
-  2. KPI stops in Friday Review render correct content after role_check insertion — no off-by-one rendering (kpi_1 content does not appear in the role_check slot)
-  3. Trace can toggle Jerry's conditional sales KPI on from admin KPI management; after toggle, Jerry's scorecard and hub show the additional KPI without a code deploy
-  4. Trace can view each partner's weekly KPI rotation history (week, KPI name, counter value) from the admin panel
-  5. Trace can approve or reject a pending self-chosen personal growth priority from the admin UI; the partner's hub badge updates on next load
+  1. Partner can mark each scorecard KPI as Yes / No / Pending-Saturday; selecting Pending requires a "what + by when" text field before the row counts as rated
+  2. `isWeekClosed()` closes the week at Saturday 23:59 local (not Sunday end); after close, any still-Pending row is treated as a No for stats and history rendering
+  3. Friday Review meeting visually distinguishes Pending rows from Yes/No rows in the kpi_* stops and surfaces the partner's follow-through commitment text inline; meeting copy frames Friday as a checkpoint, not a final tally
+  4. Monday Prep meeting renders a `saturday_recap` stop (after `clear_the_air`) only when last week had at least one Pending row, showing each Pending KPI and whether it converted to Yes by Saturday close
+  5. Both meeting types include a `kpi_review_optional` gate stop before any kpi_* stops; choosing No skips kpi_* stops entirely and proceeds to the next non-KPI stop; the gate state persists per-meeting so resume replays the chosen path
+  6. Existing Phase 16 scorecard rows render correctly under the new 3-state shape — 2-state rows (no Pending entries) display as before with no migration required
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 18: Comparison + Business Growth + Polish
-**Goal**: The side-by-side comparison view shows both partners' role identities and shared business growth progress, Day-60 milestone badges appear at the right time, and the layout holds at the current desktop breakpoint
+### Phase 18: Shared Business Priorities Display
+**Goal**: Surface the two shared business growth priorities (Lead Abatement Activation, Salesmen Onboarding & Integration) on both partners' profile views and in the relevant Friday meeting stops, so both partners see the same priority content alongside their personal growth priorities. Progress is tracked through existing weekly meeting notes — no new progress-logging table.
 **Depends on**: Phase 17
-**Requirements**: COMP-01, COMP-02, COMP-03, COMP-04, COMP-05, GROWTH-03, GROWTH-04, GROWTH-05
+**Requirements** (new for this phase): BIZ-01 (priorities table, shared scope), BIZ-02 (deliverables collapsible UI), BIZ-03 (priority content surfaces in growth_business_1/2 stops)
 **Success Criteria** (what must be TRUE):
-  1. Comparison view opens and displays both partners' role titles, self-quotes, and narratives side by side without horizontal overflow at the current desktop breakpoint
-  2. Comparison view shows both partners' mandatory KPI lists and their current weekly choice selection with labels
-  3. Both partners see shared business growth priorities on the comparison view with progress indicators; when engagement day 60 has passed with no milestone_at recorded, a Day-60 milestone badge is visible
-  4. Partners can enter and select business growth priorities from hub via a dedicated flow; Trace approves shared priorities before they lock
+  1. `business_priorities` table seeded with two rows (`lead_abatement_activation`, `salesmen_onboarding`) holding title, description, and deliverables JSONB array; rows are not partner-scoped — both partners see both priorities
+  2. Both partners see a "Business Priorities" section displaying both shared priorities (header + collapsible deliverables list) — placed alongside the existing personal growth priorities display, with the same level of prominence
+  3. Admin profile view (`AdminProfile.jsx`) shows the same business priorities section so Trace sees the same content as the partner
+  4. Friday Review meeting `growth_business_1` and `growth_business_2` stops render the corresponding priority's title and deliverables for context; the existing meeting agenda_notes capture per-stop discussion notes (no new progress table)
+  5. The two priorities appear identically on Theo's and Jerry's views — no partner-scoped variance, no per-partner progress data
 **Plans**: TBD
 **UI hint**: yes
 
@@ -139,5 +141,5 @@
 | 14. Schema + Seed | v2.0 | 3/3 | Complete    | 2026-04-16 |
 | 15. Role Identity + Hub Redesign | v2.0 | 3/3 | Complete   | 2026-04-16 |
 | 16. Weekly KPI Selection + Scorecard + Counters | v2.0 | 5/5 | Complete   | 2026-04-17 |
-| 17. Meeting Stops + Admin Controls | v2.0 | 0/? | Not started | - |
-| 18. Comparison + Business Growth + Polish | v2.0 | 0/? | Not started | - |
+| 17. Friday-Checkpoint / Saturday-Close Cycle | v2.0 | 0/? | Not started | - |
+| 18. Shared Business Priorities Display | v2.0 | 0/? | Not started | - |

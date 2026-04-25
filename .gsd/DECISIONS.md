@@ -1,0 +1,55 @@
+- Locked card uses imperative navigate() inside a button to route directly to /kpi-view/:partner, preventing the /kpi/:partner guard redirect flash (Pitfall 5)
+- Status line is a single four-branch ternary rather than a helper function, consistent with the existing binary ternary style in the pre-change file
+- Both emoji icons (target 0x1F3AF for unlocked states, lock 0x1F512 for locked) use the same \\u{} escape pattern as the existing clipboard icon on the Role Definition card
+- Human-verify checkpoint was partially approved — user confirmed hub-boot but deferred the full six-step E2E walkthrough until real KPI content is designated; remaining steps persisted as HUMAN-UAT items rather than blocking the plan
+- submitted_at reinterpreted as 'last updated' rather than renamed — preserves Phase 1/2 compatibility (D-26 refinement)
+- kpi_results shape { [kpi_selection_id]: { result, reflection } } — reflection defaults to empty string so textareas stay controlled from first render
+- Week math is pure local-time arithmetic; toISOString is forbidden in week.js (guarded by automated grep)
+- commitScorecardWeek is idempotent — re-calling updates committed_at rather than erroring (D-09 edge case 2)
+- Phase 3 adds zero new CSS keyframes — reuses existing fadeIn
+- persist() payload uses the stable currentWeekOf from useRef, never a freshly-computed getMondayOf(). This is the SCORE-04 fortification: even if a partner leaves the tab open across midnight, the ongoing auto-save continues targeting the week they committed to, not the new week.
+- setResult persists immediately; setReflectionLocal updates state optimistically and persistReflection fires on blur. Blur-only saves avoid per-keystroke network chatter while keeping the Saved indicator meaningful.
+- Reflection textarea is always rendered controlled once result is set — the { result: null, reflection: '' } initialization in commitScorecardWeek lets React mount textareas without any null-guard dance.
+- History filters use allScorecards.filter(s => s.week_of !== currentWeekOf) rather than comparing committed_at nullness — simpler and matches D-24 exactly.
+- Inline role=button + keyboard handler on history rows rather than a <button> element — the row contains flex layout with dots and hit-rate that wouldn't style cleanly inside a native button.
+- Plan 03-03 human-verify checkpoint conditionally approved; 16-step walkthrough deferred to 03-HUMAN-UAT.md because migration 003 is not applied and neither partner has locked KPIs
+- Removed unused lockedUntilDate computation in PartnerHub after the status-line ternary rewrite replaced the locked-branch string with scorecard state
+- PartnerHub scorecard card uses <Link> (not <button onClick={navigate}>) — Pitfall 5 does not apply because /scorecard/:partner only redirects when KPIs are NOT locked, and kpiLocked is already guarded on the hub
+- Clean-slate approach: wipe all test/placeholder data before re-seeding (no orphan FK concerns — no production data yet)
+- Subselect-based mandatory kpi_selections seeding to avoid hardcoded UUIDs in migration
+- Pre-expand meeting_notes CHECK to kpi_7 now to avoid extra migration in Phase 6
+- Short category names (sales/ops/client/team/finance) adopted; display labels live in content.js
+- locked_until set to 2026-06-30T23:59:59Z — Spring Season 2026 end date
+- 20 KPI templates (not 22 as roadmap said) — user confirmed 20 is correct per framework doc
+- SCORECARD_COPY counter and counterComplete now accept total parameter — components must pass KPI count dynamically instead of assuming 5
+- fetchKpiSelections returns nested kpi_templates object — consumers access via sel.kpi_templates?.mandatory
+- Core badge uses gold (var(--gold)) not red to distinguish from interactive selection state
+- Self-chosen personal growth stored as 'Title — Measure' single description string — consistent with existing growth_priorities.description shape
+- businessPriorities display is read-only in KpiSelection — partners cannot add/edit business priorities (admin-only per D-06)
+- mandatoryPersonalTemplate inserted into growth_priorities at lockIn time, not at continueToConfirmation — avoids duplicate inserts if partner goes back and forth
+- canSubmit (not allAnsweredWithReflection) gates submit button — requires weekly_win + week_rating in addition to all KPI reflections
+- weekRating auto-save uses useRef initialized guard to skip initial mount, then useEffect on weekRating change
+- KPI_STOP_COUNT constant derived from STOPS array filter — stays in sync if STOPS ever changes
+- IntroStop hit rate uses data[p].kpis.length (dynamic) not hardcoded 5
+- cascadeTemplateLabelSnapshot uses .eq('template_id', templateId) — confirmed FK column name from existing fetchKpiSelections and adminSwapKpiTemplate usage
+- Cascade failure shows cascadeFail error and returns early without success flash — template is saved but labels may be stale; user is informed
+- savedFlash uses ADMIN_KPI_COPY.savedFlash ('Template updated') instead of hardcoded 'Saved' for consistency
+- Accountability card placed inside !loading && !error gate — no separate loading state needed
+- strict === 'no' check on entry?.result ensures null/undefined results never count as misses
+- ADMIN-10 satisfied by placement alone — no partner-facing component imports accountability copy
+- PDF (Cardinal_Role_KPI_Summary.pdf) used as canonical source of truth for baseline_action/growth_clause strings — copied verbatim (D-01)
+- partner_scope CHECK widened to include 'both' while retaining 'shared' for v1.1 back-compat (D-04)
+- Defensive idempotent re-issue of kpi_templates_category_check even though already correct in v1.1 (D-07) — guarantees post-migration state
+- Jerry mandatory personal growth locked to 'Initiate one difficult conversation weekly' per CONTEXT D-31 (PDF had ambiguous weekly/bi-weekly phrasing)
+- NOT NULL enforced on baseline_action/growth_clause AFTER seed INSERT, not in initial ALTER — required because wipe clears existing rows and initial ALTER must tolerate NULL default
+- growth_priority_templates sort_order >=100 for v2.0 additions, keeping v1.1 rows retained at sort_order 10-60 (D-26 additive)
+- Trigger error contract: ERRCODE P0001 + message prefix 'back_to_back_kpi_not_allowed' — consumed by plan 14-02 supabase.js wrappers
+- BackToBackKpiError carries partner + templateId properties so UI can compose messages without re-parsing the Postgres message string
+- isBackToBackViolation is internal (not exported) — tight coupling to the error class is intentional; UI should use instanceof BackToBackKpiError, not the raw matcher
+- incrementKpiCounter read-modify-write documented as acceptable for 3-user app per D-20 and COUNT-03 (debounce lives in Phase 16 UI); no server-side RPC needed
+- fetchPreviousWeeklyKpiSelection computes prev-week via local-time (y, m-1, d-7) constructor to match getMondayOf; UTC arithmetic would break Sunday-night DST boundary
+- fetchGrowthPriorities and upsertGrowthPriority NOT modified — supabase-js pass-through covers new v2.0 columns without code change (D-35 satisfied by documentation, not new code)
+- Smoke test deferred to next dev-server boot (executor sandbox blocked from reaching Supabase over network) — file-level grep in verify blocks is sufficient proof for code correctness; schema binding correctness depends on migration 009 being deployed
+- PDF (Cardinal_Role_KPI_Summary.pdf) is canonical; REQUIREMENTS.md is secondary and must be corrected when it drifts (reaffirms Phase 14 D-01/D-02)
+- SCHEMA-08 checkbox state preserved as `[ ]`; completion flip is reserved for Plan 14-01's SUMMARY-writing step
+- Traceability table row for SCHEMA-08 left untouched (still `| SCHEMA-08 | Phase 14 | Pending |`)
