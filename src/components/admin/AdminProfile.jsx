@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchSubmission } from '../../lib/supabase.js';
+import { fetchSubmission, fetchBusinessPriorities } from '../../lib/supabase.js';
 import {
   purposeOptions,
   salesOptions,
@@ -20,6 +20,7 @@ import {
   SCORECARD_COPY,
 } from '../../data/content.js';
 import { effectiveResult } from '../../lib/week.js';
+import BusinessPrioritiesSection from '../BusinessPrioritiesSection.jsx';
 
 // Phase 17 D-02 audit footprint:
 // AdminProfile renders the partner's questionnaire submission (Purpose, Sales,
@@ -48,11 +49,18 @@ function lbl(arr, id) {
 export default function AdminProfile() {
   const { partner } = useParams();
   const [sub, setSub] = useState(null);
+  const [businessPriorities, setBusinessPriorities] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchSubmission(partner)
-      .then(setSub)
+    Promise.all([
+      fetchSubmission(partner),
+      fetchBusinessPriorities(),
+    ])
+      .then(([fetchedSub, biz]) => {
+        setSub(fetchedSub);
+        setBusinessPriorities(biz);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [partner]);
@@ -123,6 +131,9 @@ export default function AdminProfile() {
               Submitted {new Date(sub.submitted_at).toLocaleString()}
             </p>
           </div>
+
+          {/* Business Priorities (Phase 18 BIZ-02, D-11) — shared, identical for both partners */}
+          <BusinessPrioritiesSection priorities={businessPriorities} />
 
           {/* Purpose */}
           <Section title="Purpose Orientation">
