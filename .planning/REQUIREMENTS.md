@@ -78,25 +78,17 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 - [ ] **GROWTH-04**: Business growth priority Day-60 milestone badge appears on hub + comparison view starting at engagement day 60 if no `milestone_at` recorded
 - [ ] **GROWTH-05**: Business growth priority selection happens via a dedicated selection flow accessible from hub (no meeting-mode interactive selection in v2.0)
 
-### Meeting Mode
+### Friday-Checkpoint / Saturday-Close Cycle (Phase 17)
 
-- [ ] **MEET-01**: New `role_check` stop added as second stop (after `clear_the_air`) in both `FRIDAY_STOPS` and `MONDAY_STOPS` arrays
-- [ ] **MEET-02**: `RoleCheckStop.jsx` renders prompt: each partner self-assesses whether they operated in their lane this week or drifted into the other's territory; captures notes
-- [ ] **MEET-03**: `AdminMeetingSession.jsx` `KPI_START_INDEX` derived via `FRIDAY_STOPS.indexOf('kpi_1')` (not hardcoded 2); update lands in the same commit as the FRIDAY_STOPS array change
-- [ ] **MEET-04**: Meeting notes save and render for `role_check` stop on both meeting types via migration 009 CHECK expansion
-- [ ] **MEET-05**: Monday Prep stop count updated from 5 to 6 (Clear the Air, Role Check, Week Preview, Priorities & Focus, Risks & Blockers, Commitments)
-- [ ] **MEET-06**: Friday Review stop count updated from 13 to 14 (Clear the Air, Role Check, then the existing 12 KPI + wrap stops)
-
-### Admin Controls
-
-- [ ] **ADMIN-01**: Admin KPI Management includes a toggle for Jerry's conditional sales KPI; toggling on makes the KPI appear as Jerry's 7th mandatory (before weekly choice)
-- [ ] **ADMIN-02**: Admin KPI Management includes an editable threshold field for Theo's closing-rate target KPI (default 40%); persisted in `admin_settings`
-- [ ] **ADMIN-03**: Admin view shows weekly KPI rotation history per partner: week_start_date, selected KPI, counter value
-- [ ] **ADMIN-04**: Trace can edit any partner's self-chosen personal growth priority from admin UI (description text); partner hub reflects the edited value on next load
-- [ ] **ADMIN-05**: Existing Edit Template functionality supports modifying baseline text, growth clause text, countable flag, and category for any KPI template
-- [ ] **ADMIN-06**: Mandatory templates remain locked from deletion (existing guarantee preserved)
+- [ ] **WEEK-01**: `isWeekClosed(today)` and related week-edge logic close the week at Saturday 23:59 local (not Sunday 00:00); after close, any `kpi_results` entry with `result='pending'` is treated as `'no'` for stats aggregation and history rendering — derived at read time, no DB write or row mutation required for the conversion
+- [ ] **KPI-01**: Scorecard rows accept three result states — `'yes' | 'no' | 'pending'` — persisted in `kpi_results[entry].result`; pre-Phase-17 2-state rows render unchanged with no migration; Pending rows are visually distinguished from Yes/No (badge or accent) wherever scorecard data renders (scorecard entry view, hub history, Friday meeting `kpi_*` stops)
+- [ ] **KPI-02**: Selecting Pending requires a non-empty follow-through text field ("what + by when") on the same row; the row is not treated as rated and `handleSubmit` cannot proceed until the text is provided; the text persists on the `kpi_results` entry (e.g., `pending_text`) and surfaces inline anywhere the row is rendered after submit
+- [ ] **MEET-07**: Both `FRIDAY_STOPS` and `MONDAY_STOPS` arrays include a `kpi_review_optional` gate stop placed before any `kpi_*` stop; in `AdminMeetingSession.jsx`, choosing "No, skip KPI review" advances past every `kpi_*` stop to the next non-KPI stop while "Yes" continues to `kpi_1`; the gate choice persists per meeting (session state and/or `meeting_notes`) so resume replays the chosen path; meeting copy reframes Friday as a "checkpoint" rather than a final tally
+- [ ] **MEET-08**: `MONDAY_STOPS` includes a `saturday_recap` stop placed immediately after `clear_the_air`; the stop renders only when last week's scorecard contains ≥1 row with `result='pending'`; for each Pending row the UI renders the KPI label, the stored follow-through text, and the conversion state (Yes / still No after Saturday close); `meeting_notes` CHECK constraint expanded to accept `saturday_recap` for Monday meetings via the Phase 14 idempotent DROP+ADD migration pattern
 
 ### Side-by-Side Comparison
+
+> **Note (2026-04-25):** ROADMAP.md Phase 18 was rewritten to "Shared Business Priorities Display" (BIZ-01..03). The COMP-* and GROWTH-03..05 IDs below predate that rewrite and may be deprecated when Phase 18 is planned. Left in place for now — sync during `/gsd-plan-phase 18`.
 
 - [ ] **COMP-01**: Comparison view shows both partners' role titles, self-quotes, and role narratives at top
 - [ ] **COMP-02**: Comparison view shows both partners' mandatory KPIs as a side-by-side list
@@ -111,6 +103,13 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 - **Export capability** — meeting notes and scorecard data export (previously deferred from v1.2)
 - **Monday Prep weekly KPI selection stop** — interactive selection during the meeting; moved to hub-only for v2.0 (may return as display-only reminder)
 - **TEST-01** — Monday Prep mock session in admin test account; dropped from v1.3, remains deferred
+
+### Deprecated in 2026-04-25 Phase 17 rewrite
+
+ROADMAP.md commit 913cc9f replaced the original "Meeting Stops + Admin Controls" Phase 17 with "Friday-Checkpoint / Saturday-Close Cycle". The IDs below were never implemented and are formally retired from v2.0 scope. They are listed here for traceability — do not re-introduce without an explicit roadmap entry.
+
+- **MEET-01..06** — `role_check` stop in `FRIDAY_STOPS`/`MONDAY_STOPS`, `RoleCheckStop.jsx`, derived `KPI_START_INDEX`, meeting-notes CHECK expansion for `role_check`, stop-count copy updates. Replaced by Phase 17 KPI-checkpoint cycle (WEEK-01, KPI-01..02, MEET-07..08).
+- **ADMIN-01..06** — Admin KPI Management (Jerry conditional sales toggle, Theo closing-rate threshold field, weekly rotation history view, growth-priority edit, edit-template fields, mandatory-template delete lock). Not in scope for v2.0; admin tooling will be revisited in a later milestone if needed.
 
 ## Out of Scope
 
@@ -174,18 +173,13 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 | COUNT-03 | Phase 16 | Pending |
 | COUNT-04 | Phase 16 | Pending |
 | COUNT-05 | Phase 16 | Pending |
-| MEET-01 | Phase 17 | Pending |
-| MEET-02 | Phase 17 | Pending |
-| MEET-03 | Phase 17 | Pending |
-| MEET-04 | Phase 17 | Pending |
-| MEET-05 | Phase 17 | Pending |
-| MEET-06 | Phase 17 | Pending |
-| ADMIN-01 | Phase 17 | Pending |
-| ADMIN-02 | Phase 17 | Pending |
-| ADMIN-03 | Phase 17 | Pending |
-| ADMIN-04 | Phase 17 | Pending |
-| ADMIN-05 | Phase 17 | Pending |
-| ADMIN-06 | Phase 17 | Pending |
+| WEEK-01 | Phase 17 | Pending |
+| KPI-01 | Phase 17 | Pending |
+| KPI-02 | Phase 17 | Pending |
+| MEET-07 | Phase 17 | Pending |
+| MEET-08 | Phase 17 | Pending |
+| MEET-01..06 | (retired) | Deprecated in 2026-04-25 rewrite |
+| ADMIN-01..06 | (retired) | Deprecated in 2026-04-25 rewrite |
 | COMP-01 | Phase 18 | Pending |
 | COMP-02 | Phase 18 | Pending |
 | COMP-03 | Phase 18 | Pending |
@@ -196,10 +190,11 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 | GROWTH-05 | Phase 18 | Pending |
 
 **Coverage:**
-- v2.0 requirements: 56 total
-- Mapped to phases: 56
+- v2.0 requirements: 49 total (56 original − 12 deprecated MEET/ADMIN + 5 new Phase 17 IDs)
+- Mapped to phases: 49
 - Unmapped: 0
+- Deprecated (out of v2.0 scope): MEET-01..06, ADMIN-01..06
 
 ---
 *Requirements defined: 2026-04-16*
-*Last updated: 2026-04-16 — traceability populated by roadmapper*
+*Last updated: 2026-04-25 — Phase 17 sync after ROADMAP.md rewrite (commit 913cc9f): added WEEK-01, KPI-01, KPI-02, MEET-07, MEET-08; deprecated MEET-01..06, ADMIN-01..06*
