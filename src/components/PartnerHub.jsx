@@ -243,14 +243,15 @@ export default function PartnerHub() {
   const jerrySubmitted = allSubs.some((s) => s.partner === 'jerry');
   const comparisonReady = theoSubmitted && jerrySubmitted;
 
+  // UAT A2 (2026-04-25): When kpiReady, the scorecard hub-card already surfaces
+  // commit/progress/complete state with the correct count. The duplicated
+  // "This week: X of Y" status line above was wrong (was 0/6 because it counted
+  // only mandatory selections, not the full 7) and redundant. Suppress the status
+  // line entirely when kpiReady — partners get the truth from the scorecard card.
   const statusText = error
     ? copy.errorLoad
     : kpiReady
-      ? (scorecardState === 'complete'
-          ? copy.status.scorecardComplete
-          : scorecardState === 'inProgress'
-            ? copy.status.scorecardInProgress(scorecardAnsweredCount, kpiSelections.length)
-            : copy.status.scorecardNotCommitted)
+      ? null
       : (submission
           ? copy.status.roleCompleteNoKpis
           : copy.status.roleNotComplete);
@@ -271,7 +272,7 @@ export default function PartnerHub() {
             <div className="screen-header">
               <h2>{copy.greeting(partnerName)}</h2>
             </div>
-            <p className="status-line">{statusText}</p>
+            {statusText && <p className="status-line">{statusText}</p>}
           </div>
 
           {/* Role Identity — renders immediately from static data (UI-SPEC success criterion 1, P-U1) */}
@@ -372,7 +373,7 @@ export default function PartnerHub() {
                       {scorecardState === 'complete'
                         ? SCORECARD_COPY.hubCard.ctaComplete
                         : scorecardState === 'inProgress'
-                          ? SCORECARD_COPY.hubCard.ctaInProgress(scorecardAnsweredCount)
+                          ? SCORECARD_COPY.hubCard.ctaInProgress(scorecardAnsweredCount, kpiSelections.length)
                           : SCORECARD_COPY.hubCard.ctaNotCommitted}
                     </span>
                   </Link>
