@@ -8,6 +8,7 @@ import {
   fetchWeeklyKpiSelection,
   fetchPreviousWeeklyKpiSelection,
   fetchGrowthPriorities,
+  fetchBusinessPriorities,
   upsertGrowthPriority,
   incrementKpiCounter,
 } from '../lib/supabase.js';
@@ -24,6 +25,7 @@ import { ROLE_IDENTITY } from '../data/roles.js';
 import RoleIdentitySection from './RoleIdentitySection.jsx';
 import ThisWeekKpisSection from './ThisWeekKpisSection.jsx';
 import PersonalGrowthSection from './PersonalGrowthSection.jsx';
+import BusinessPrioritiesSection from './BusinessPrioritiesSection.jsx';
 
 export default function PartnerHub() {
   const { partner } = useParams();
@@ -39,6 +41,7 @@ export default function PartnerHub() {
   const [weeklySelection, setWeeklySelection] = useState(null);
   const [previousSelection, setPreviousSelection] = useState(null);
   const [growthPriorities, setGrowthPriorities] = useState([]);
+  const [businessPriorities, setBusinessPriorities] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -68,8 +71,9 @@ export default function PartnerHub() {
       fetchWeeklyKpiSelection(partner, currentMonday),
       fetchPreviousWeeklyKpiSelection(partner, currentMonday),
       fetchGrowthPriorities(partner),
+      fetchBusinessPriorities(),
     ])
-      .then(([sub, sels, cards, subs, thisWeek, prevWeek, growth]) => {
+      .then(([sub, sels, cards, subs, thisWeek, prevWeek, growth, bizPriorities]) => {
         setSubmission(sub);
         setKpiSelections(sels);
         setScorecards(cards);
@@ -77,6 +81,7 @@ export default function PartnerHub() {
         setWeeklySelection(thisWeek);
         setPreviousSelection(prevWeek);
         setGrowthPriorities(growth);
+        setBusinessPriorities(bizPriorities);
       })
       .catch((err) => {
         console.error(err);
@@ -303,6 +308,9 @@ export default function PartnerHub() {
                 growthPriorities={growthPriorities}
                 onSaveSelfChosen={handleSaveSelfChosen}
               />
+
+              {/* Business Priorities (Phase 18 BIZ-02, D-10) — shared, identical for both partners */}
+              <BusinessPrioritiesSection priorities={businessPriorities} />
 
               {/* Workflow card grid (D-07 bottom; D-08 card roster) */}
               <div className="hub-grid">
