@@ -1,7 +1,7 @@
 // Season stats computation helpers (Phase 11 — rewritten Phase 15 per D-22 / P-B1)
 
 import { SEASON_START_DATE } from '../data/content.js';
-import { getMondayOf } from './week.js';
+import { getMondayOf, effectiveResult } from './week.js';
 
 /**
  * Computes cumulative season hit rate and per-KPI stats.
@@ -29,16 +29,21 @@ export function computeSeasonStats(kpiSelections, scorecards) {
       if (!perLabelMap[label]) {
         perLabelMap[label] = { hits: 0, possible: 0 };
       }
-      if (entry.result === 'yes') {
+      // Phase 17 D-02: read entry.result through effectiveResult so post-Saturday-close
+      // pending entries are coerced to 'no' for season aggregation. Live pending (week
+      // not yet closed) still flows through as 'pending' and is skipped — same treatment
+      // as null. Closed-week pending counts toward possible (and toward miss totals).
+      const eff = effectiveResult(entry.result, card.week_of);
+      if (eff === 'yes') {
         hits++;
         possible++;
         perLabelMap[label].hits++;
         perLabelMap[label].possible++;
-      } else if (entry.result === 'no') {
+      } else if (eff === 'no') {
         possible++;
         perLabelMap[label].possible++;
       }
-      // null or missing: skip entirely
+      // null, undefined, or live 'pending': skip entirely
     }
   }
 
@@ -79,10 +84,13 @@ export function computeStreaks(kpiSelections, scorecards) {
       const results = card.kpi_results ?? {};
       // find the entry that matches this label (historical IDs won't match k.id)
       const entry = Object.values(results).find((e) => e?.label === label);
-      if (entry?.result === 'no') {
+      // Phase 17 D-02: post-close pending coerces to 'no' so closed-week pendings
+      // extend the miss streak rather than silently breaking it.
+      const eff = effectiveResult(entry?.result, card.week_of);
+      if (eff === 'no') {
         streak++;
       } else {
-        break;  // 'yes' OR null OR missing — break streak
+        break;  // 'yes' OR null OR live 'pending' OR missing — break streak
       }
     }
     return { id: k.id, label, streak };

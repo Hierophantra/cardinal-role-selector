@@ -6,20 +6,42 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { WEEKLY_KPI_COPY } from '../data/content.js';
+import { effectiveResult, isWeekClosed } from '../lib/week.js';
 
 /**
- * Maps scorecard entry result to status-dot color class.
- * 'yes' → green (met), 'no' → red (missed), anything else → gray (not yet answered).
- * Per CONTEXT D-10 and UI-SPEC Status Dot States table.
+ * Maps scorecard entry raw result to status-dot color class.
+ * 'yes' → green (met), 'no' → red (missed).
+ * Phase 17 D-02 + D-08: 'pending' branches by week-closed state —
+ *   live pending (week still open) → amber `--pending-active` (active commitment)
+ *   closed-week pending (auto-coerced to 'no' by effectiveResult) → gray `--pending`
+ * null / undefined / unknown → gray `--pending` (preserves existing "not yet
+ * answered" semantics).
  *
  * Exported (not just module-private) so it can be unit-tested directly
  * (per Phase 15 checker B1, 2026-04-16). Pure function, no side effects.
+ *
+ * @param {string|null|undefined} rawResult
+ * @param {string} [weekOf] 'YYYY-MM-DD' Monday — required to distinguish live vs
+ *   closed pending; falsy treats pending as live (active amber).
  */
-export function statusModifierClass(result) {
-  if (result === 'yes') return 'kpi-status-dot--met';
-  if (result === 'no') return 'kpi-status-dot--missed';
+export function statusModifierClass(rawResult, weekOf) {
+  if (rawResult === 'yes') return 'kpi-status-dot--met';
+  if (rawResult === 'no') return 'kpi-status-dot--missed';
+  if (rawResult === 'pending') {
+    // Use effectiveResult to detect post-close coercion: pending + closed → 'no' →
+    // this row will already render with the missed dot via the rawResult==='no' branch
+    // when callers pre-coerce. For uncoerced raw 'pending', still distinguish by week:
+    if (weekOf && isWeekClosed(weekOf)) return 'kpi-status-dot--pending';
+    return 'kpi-status-dot--pending-active';
+  }
   return 'kpi-status-dot--pending';
 }
+
+// Internal sanity reference to keep effectiveResult import live for future call-sites
+// (Phase 17 D-02 audit footprint). statusModifierClass branches above already cover
+// the live-vs-closed distinction; effectiveResult is exported by week.js for parity
+// with other consumers in this audit (PartnerHub, seasonStats).
+void effectiveResult;
 
 export default function ThisWeekKpisSection({
   partner,
@@ -54,7 +76,7 @@ export default function ThisWeekKpisSection({
           return (
             <li key={k.id} className="kpi-week-row">
               <span
-                className={`kpi-status-dot ${statusModifierClass(result)}`}
+                className={`kpi-status-dot ${statusModifierClass(result, thisWeekCard?.week_of)}`}
                 aria-hidden="true"
               />
               <span className="kpi-week-label">{k.label_snapshot}</span>

@@ -208,17 +208,20 @@ export default function PartnerHub() {
   // Scorecard state derivation — kpiReady-based per D-06
   const committedThisWeek = Boolean(thisWeekCard?.committed_at);
   // kpi_results is keyed by kpi_templates.id (v2.0 Scorecard write shape) — read by k.template_id
+  // Phase 17 D-02: 'pending' is a fully-answered terminal state (partner picked it
+  // and supplied pending_text) — count it as answered alongside 'yes' and 'no'.
   const scorecardAnsweredCount = thisWeekCard
     ? kpiSelections.reduce((n, k) => {
         const r = thisWeekCard.kpi_results?.[k.template_id]?.result;
-        return r === 'yes' || r === 'no' ? n + 1 : n;
+        return r === 'yes' || r === 'no' || r === 'pending' ? n + 1 : n;
       }, 0)
     : 0;
   const scorecardAllComplete = thisWeekCard && kpiSelections.length > 0
     ? kpiSelections.every((k) => {
         const r = thisWeekCard.kpi_results?.[k.template_id];
-        if (!r || (r.result !== 'yes' && r.result !== 'no')) return false;
+        if (!r || (r.result !== 'yes' && r.result !== 'no' && r.result !== 'pending')) return false;
         if (r.result === 'no') return r.reflection?.trim().length > 0;
+        if (r.result === 'pending') return r.pending_text?.trim().length > 0;
         return true;
       })
     : false;
