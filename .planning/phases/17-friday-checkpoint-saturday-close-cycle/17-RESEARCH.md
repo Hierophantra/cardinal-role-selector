@@ -1040,22 +1040,25 @@ See Pattern 10 above — full SQL block.
 
 **If this table is shorter than expected:** All other claims in this research are tagged `[VERIFIED: ...]` against codebase grep, file reads, and CONTEXT.md / UI-SPEC explicit decisions. The four assumptions above are the only ones that warrant user/planner confirmation.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Saturday-recap conversion-detection strategy (Pattern 9, Pitfall 4 — load-bearing)**
    - What we know: D-16 says "the partner can re-open and update Pending rows specifically until Saturday close" + "the conversion check requires the partner to have edited their scorecard between Friday and Saturday." When the partner converts a Pending row to Yes, Pattern 5's payload builder drops `pending_text`. By Monday recap, the row reads `result='yes'` with no trace of prior pending state.
    - What's unclear: How does SaturdayRecapStop find the row that USED to be pending? Three options: (a) preserve `pending_text` on yes-conversion (cleanest, slightly noisier JSONB); (b) read last Friday's meeting_notes for context (brittle); (c) accept the limitation and only render rows whose current state is 'pending' (loses converted rows from the recap entirely).
    - Recommendation: **Option (a) — preserve `pending_text` on yes-conversion.** Modify Pattern 5: keep `pending_text` on the row whenever the row was previously pending, even after toggle to yes/no. This adds 1 JSONB key per converted row but enables clean recap rendering. Planner makes the final call; flag in 17-PLAN-CHECK.
+   - **RESOLVED:** Adopted Option (a). Wave 2's `buildKpiResultsPayload` retains `pending_text` on yes-conversion; SaturdayRecapStop (Wave 3) qualifies a row for the recap by non-empty `pending_text` regardless of current `result`. Conversion state then derives from `effectiveResult(entry.result, sc.week_of) === 'yes'`.
 
 2. **Should `effectiveResult` be defensive against unknown raw values?**
    - What we know: rawResult is `'yes' | 'no' | 'pending' | null | undefined`. Helper handles `'pending'` explicitly; everything else passes through unchanged.
    - What's unclear: If a future migration introduces another value, helper silently passes it through.
    - Recommendation: leave as pass-through — it preserves the principle that the helper has ONE job (Pending coercion). Don't add validation. Planner can add a console.warn for unknown values if defensiveness is wanted.
+   - **RESOLVED:** Pass-through. `effectiveResult` performs no defensive validation and no `console.warn`; unknown raw values flow through unchanged (Plan 17-01 Task 1 action body explicit).
 
 3. **`meeting_notes` value encoding for the gate choice**
    - What we know: `agenda_notes` holds the textarea body. Pattern 8 stores `'review'` or `'skip'` directly in this column.
    - What's unclear: If Trace later wants to type free-text notes ON the gate stop, where do they go? Same column collides with the choice.
    - Recommendation: For v2.0, accept the collision — `agenda_notes` holds either `'review'`, `'skip'`, OR `'review — additional notes'` / `'skip — additional notes'`. Parser splits on first space. Cleaner alternative: structured JSON `'{"choice":"review","note":""}'` — but adds parsing complexity. Planner picks; default is the collision-acceptance path because Trace is not expected to add free-text on a binary-choice stop.
+   - **RESOLVED:** Collision-acceptance path. `agenda_notes` stores the literal `'review'` or `'skip'`; free-text on the gate stop is out of v2.0 scope. KpiReviewOptionalStop persists only the choice via the existing `onNoteChange` plumbing — no parser, no JSON wrapper.
 
 ## Environment Availability
 
