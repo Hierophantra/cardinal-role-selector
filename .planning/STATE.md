@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role Identity & Weekly KPI Rotation
-status: Phase 18 in progress (Plan 18-01 Wave 0 shipped)
-stopped_at: Phase 18 Plan 01 SUMMARY committed
-last_updated: "2026-04-25T12:30:00.000Z"
+status: Phase 18 feature-complete (Plans 18-01, 18-02, 18-03 all shipped — ready for verification)
+stopped_at: Phase 18 Plan 03 SUMMARY committed
+last_updated: "2026-04-25T13:00:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 15
-  completed_plans: 11
-  percent: 73
+  completed_plans: 13
+  percent: 87
 ---
 
 # Project State
@@ -24,8 +24,8 @@ See: .planning/PROJECT.md (updated 2026-04-16 — v2.0 milestone started)
 
 ## Current Position
 
-Phase: 18 (shared-business-priorities-display) — IN PROGRESS (Wave 0 shipped 2026-04-25)
-Plan: 1 of 3 — 18-01 complete (foundation); 18-02 (component + CSS) and 18-03 (integration) remaining
+Phase: 18 (shared-business-priorities-display) — FEATURE-COMPLETE (all 3 plans shipped 2026-04-25)
+Plan: 3 of 3 — 18-01 (foundation), 18-02 (component + CSS), 18-03 (integration) all complete; verification phase next
 
 ## Shipped Milestones
 
@@ -103,6 +103,10 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 - [Phase 18-shared-business-priorities-display]: Plan 18-01: business_priorities seeded with literal '[TBD: replace via UPDATE before partner UAT]' content per D-13 — visible TBD strings are the pre-UAT safety signal; UPDATE recipe templates documented at end of migration 011
 - [Phase 18-shared-business-priorities-display]: Plan 18-01: fetchBusinessPriorities is read-only (no upsert per D-04) — content edited via SQL UPDATE on the migration footer recipe; admin-tooling write-path deferred to a future phase
 - [Phase 18-shared-business-priorities-display]: Plan 18-01: BUSINESS_GROWTH_STOP_MAPPING in content.js is the single source of truth for growth_business_1/2 stop->priority binding (D-14); MEETING_COPY and MONDAY_PREP_COPY both gain 4 parity copy keys (growthBusinessSubtext, businessPriorityCardEyebrow, businessPriorityToggleShow/Hide) — no new PHASE18_COPY namespace introduced
+- [Phase 18-shared-business-priorities-display]: Plan 18-03: A2 deviation locked — GrowthStop kind='business' uses single shared StopNotesArea (NOT per-partner) per meeting_notes schema (keyed by meeting_id+agenda_stop_key only) and CONTEXT D-17 no-schema-changes; UI-SPEC ASCII diagram showing per-partner textareas is acknowledged misleading
+- [Phase 18-shared-business-priorities-display]: Plan 18-03: AdminProfile placement at TOP of partner profile (under Submitted-date header, before Purpose Orientation) per RESEARCH Open Question 3 — business priorities are persistent context, not questionnaire artifacts
+- [Phase 18-shared-business-priorities-display]: Plan 18-03: Phase 17 audit-footprint imports in AdminProfile.jsx (effectiveResult, SCORECARD_COPY.commitmentPrefix, _AUDIT_PENDING_BADGE_CLASS) preserved unchanged (Pitfall 5)
+- [Phase 18-shared-business-priorities-display]: Plan 18-03: data.businessPriorities flat sibling key in AdminMeetingSession (Phase 17 D-15 pattern reuse for lastWeekScorecards); GrowthStop function gains useState({}) for per-card collapsible deliverables, declared BEFORE kind branching (P-U2)
 
 ### Pending Todos
 
@@ -125,6 +129,7 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 
 ## Session Continuity
 
-Last session: 2026-04-25T12:30:00.000Z
-Stopped at: Phase 18 Plan 01 SUMMARY committed — Wave 0 foundation shipped (migration 011 + supabase.js fetchBusinessPriorities + content.js mapping & copy keys); ready for Plan 18-02
-Resume file: .planning/phases/18-shared-business-priorities-display/18-01-SUMMARY.md
+Last session: 2026-04-25T13:00:00.000Z
+Stopped at: Phase 18 Plan 03 SUMMARY committed — Phase 18 feature-complete (BIZ-02 + BIZ-03 wired across PartnerHub, AdminProfile, AdminMeetingSession); ready for Phase 18 verification
+Resume file: .planning/phases/18-shared-business-priorities-display/18-03-SUMMARY.md
+Pre-UAT reminder: post-merge UPDATE statements at end of supabase/migrations/011_business_priorities.sql MUST be run before partner UAT — until then, TBD placeholder strings are the intended visible signal (D-13)

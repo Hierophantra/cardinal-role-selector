@@ -135,8 +135,8 @@
   5. The two priorities appear identically on Theo's and Jerry's views — no partner-scoped variance, no per-partner progress data
 **Plans**: 3 plans
 - [x] 18-01-PLAN.md — Wave 0: Migration 011 (business_priorities table + 2-row TBD seed) + supabase.js fetchBusinessPriorities + content.js BUSINESS_GROWTH_STOP_MAPPING + 4 MEETING_COPY/MONDAY_PREP_COPY copy keys (BIZ-01)
-- [ ] 18-02-PLAN.md — Wave 1: BusinessPrioritiesSection.jsx component + index.css Phase 18 appendix (BIZ-02)
-- [ ] 18-03-PLAN.md — Wave 2: PartnerHub + AdminProfile + AdminMeetingSession integration (GrowthStop kind=business rewrite, single shared textarea per A2 deviation) (BIZ-02, BIZ-03)
+- [x] 18-02-PLAN.md — Wave 1: BusinessPrioritiesSection.jsx component + index.css Phase 18 appendix (BIZ-02)
+- [x] 18-03-PLAN.md — Wave 2: PartnerHub + AdminProfile + AdminMeetingSession integration (GrowthStop kind=business rewrite, single shared textarea per A2 deviation) (BIZ-02, BIZ-03)
 **UI hint**: yes
 
 ## Progress
