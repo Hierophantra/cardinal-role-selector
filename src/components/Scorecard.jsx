@@ -70,6 +70,12 @@ export default function Scorecard() {
   // Submit state
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  // UAT C5: confirmation modal before persistDraft+submit fires.
+  const [confirmingSubmit, setConfirmingSubmit] = useState(false);
+  // UAT C6: completion message picked once on submit success and held in
+  // state so the post-submit view shows a stable string until the partner
+  // navigates away (re-pick on next mount only).
+  const [completionMessage, setCompletionMessage] = useState(null);
 
   // History UI state
   const [expandedHistoryWeek, setExpandedHistoryWeek] = useState(null);
@@ -372,7 +378,10 @@ export default function Scorecard() {
     persistDraft(kpiResults);
   }
 
-  async function handleSubmit() {
+  // UAT C5: validate + open confirmation modal. The actual persist happens in
+  // performSubmit (called from the confirm modal's primary CTA). This split
+  // keeps validation errors visible without blocking the modal flow on success.
+  function handleSubmit() {
     if (submitting) return;
     // WR-02: Force-blur the active element so any pending textarea onBlur
     // (which calls persistField → persistDraft) commits before we read
@@ -413,6 +422,18 @@ export default function Scorecard() {
       setSubmitError(SCORECARD_COPY.submitErrorPendingTextRequired);
       return;
     }
+    // Validation passed -- open the confirmation modal. The user must click
+    // Confirm to actually persist (UAT C5).
+    setConfirmingSubmit(true);
+  }
+
+  function cancelSubmitConfirm() {
+    setConfirmingSubmit(false);
+  }
+
+  async function performSubmit() {
+    if (submitting) return;
+    setConfirmingSubmit(false);
     setSubmitting(true);
     try {
       const nowIso = new Date().toISOString();
@@ -431,6 +452,13 @@ export default function Scorecard() {
         growth_followup: growthFollowup ?? {},
       });
       setView('submitted');
+      // UAT C6: pick a completion message at random for the post-submit state.
+      // Stable for this view -- the partner only sees one variant per submission.
+      const messages = SCORECARD_COPY.completionMessages ?? [];
+      if (messages.length > 0) {
+        const pick = messages[Math.floor(Math.random() * messages.length)];
+        setCompletionMessage(pick);
+      }
       const refreshed = await fetchScorecards(partner);
       setAllScorecards(refreshed);
     } catch (err) {
@@ -630,7 +658,9 @@ export default function Scorecard() {
             {isSubmitted && (
               <div className="scorecard-commit-gate" style={{ marginBottom: 20 }}>
                 <p className="muted" style={{ margin: 0 }}>
-                  {SCORECARD_COPY.submittedNotice}
+                  {/* UAT C6: rotated completion message picked once on submit;
+                      falls back to the canonical submittedNotice on remount. */}
+                  {completionMessage ?? SCORECARD_COPY.submittedNotice}
                   {committedAt && (
                     <>
                       {' '}
@@ -971,6 +1001,65 @@ export default function Scorecard() {
           </div>
         );
       })()}
+
+      {/* UAT C5: submit confirmation overlay — rendered above the sticky bar. */}
+      {confirmingSubmit && (
+        <div
+          className="scorecard-submit-confirm-overlay"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+            zIndex: 1000,
+          }}
+          onClick={cancelSubmitConfirm}
+        >
+          <div
+            className="scorecard-submit-confirm-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: 480,
+              width: '100%',
+              padding: '24px 24px 20px',
+              borderRadius: 14,
+              background: 'var(--card, #1a1a1a)',
+              border: '1px solid var(--border, rgba(255,255,255,0.12))',
+            }}
+          >
+            <div className="eyebrow" style={{ marginBottom: 8 }}>
+              {SCORECARD_COPY.submitConfirmEyebrow}
+            </div>
+            <h3 style={{ margin: '0 0 12px', fontSize: 20, lineHeight: 1.3 }}>
+              {SCORECARD_COPY.submitConfirmHeading}
+            </h3>
+            <p className="muted" style={{ margin: 0, lineHeight: 1.55 }}>
+              {SCORECARD_COPY.submitConfirmBody}
+            </p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={cancelSubmitConfirm}
+                disabled={submitting}
+              >
+                {SCORECARD_COPY.submitConfirmCancelCta}
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={performSubmit}
+                disabled={submitting}
+              >
+                {submitting ? SCORECARD_COPY.submitConfirmSubmittingCta : SCORECARD_COPY.submitConfirmCta}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

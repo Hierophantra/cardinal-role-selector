@@ -551,6 +551,22 @@ export const SCORECARD_COPY = {
   pendingUpdateCta: 'Update Pending Rows',
   // UAT B2 — committed_at time line shown beside the submittedNotice in Scorecard.jsx
   committedAtPrefix: 'Committed ',
+  // UAT C5 — submit confirmation modal copy
+  submitConfirmEyebrow: 'CONFIRM SUBMISSION',
+  submitConfirmHeading: 'Submit your scorecard for this week?',
+  submitConfirmBody:
+    'You can re-open Pending rows until Saturday close, but Yes/No rows will lock immediately.',
+  submitConfirmCta: 'Yes, submit',
+  submitConfirmCancelCta: 'Not yet',
+  submitConfirmSubmittingCta: 'Submitting…',
+  // UAT C6 — completion message rotation. Picked at random on submit.
+  completionMessages: [
+    'Scorecard submitted. Nice work!',
+    'Great job on another scorecard submission!',
+    'Another week locked in — well done.',
+    'Submission complete. See you next week.',
+    'Thanks for checking in. Have a great weekend.',
+  ],
   hubCard: {
     title: 'Weekly Scorecard',
     description: 'Check in on your 7 KPIs each week and track your progress over time.',
