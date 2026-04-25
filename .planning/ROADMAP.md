@@ -133,7 +133,10 @@
   3. Admin profile view (`AdminProfile.jsx`) shows the same business priorities section so Trace sees the same content as the partner
   4. Friday Review meeting `growth_business_1` and `growth_business_2` stops render the corresponding priority's title and deliverables for context; the existing meeting agenda_notes capture per-stop discussion notes (no new progress table)
   5. The two priorities appear identically on Theo's and Jerry's views — no partner-scoped variance, no per-partner progress data
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 18-01-PLAN.md — Wave 0: Migration 011 (business_priorities table + 2-row TBD seed) + supabase.js fetchBusinessPriorities + content.js BUSINESS_GROWTH_STOP_MAPPING + 4 MEETING_COPY/MONDAY_PREP_COPY copy keys (BIZ-01)
+- [ ] 18-02-PLAN.md — Wave 1: BusinessPrioritiesSection.jsx component + index.css Phase 18 appendix (BIZ-02)
+- [ ] 18-03-PLAN.md — Wave 2: PartnerHub + AdminProfile + AdminMeetingSession integration (GrowthStop kind=business rewrite, single shared textarea per A2 deviation) (BIZ-02, BIZ-03)
 **UI hint**: yes
 
 ## Progress
@@ -146,4 +149,4 @@
 | 15. Role Identity + Hub Redesign | v2.0 | 3/3 | Complete   | 2026-04-16 |
 | 16. Weekly KPI Selection + Scorecard + Counters | v2.0 | 5/5 | Complete   | 2026-04-17 |
 | 17. Friday-Checkpoint / Saturday-Close Cycle | v2.0 | 0/4 | Planned    | - |
-| 18. Shared Business Priorities Display | v2.0 | 0/? | Not started | - |
+| 18. Shared Business Priorities Display | v2.0 | 0/3 | Planned    | - |
