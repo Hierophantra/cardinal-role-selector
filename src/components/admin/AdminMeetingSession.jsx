@@ -23,6 +23,7 @@ import {
   PARTNER_DISPLAY,
   SCORECARD_COPY,
   BUSINESS_GROWTH_STOP_MAPPING,
+  GROWTH_FOLLOWUP_FIELDS,
 } from '../../data/content.js';
 
 // Stop arrays are now imported from content.js (FRIDAY_STOPS, MONDAY_STOPS).
@@ -1492,14 +1493,18 @@ function GrowthStop({
   }
 
   // -----------------------------------------------------------------------
-  // PERSONAL BRANCH (UNCHANGED \u2014 preserves existing per-partner growth-cell render)
+  // PERSONAL BRANCH (UAT C1: surfaces the partner's mandatory growth_followup
+  // entries from scorecards.growth_followup as read-only context above the
+  // existing growth-cell render. Self-chosen growth is rendered alongside
+  // the mandatory but with no follow-up data \u2014 the field is reminder-only.)
   // -----------------------------------------------------------------------
   return (
     <>
       <div className="eyebrow meeting-stop-eyebrow">{eyebrow}</div>
       <h3 className="meeting-stop-heading">Growth Priority</h3>
       <p className="meeting-stop-subtext">
-        Growth priorities are read-only inside Meeting Mode. Edit on Partner Management.
+        Growth priorities are read-only inside Meeting Mode. Mandatory follow-up reflects
+        what the partner submitted on their scorecard this week.
       </p>
 
       <div className="meeting-growth-grid">
@@ -1521,11 +1526,18 @@ function GrowthStop({
 
           const status = priority.status ?? 'active';
           const statusLabel = GROWTH_STATUS_COPY[status] ?? GROWTH_STATUS_COPY.active;
+          // UAT C1: render the partner's submitted follow-up answers (only for
+          // mandatory; self-chosen has no follow-up). Treat any non-self-chosen
+          // personal priority as the mandatory slot.
+          const isMandatory = priority.subtype !== 'self_personal';
+          const followup = data[p].scorecard?.growth_followup ?? {};
+          const followupFields = isMandatory ? (GROWTH_FOLLOWUP_FIELDS[p] ?? []) : [];
+          const hasAnyFollowup = followupFields.some((f) => (followup[f.key] ?? '').toString().trim() !== '');
 
           return (
             <div key={p} className="meeting-growth-cell">
               <div className="meeting-partner-name">{PARTNER_DISPLAY[p]}</div>
-              <div style={{ fontSize: 15, lineHeight: 1.55 }}>
+              <div style={{ fontSize: 15, lineHeight: 1.55, fontWeight: 600 }}>
                 {priority.description || priority.custom_text || '\u2014'}
               </div>
               <div>
@@ -1533,6 +1545,42 @@ function GrowthStop({
               </div>
               {priority.admin_note && (
                 <div className="growth-admin-note">{priority.admin_note}</div>
+              )}
+
+              {isMandatory && followupFields.length > 0 && (
+                <div
+                  className="growth-followup-readout"
+                  style={{
+                    marginTop: 10,
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid var(--border, rgba(255,255,255,0.08))',
+                  }}
+                >
+                  <div
+                    className="eyebrow"
+                    style={{ fontSize: 10, marginBottom: 6, color: 'var(--muted)' }}
+                  >
+                    THIS WEEK&apos;S FOLLOW-THROUGH
+                  </div>
+                  {hasAnyFollowup ? (
+                    followupFields.map((f) => {
+                      const v = (followup[f.key] ?? '').toString().trim();
+                      if (!v) return null;
+                      return (
+                        <div key={f.key} style={{ fontSize: 13, lineHeight: 1.5 }}>
+                          <span style={{ color: 'var(--muted)' }}>{f.label} </span>
+                          <span>{v}</span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="muted" style={{ fontSize: 12, fontStyle: 'italic' }}>
+                      Not yet submitted on the scorecard.
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           );

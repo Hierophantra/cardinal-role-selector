@@ -6,10 +6,18 @@ import {
   fetchWeeklyKpiSelection,
   fetchAdminSetting,
   fetchScorecards,
+  fetchGrowthPriorities,
   upsertScorecard,
 } from '../lib/supabase.js';
 import { getMondayOf, isWeekClosed, formatWeekRange, effectiveResult } from '../lib/week.js';
-import { VALID_PARTNERS, PARTNER_DISPLAY, SCORECARD_COPY, effectivePartnerScope } from '../data/content.js';
+import {
+  VALID_PARTNERS,
+  PARTNER_DISPLAY,
+  SCORECARD_COPY,
+  GROWTH_FOLLOWUP_FIELDS,
+  GROWTH_FOLLOWUP_COPY,
+  effectivePartnerScope,
+} from '../data/content.js';
 
 // Motion props shared by all views — matches KpiSelection.jsx pattern
 const motionProps = {
@@ -52,6 +60,12 @@ export default function Scorecard() {
   const [weeklyWin, setWeeklyWin] = useState('');
   const [weeklyLearning, setWeeklyLearning] = useState('');
   const [weekRating, setWeekRating] = useState(null); // 1-5 or null
+
+  // UAT C1: growth_followup JSONB form state. Schema is partner-driven via
+  // GROWTH_FOLLOWUP_FIELDS and persists in scorecards.growth_followup
+  // (migration 012). Self-chosen growth is rendered read-only above the form.
+  const [growthFollowup, setGrowthFollowup] = useState({});
+  const [growthPriorities, setGrowthPriorities] = useState([]);
 
   // Submit state
   const [submitting, setSubmitting] = useState(false);
@@ -101,9 +115,14 @@ export default function Scorecard() {
         ? fetchAdminSetting('jerry_sales_kpi_active').then((r) => r?.value === true)
         : Promise.resolve(false),
       fetchScorecards(partner),
+      // UAT C1: growth priorities drive the mandatory + self-chosen reminders
+      // alongside the KPI grid. Fetched on mount, refreshed only on partner
+      // change (matches the existing kpi_templates fetch lifecycle).
+      fetchGrowthPriorities(partner).catch(() => []),
     ])
-      .then(([templates, sel, jerryActive, scorecards]) => {
+      .then(([templates, sel, jerryActive, scorecards, growth]) => {
         setAllScorecards(scorecards);
+        setGrowthPriorities(growth ?? []);
 
         // Empty guard: no weekly KPI selected for current week
         if (!sel || !sel.kpi_template_id) {
@@ -158,6 +177,7 @@ export default function Scorecard() {
           setWeeklyWin(thisWeekRow.weekly_win ?? '');
           setWeeklyLearning(thisWeekRow.weekly_learning ?? '');
           setWeekRating(thisWeekRow.week_rating ?? null);
+          setGrowthFollowup(thisWeekRow.growth_followup ?? {});
         } else if (thisWeekRow) {
           // Partial draft row exists. Hydrate reflection fields if present.
           setCommittedAt(thisWeekRow.committed_at ?? null);
@@ -166,6 +186,7 @@ export default function Scorecard() {
           setWeeklyWin(thisWeekRow.weekly_win ?? '');
           setWeeklyLearning(thisWeekRow.weekly_learning ?? '');
           setWeekRating(thisWeekRow.week_rating ?? null);
+          setGrowthFollowup(thisWeekRow.growth_followup ?? {});
         }
       })
       .catch((err) => {
@@ -252,6 +273,10 @@ export default function Scorecard() {
         weekly_win: weeklyWin,
         weekly_learning: weeklyLearning,
         week_rating: weekRating,
+        // UAT C1: persist mandatory growth follow-up alongside the rest of the
+        // scorecard. Empty object is the default — pre-Phase-C1 rows hydrate
+        // unchanged because the column ships with default '{}'.
+        growth_followup: growthFollowup ?? {},
       });
       if (!committedAt) setCommittedAt(row.committed_at ?? nowIso);
       setAllScorecards((prev) => {
@@ -402,6 +427,8 @@ export default function Scorecard() {
         weekly_win: weeklyWin,
         weekly_learning: weeklyLearning,
         week_rating: weekRating,
+        // UAT C1: include growth_followup on submit (same persist path as draft).
+        growth_followup: growthFollowup ?? {},
       });
       setView('submitted');
       const refreshed = await fetchScorecards(partner);
@@ -642,6 +669,10 @@ export default function Scorecard() {
               </p>
             )}
 
+            {/* UAT C1: self-chosen growth reminder — read-only, top of scorecard */}
+            <SelfChosenGrowthReminder growthPriorities={growthPriorities} />
+
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {rows.map((tpl) => {
                 const entry = kpiResults[tpl.id] || { result: null, reflection: '', count: 0, pending_text: '' };
@@ -791,6 +822,16 @@ export default function Scorecard() {
               })}
             </div>
 
+            {/* UAT C1: mandatory growth weekly follow-up form — between KPI rows and Weekly Reflection */}
+            <MandatoryGrowthFollowupForm
+              partner={partner}
+              growthPriorities={growthPriorities}
+              growthFollowup={growthFollowup}
+              setGrowthFollowup={setGrowthFollowup}
+              onPersist={persistField}
+              disabled={weekClosed || isSubmitted}
+            />
+
             {/* Weekly Reflection section */}
             <div className="scorecard-reflection-section">
               <div className="eyebrow">{SCORECARD_COPY.weeklyReflectionHeading}</div>
@@ -930,6 +971,147 @@ export default function Scorecard() {
           </div>
         );
       })()}
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------
+// UAT C1: SelfChosenGrowthReminder — top-of-scorecard read-only reminder card
+// surfacing the partner's self-chosen personal growth priority. No inputs
+// (the self-chosen priority is intentionally NOT tracked weekly per spec).
+// --------------------------------------------------------------------------
+
+function SelfChosenGrowthReminder({ growthPriorities }) {
+  const selfChosen = (growthPriorities ?? []).find(
+    (g) => g.type === 'personal' && g.subtype === 'self_personal'
+  );
+  if (!selfChosen) return null;
+  const description = selfChosen.description || selfChosen.custom_text || '';
+  if (!description) return null;
+  return (
+    <div
+      className="scorecard-self-chosen-reminder"
+      style={{
+        padding: '12px 16px',
+        marginBottom: 20,
+        borderRadius: 10,
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid var(--border, rgba(255,255,255,0.08))',
+      }}
+    >
+      <div
+        className="eyebrow"
+        style={{ fontSize: 11, marginBottom: 4, color: 'var(--muted)' }}
+      >
+        {GROWTH_FOLLOWUP_COPY.selfChosenEyebrow}
+      </div>
+      <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.4 }}>{description}</div>
+      <div
+        className="muted"
+        style={{ fontSize: 12, marginTop: 4, fontStyle: 'italic' }}
+      >
+        {GROWTH_FOLLOWUP_COPY.selfChosenSubtext}
+      </div>
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------
+// UAT C1: MandatoryGrowthFollowupForm — partner-specific structured follow-up
+// for the mandatory personal growth priority. Field shape is content-driven
+// (GROWTH_FOLLOWUP_FIELDS keyed by partner). Persists into
+// scorecards.growth_followup JSONB on blur via the same persistField path
+// used by reflection / count fields.
+// --------------------------------------------------------------------------
+
+function MandatoryGrowthFollowupForm({
+  partner,
+  growthPriorities,
+  growthFollowup,
+  setGrowthFollowup,
+  onPersist,
+  disabled,
+}) {
+  const fields = GROWTH_FOLLOWUP_FIELDS[partner];
+  if (!fields || fields.length === 0) return null; // 'test' partner or unknown
+
+  const mandatory = (growthPriorities ?? []).find(
+    (g) =>
+      g.type === 'personal' &&
+      // Mandatory subtype labels vary across seeds; treat any non-self-chosen personal as mandatory.
+      g.subtype !== 'self_personal'
+  );
+  const mandatoryDescription = mandatory?.description || mandatory?.custom_text || '';
+
+  function setField(key, value) {
+    setGrowthFollowup((prev) => ({ ...(prev ?? {}), [key]: value }));
+  }
+
+  return (
+    <div
+      className="scorecard-growth-followup"
+      style={{
+        marginTop: 24,
+        padding: '20px 20px 16px',
+        borderRadius: 12,
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid var(--border, rgba(255,255,255,0.08))',
+      }}
+    >
+      <div className="eyebrow" style={{ marginBottom: 8 }}>
+        {GROWTH_FOLLOWUP_COPY.eyebrow}
+      </div>
+      <h3 style={{ margin: '0 0 4px', fontSize: 18 }}>
+        {GROWTH_FOLLOWUP_COPY.heading}
+      </h3>
+      {mandatoryDescription ? (
+        <p
+          className="muted"
+          style={{ margin: '0 0 16px', fontSize: 14, lineHeight: 1.55 }}
+        >
+          {mandatoryDescription}
+        </p>
+      ) : (
+        <p className="muted" style={{ margin: '0 0 16px', fontSize: 14, fontStyle: 'italic' }}>
+          {GROWTH_FOLLOWUP_COPY.emptyMandatory}
+        </p>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {fields.map((f) => {
+          const value = (growthFollowup ?? {})[f.key] ?? '';
+          return (
+            <div key={f.key}>
+              <label className="scorecard-reflection-label" htmlFor={`growth-followup-${f.key}`}>
+                {f.label}
+              </label>
+              {disabled ? (
+                <p className="muted" style={{ margin: 0 }}>{value || '—'}</p>
+              ) : f.kind === 'textarea' ? (
+                <textarea
+                  id={`growth-followup-${f.key}`}
+                  className="textarea"
+                  rows={2}
+                  value={value}
+                  placeholder={f.placeholder}
+                  onChange={(e) => setField(f.key, e.target.value)}
+                  onBlur={onPersist}
+                />
+              ) : (
+                <input
+                  id={`growth-followup-${f.key}`}
+                  type="text"
+                  className="input"
+                  value={value}
+                  placeholder={f.placeholder}
+                  onChange={(e) => setField(f.key, e.target.value)}
+                  onBlur={onPersist}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

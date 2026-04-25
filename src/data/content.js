@@ -799,6 +799,39 @@ export const BUSINESS_GROWTH_STOP_MAPPING = {
   growth_business_2: 'salesmen_onboarding',
 };
 
+// UAT C1 (2026-04-25): mandatory-growth weekly follow-up fields. Each partner's
+// mandatory growth priority drives a small structured form on the Scorecard
+// (rendered below the KPI rows, before the weekly reflection block) and a
+// read-only mirror inside AdminMeetingSession's GrowthStop kind='personal'.
+//
+// Partner-specific shape because the underlying mandatory priorities differ:
+//   - Theo: 'Leave work at a set time at least 2 days per week' → days + time
+//   - Jerry: 'Initiate one difficult conversation weekly' → who + why_difficult
+//
+// The schema is content-driven (this constant) and persisted via the
+// scorecards.growth_followup JSONB column added in migration 012. Adding a
+// third field or a third partner becomes a one-place edit.
+export const GROWTH_FOLLOWUP_FIELDS = {
+  theo: [
+    { key: 'days', label: 'What days?', placeholder: 'e.g. Tues + Thurs', kind: 'text' },
+    { key: 'time', label: 'What time?', placeholder: 'e.g. 5:30 pm', kind: 'text' },
+  ],
+  jerry: [
+    { key: 'who', label: 'With whom?', placeholder: 'e.g. crew lead about Friday delays', kind: 'text' },
+    { key: 'why_difficult', label: 'Why was it difficult?', placeholder: 'What made the conversation hard?', kind: 'textarea' },
+  ],
+};
+
+// UAT C1: weekly-mandatory-growth follow-up copy block on Scorecard.jsx.
+export const GROWTH_FOLLOWUP_COPY = {
+  eyebrow: 'MANDATORY GROWTH — WEEKLY FOLLOW-UP',
+  heading: "This week's follow-through",
+  subtext: 'Quick log so we can talk about what actually happened on Friday.',
+  selfChosenEyebrow: 'YOUR SELF-CHOSEN GROWTH',
+  selfChosenSubtext: 'Reminder for the week — not tracked here.',
+  emptyMandatory: 'No mandatory growth priority yet. Trace will lock one in.',
+};
+
 // --- Phase 11: Season Overview & Progress ---
 
 export const PROGRESS_COPY = {
