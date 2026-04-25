@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role Identity & Weekly KPI Rotation
-status: Phase 18 feature-complete (Plans 18-01, 18-02, 18-03 all shipped — ready for verification)
-stopped_at: Phase 18 Plan 03 SUMMARY committed
-last_updated: "2026-04-25T13:00:00.000Z"
+status: v2.0 milestone phases complete — Phase 17 + Phase 18 passed UAT 2026-04-25; processing UAT findings as separate fixes
+stopped_at: Phase 17 + Phase 18 verification passed; UAT-driven fixes pending
+last_updated: "2026-04-25T18:00:00.000Z"
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 5
   total_plans: 15
-  completed_plans: 13
-  percent: 87
+  completed_plans: 15
+  percent: 100
 ---
 
 # Project State
@@ -20,12 +20,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-16 — v2.0 milestone started)
 
 **Core value:** Partners have clear, locked-in accountability commitments they check in on weekly, with an admin who can track progress and facilitate structured conversations.
-**Current focus:** Phase 16 — weekly-kpi-selection-scorecard-counters
+**Current focus:** Post-UAT fixes against shipped Phase 17 + Phase 18
 
 ## Current Position
 
-Phase: 18 (shared-business-priorities-display) — FEATURE-COMPLETE (all 3 plans shipped 2026-04-25)
-Plan: 3 of 3 — 18-01 (foundation), 18-02 (component + CSS), 18-03 (integration) all complete; verification phase next
+Phase: 17 (friday-checkpoint-saturday-close-cycle) — PASSED (8/8 must-haves; UAT 2026-04-25)
+Phase: 18 (shared-business-priorities-display) — PASSED (8/8 must-haves; UAT 2026-04-25)
+Status: v2.0 milestone feature-complete; processing UAT-driven fixes as separate scope
 
 ## Shipped Milestones
 

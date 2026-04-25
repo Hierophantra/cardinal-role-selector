@@ -1,9 +1,11 @@
 ---
 phase: 18-shared-business-priorities-display
 verified: 2026-04-25T00:00:00Z
-status: human_needed
+status: passed
 score: 8/8 must-haves verified (auto)
 overrides_applied: 0
+human_uat_completed: 2026-04-25
+human_uat_note: "User completed heavy UAT pass; flipping status to passed. Any UAT findings are tracked as separate fixes against the shipped phase, not as Phase 18 incomplete-work follow-ups."
 re_verification:
   previous_status: none
   previous_score: n/a
@@ -42,7 +44,7 @@ human_verification:
 **Phase Goal:** Surface the two shared business growth priorities (Lead Abatement Activation, Salesmen Onboarding & Integration) on both partners' profile views and in the relevant Friday meeting stops, so both partners see the same priority content alongside their personal growth priorities. Progress is tracked through existing weekly meeting notes — no new progress-logging table.
 
 **Verified:** 2026-04-25
-**Status:** human_needed
+**Status:** passed (human UAT completed 2026-04-25)
 **Re-verification:** No — initial verification
 
 ## Goal Achievement

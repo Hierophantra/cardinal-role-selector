@@ -1,10 +1,12 @@
 ---
 phase: 17-friday-checkpoint-saturday-close-cycle
 verified: 2026-04-25T00:00:00Z
-status: human_needed
+status: passed
 score: 8/8 must-haves verified
 overrides_applied: 0
 re_verification: false
+human_uat_completed: 2026-04-25
+human_uat_note: "User completed heavy UAT pass; flipping status to passed. Any UAT findings are tracked as separate fixes against the shipped phase, not as Phase 17 incomplete-work follow-ups."
 human_verification:
   - test: "Friday meeting gate-skip path"
     expected: "Open a Friday meeting → land on kpi_review_optional after clear_the_air; click 'No — skip to growth' → click Next → meeting jumps directly to growth_personal (skips intro + kpi_1..kpi_7); click Prev → returns to gate stop with 'skip' button active and skip-summary line visible"
@@ -39,7 +41,7 @@ human_verification:
 
 **Phase Goal:** Decouple the Friday accountability conversation from the final weekly tally so partners can mark KPIs as Pending-Saturday with a follow-through commitment, week auto-closes Saturday 23:59 local, Monday meetings recap last-Friday's Saturday commitments, and either meeting type can opt in or out of reviewing KPIs.
 **Verified:** 2026-04-25
-**Status:** human_needed (all programmatic checks PASS; 9 visual/interactive items routed to human)
+**Status:** passed (all programmatic checks PASS; human UAT completed 2026-04-25)
 **Re-verification:** No — initial verification.
 
 ## Goal Achievement
