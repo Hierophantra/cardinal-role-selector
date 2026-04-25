@@ -480,6 +480,49 @@ export async function upsertMeetingNote({ meeting_id, agenda_stop_key, body }) {
   return data;
 }
 
+/**
+ * Upsert per-partner meeting notes for a single stop. Used by UAT Batch
+ * C2/C3/C4 partner-scoped Monday Prep stops (priorities_focus,
+ * risks_blockers, commitments). Writes notes_theo + notes_jerry; the shared
+ * body column is set to '' (NOT NULL constraint) and reserved for stops that
+ * use the shared single-textarea path.
+ *
+ * The renderer chooses which function to call based on stop key — there is
+ * no auto-detection in the lib layer. upsertMeetingNote stays unchanged for
+ * shared-textarea stops.
+ *
+ * Migration 013 adds the two nullable columns. Pre-existing rows read the
+ * new columns as NULL, which downstream consumers treat as empty string.
+ *
+ * @param {object} args
+ * @param {string} args.meeting_id meetings.id UUID
+ * @param {string} args.agenda_stop_key stop key (must be in CHECK constraint)
+ * @param {{theo?: string, jerry?: string}} args.notes per-partner note bodies
+ * @returns {Promise<object>} the upserted row
+ */
+export async function upsertMeetingNotePerPartner({ meeting_id, agenda_stop_key, notes }) {
+  const { theo, jerry } = notes ?? {};
+  const { data, error } = await supabase
+    .from('meeting_notes')
+    .upsert(
+      {
+        meeting_id,
+        agenda_stop_key,
+        // body is NOT NULL — keep it empty for per-partner rows so the row is
+        // legal but the renderer reads from notes_theo / notes_jerry instead.
+        body: '',
+        notes_theo: theo ?? null,
+        notes_jerry: jerry ?? null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'meeting_id,agenda_stop_key' }
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 // --- Weekly KPI Selections + Counters (Phase 14, v2.0) ---
 // Binds to migration 009 (supabase/migrations/009_schema_v20.sql):
 //   - weekly_kpi_selections table with composite PK (partner, week_start_date)
