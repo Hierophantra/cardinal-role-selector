@@ -334,7 +334,7 @@ export const HUB_COPY = {
         ctaNotSubmitted: 'Start Questionnaire',
       },
       comparison: {
-        title: 'Side-by-Side Comparison',
+        title: 'Role Questionnaire Submissions',
         description: 'See how your answers line up with your partner\u2019s across every dimension',
       },
     },
@@ -366,7 +366,7 @@ export const HUB_COPY = {
         description: 'Review Theo and Jerry\u2019s state, open their profiles, and reset data if needed',
       },
       comparison: {
-        title: 'Side-by-Side Comparison',
+        title: 'Role Questionnaire Submissions',
         description: 'Compare both partners\' answers across all questionnaire dimensions',
       },
       kpiManagement: {

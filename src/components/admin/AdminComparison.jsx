@@ -122,7 +122,7 @@ export default function AdminComparison() {
 
           <div className="screen-header">
             <div className="eyebrow">Comparison View</div>
-            <h2>Theo vs Jerry — Side by Side</h2>
+            <h2>Role Questionnaire Submissions</h2>
           </div>
 
           {/* Side-by-side comparison table */}
