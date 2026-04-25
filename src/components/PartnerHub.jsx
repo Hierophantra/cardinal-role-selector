@@ -212,18 +212,27 @@ export default function PartnerHub() {
 
   // Scorecard state derivation — kpiReady-based per D-06
   const committedThisWeek = Boolean(thisWeekCard?.committed_at);
-  // kpi_results is keyed by kpi_templates.id (v2.0 Scorecard write shape) — read by k.template_id
+  // UAT A1/A2 (2026-04-25): the scorecard composes 6 mandatory + 1 weekly choice = 7 rows
+  // (Scorecard.jsx Pattern 5 composition). Count over the full set, not just mandatory,
+  // so the hub-card "X of Y checked in" denominator matches Scorecard's "Y / 7" counter.
+  // The weekly choice template_id lives in weeklySelection (weekly_kpi_selections row).
+  const scorecardTemplateIds = [
+    ...kpiSelections.map((k) => k.template_id),
+    ...(weeklySelection?.kpi_template_id ? [weeklySelection.kpi_template_id] : []),
+  ];
+  // kpi_results is keyed by kpi_templates.id (v2.0 Scorecard write shape).
   // Phase 17 D-02: 'pending' is a fully-answered terminal state (partner picked it
   // and supplied pending_text) — count it as answered alongside 'yes' and 'no'.
   const scorecardAnsweredCount = thisWeekCard
-    ? kpiSelections.reduce((n, k) => {
-        const r = thisWeekCard.kpi_results?.[k.template_id]?.result;
+    ? scorecardTemplateIds.reduce((n, tplId) => {
+        const r = thisWeekCard.kpi_results?.[tplId]?.result;
         return r === 'yes' || r === 'no' || r === 'pending' ? n + 1 : n;
       }, 0)
     : 0;
-  const scorecardAllComplete = thisWeekCard && kpiSelections.length > 0
-    ? kpiSelections.every((k) => {
-        const r = thisWeekCard.kpi_results?.[k.template_id];
+  const scorecardTotalCount = scorecardTemplateIds.length;
+  const scorecardAllComplete = thisWeekCard && scorecardTotalCount > 0
+    ? scorecardTemplateIds.every((tplId) => {
+        const r = thisWeekCard.kpi_results?.[tplId];
         if (!r || (r.result !== 'yes' && r.result !== 'no' && r.result !== 'pending')) return false;
         if (r.result === 'no') return r.reflection?.trim().length > 0;
         if (r.result === 'pending') return r.pending_text?.trim().length > 0;
@@ -373,7 +382,7 @@ export default function PartnerHub() {
                       {scorecardState === 'complete'
                         ? SCORECARD_COPY.hubCard.ctaComplete
                         : scorecardState === 'inProgress'
-                          ? SCORECARD_COPY.hubCard.ctaInProgress(scorecardAnsweredCount, kpiSelections.length)
+                          ? SCORECARD_COPY.hubCard.ctaInProgress(scorecardAnsweredCount, scorecardTotalCount)
                           : SCORECARD_COPY.hubCard.ctaNotCommitted}
                     </span>
                   </Link>
