@@ -82,9 +82,16 @@ export default function Scorecard() {
 
   // ---- Mount guards + data fetch (Pattern 5 — composite fetch) ----
   useEffect(() => {
+    // WR-07: Register cleanup BEFORE the early-return so any future side effect
+    // added to the redirect path still cleans up its timers.
+    const cleanup = () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      if (savedFadeRef.current) clearTimeout(savedFadeRef.current);
+    };
+
     if (!VALID_PARTNERS.includes(partner)) {
       navigate('/', { replace: true });
-      return;
+      return cleanup;
     }
 
     Promise.all([
@@ -166,10 +173,7 @@ export default function Scorecard() {
       })
       .finally(() => setLoading(false));
 
-    return () => {
-      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-      if (savedFadeRef.current) clearTimeout(savedFadeRef.current);
-    };
+    return cleanup;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partner]);
 
@@ -297,6 +301,20 @@ export default function Scorecard() {
 
   async function handleSubmit() {
     if (submitting) return;
+    // WR-02: Force-blur the active element so any pending textarea onBlur
+    // (which calls persistField → persistDraft) commits before we read
+    // weeklyWin / weeklyLearning / tasks_* from React closure for the
+    // submit payload. On mobile, tapping the Submit button does NOT fire
+    // a blur on the previously-focused field, so without this we would
+    // submit stale free-text values.
+    if (typeof document !== 'undefined' && document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+    // WR-04: Clear stale draft-save errors at the start of submit so an
+    // earlier persistDraft failure that the user has since recovered from
+    // doesn't reappear when admin reopens the week.
+    setSubmitError(null);
+    setSaveError(null);
     // Defensive: rows must exist before submit. Array.some() on [] returns
     // false, so without this guard an empty-rows state would pass the
     // incomplete check and write a submitted row with kpi_results={}.
@@ -313,7 +331,6 @@ export default function Scorecard() {
       return;
     }
     setSubmitting(true);
-    setSubmitError(null);
     try {
       const nowIso = new Date().toISOString();
       await upsertScorecard({
@@ -361,8 +378,16 @@ export default function Scorecard() {
               const expanded = expandedHistoryWeek === row.week_of;
               const rowResults = row.kpi_results || {};
               const allResultIds = Object.keys(rowResults);
-              const totalKpis = allResultIds.length;
-              const hitCount = allResultIds.reduce(
+              // WR-08: Hit rate denominator only counts answered KPIs (yes|no).
+              // Admin overrides can leave a row with result=null; counting those
+              // would render misleading fractions like "3/7" when one of the 7
+              // was never rated.
+              const answeredIds = allResultIds.filter((id) => {
+                const r = rowResults[id]?.result;
+                return r === 'yes' || r === 'no';
+              });
+              const totalKpis = answeredIds.length;
+              const hitCount = answeredIds.reduce(
                 (n, id) => (rowResults[id]?.result === 'yes' ? n + 1 : n),
                 0
               );
@@ -691,7 +716,7 @@ export default function Scorecard() {
                         <button
                           key={n}
                           type="button"
-                          className={`scorecard-yn-btn${weekRating === n ? ' active' : ''}`}
+                          className={`scorecard-rating-btn${weekRating === n ? ' active' : ''}`}
                           onClick={() => setWeekRating(n)}
                           disabled={weekClosed}
                         >

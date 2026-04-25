@@ -217,6 +217,9 @@ export default function WeeklyKpiSelectionFlow() {
                   <button
                     type="button"
                     className="btn-ghost"
+                    // IN-05: intentionally preserves inlineError so the user
+                    // sees why they were sent back to the selection view (e.g.
+                    // back-to-back guard fired during confirm).
                     onClick={() => setView('selection')}
                     disabled={saving}
                   >

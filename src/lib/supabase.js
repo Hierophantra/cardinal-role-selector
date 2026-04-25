@@ -177,6 +177,9 @@ export async function fetchScorecards(partner) {
 // Parameterized by partner. Guards against arbitrary values — only theo/jerry/test allowed.
 // The test-specific wrappers below are kept as thin aliases for backward compatibility.
 
+// IN-02: 'test' is allowed here for AdminTest.jsx; AdminPartners only manages
+// theo+jerry per its MANAGED constant. The test partner exercises the same
+// code paths without being shown in the partner-management list.
 const RESETTABLE_PARTNERS = ['theo', 'jerry', 'test'];
 
 function assertResettable(partner) {
@@ -216,13 +219,11 @@ export async function resetPartnerKpis(partner) {
 
 export async function resetPartnerScorecards(partner) {
   assertResettable(partner);
-  // Phase 16: weekly_kpi_selections is the per-week choice row feeding Scorecard.
-  // A true reset must clear it too, otherwise the partner's "this week's pick"
-  // survives and re-seeds the next Scorecard visit with stale state.
-  const { error: e1 } = await supabase.from('scorecards').delete().eq('partner', partner);
-  if (e1) throw e1;
-  const { error: e2 } = await supabase.from('weekly_kpi_selections').delete().eq('partner', partner);
-  if (e2) throw e2;
+  // CR-01: this function only resets `scorecards`. The 'all' caller in
+  // AdminPartners.performReset is responsible for also calling
+  // resetPartnerWeeklyKpiSelections so each helper does what its name says.
+  const { error } = await supabase.from('scorecards').delete().eq('partner', partner);
+  if (error) throw error;
 }
 
 // Test-specific aliases (used by existing AdminTest.jsx)
@@ -230,28 +231,10 @@ export const resetTestSubmission = () => resetPartnerSubmission('test');
 export const resetTestKpis = () => resetPartnerKpis('test');
 export const resetTestScorecards = () => resetPartnerScorecards('test');
 
-export async function commitScorecardWeek(partner, weekOf, kpiSelectionIds, kpiLabels = {}) {
-  const emptyResults = Object.fromEntries(
-    kpiSelectionIds.map((id) => [id, { result: null, reflection: '', label: kpiLabels[id] || '' }])
-  );
-  const now = new Date().toISOString();
-  const { data, error } = await supabase
-    .from('scorecards')
-    .upsert(
-      {
-        partner,
-        week_of: weekOf,
-        kpi_results: emptyResults,
-        committed_at: now,
-        submitted_at: now,
-      },
-      { onConflict: 'partner,week_of' }
-    )
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
+// IN-03: removed unused commitScorecardWeek helper. Phase 16 wires commit
+// semantics directly through upsertScorecard from inside Scorecard.jsx —
+// committed_at is set on the first persistDraft and submitted_at on
+// handleSubmit. No callers ever imported commitScorecardWeek.
 
 // --- Admin: KPI Template CRUD (ADMIN-04) — Phase 4 ---
 
@@ -595,44 +578,75 @@ export async function upsertWeeklyKpiSelection(partner, weekStartDate, templateI
 
 /**
  * Increment counter_value->templateId by 1 for the (partner, weekStartDate) row.
- * Auto-creates the row with kpi_template_id=NULL, label_snapshot=NULL if absent
- * (D-19, D-21 auto-create path) — the trigger ignores NULL kpi_template_id rows
- * so back-to-back cannot fire on counter-only rows (D-23).
  *
- * Read-modify-write pattern: acceptable for this 3-user app with debounced UI
- * (Phase 16 COUNT-03 debouncing keeps the race window narrow).
+ * CR-02 fix: Two-step write to avoid clobbering a concurrent KPI pick.
+ * Earlier implementation upserted with kpi_template_id=NULL when no row existed,
+ * which races with upsertWeeklyKpiSelection: if the partner picked their KPI
+ * at the same moment as a counter tap, the counter upsert could land second
+ * and silently null out kpi_template_id/label_snapshot.
+ *
+ * Now we:
+ *  1. Insert a counter-only seed row with `ignoreDuplicates: true` — this
+ *     creates the row only if it does not yet exist; if a pick already
+ *     created the row, this is a no-op and leaves kpi_template_id intact.
+ *  2. Read-modify-write the counter_value with an UPDATE that touches ONLY
+ *     counter_value — never kpi_template_id or label_snapshot.
+ *
+ * Note: WR-09. Counter-only seed rows have kpi_template_id=NULL. Any code
+ * that uses count(weekly_kpi_selections) as a "did the partner pick?" proxy
+ * will be wrong — always check Boolean(row.kpi_template_id) instead.
+ * The trigger ignores NULL kpi_template_id rows so back-to-back cannot fire
+ * on counter-only rows (D-23).
  *
  * @param {'theo'|'jerry'|'test'} partner
  * @param {string} weekStartDate 'YYYY-MM-DD' Monday local string
  * @param {string} templateId kpi_templates.id UUID being counted
- * @returns {Promise<object>} the upserted row (with updated counter_value)
+ * @returns {Promise<object>} the updated row (with updated counter_value)
  */
 export async function incrementKpiCounter(partner, weekStartDate, templateId) {
+  // Step 1: Read current state to compute nextCounters.
   const existing = await fetchWeeklyKpiSelection(partner, weekStartDate);
   const currentCounters = existing?.counter_value ?? {};
   const currentVal = Number(currentCounters[templateId] ?? 0);
   const nextCounters = { ...currentCounters, [templateId]: currentVal + 1 };
 
-  const payload = {
-    partner,
-    week_start_date: weekStartDate,
-    counter_value: nextCounters,
-  };
+  // Step 2: If no row exists, seed an empty counter-only row.
+  // ignoreDuplicates so a concurrent pick that landed first wins without error.
   if (!existing) {
-    // New row — leave kpi_template_id and label_snapshot NULL (D-19, D-21 auto-create path).
-    // Trigger ignores NULL kpi_template_id so back-to-back cannot fire here.
-    payload.kpi_template_id = null;
-    payload.label_snapshot = null;
+    const { error: seedError } = await supabase
+      .from('weekly_kpi_selections')
+      .upsert(
+        {
+          partner,
+          week_start_date: weekStartDate,
+          kpi_template_id: null,
+          label_snapshot: null,
+          counter_value: {},
+        },
+        { onConflict: 'partner,week_start_date', ignoreDuplicates: true }
+      );
+    if (seedError) {
+      if (isBackToBackViolation(seedError)) {
+        throw new BackToBackKpiError(seedError.message, partner, templateId);
+      }
+      throw seedError;
+    }
   }
 
+  // Step 3: UPDATE only counter_value — never touches kpi_template_id or label_snapshot.
+  // This is the safe path: a concurrent pick that completes between Step 1 and Step 3
+  // is preserved because we never include those columns in the UPDATE.
   const { data, error } = await supabase
     .from('weekly_kpi_selections')
-    .upsert(payload, { onConflict: 'partner,week_start_date' })
+    .update({ counter_value: nextCounters })
+    .eq('partner', partner)
+    .eq('week_start_date', weekStartDate)
     .select()
     .single();
   if (error) {
-    // Defensive: surface typed error even though trigger ignores NULL template rows.
-    if (isBackToBackViolation(error)) throw new BackToBackKpiError(error.message, partner, templateId);
+    if (isBackToBackViolation(error)) {
+      throw new BackToBackKpiError(error.message, partner, templateId);
+    }
     throw error;
   }
   return data;

@@ -6,7 +6,7 @@ import {
   fetchGrowthPriorities,
   fetchScorecards,
   resetPartnerSubmission,
-  resetPartnerKpis,
+  resetPartnerKpiSelections,
   resetPartnerWeeklyKpiSelections,
   resetPartnerGrowthPriorities,
   resetPartnerScorecards,
@@ -143,19 +143,23 @@ function PartnerSection({ partner }) {
     setResetting(true);
     setStatusMsg('');
     try {
-      if (kind === 'submission' || kind === 'all') {
+      // CR-01: Each branch lists exactly the surfaces it resets so 'all'
+      // doesn't depend on a side effect inside any helper. resetPartnerScorecards
+      // now only touches `scorecards` — 'all' must explicitly call
+      // resetPartnerWeeklyKpiSelections to wipe the per-week pick row.
+      if (kind === 'submission') {
         await resetPartnerSubmission(partner);
-      }
-      if (kind === 'weeklyKpi') {
+      } else if (kind === 'weeklyKpi') {
         await resetPartnerWeeklyKpiSelections(partner);
-      }
-      if (kind === 'growthPriorities') {
+      } else if (kind === 'growthPriorities') {
         await resetPartnerGrowthPriorities(partner);
-      }
-      if (kind === 'all') {
-        await resetPartnerKpis(partner);
-      }
-      if (kind === 'scorecards' || kind === 'all') {
+      } else if (kind === 'scorecards') {
+        await resetPartnerScorecards(partner);
+      } else if (kind === 'all') {
+        await resetPartnerSubmission(partner);
+        await resetPartnerKpiSelections(partner);
+        await resetPartnerGrowthPriorities(partner);
+        await resetPartnerWeeklyKpiSelections(partner);
         await resetPartnerScorecards(partner);
       }
       setStatusMsg(`Reset complete: ${kind}`);

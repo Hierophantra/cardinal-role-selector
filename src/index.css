@@ -991,11 +991,10 @@ textarea { resize: vertical; min-height: 120px; }
   cursor: pointer;
 }
 
-.scorecard-yn-btn.active {
-  background: var(--surface-3, rgba(255,255,255,0.08));
-  border-color: var(--accent, var(--text));
-  color: var(--text);
-}
+/* Note: rating buttons use .scorecard-rating-btn (gold treatment), not
+   .scorecard-yn-btn.active. The Yes/No buttons always combine .active with
+   .yes or .no, so a bare .scorecard-yn-btn.active rule is intentionally
+   absent — no production class combination triggers it. */
 
 .scorecard-yn-btn.yes.active {
   background: rgba(45,143,94,0.18);

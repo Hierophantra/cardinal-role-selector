@@ -48,7 +48,11 @@ export default function PartnerHub() {
   const [narrativeExpanded, setNarrativeExpanded] = useState(false); // D-02 collapsed by default
 
   // ---- Derived before early return ----
-  const currentMonday = getMondayOf();
+  // WR-03: Anchor currentMonday in a ref so a midnight Sunday→Monday rollover
+  // mid-session doesn't change the captured fetch effect's week. Matches the
+  // pattern in Scorecard.jsx and WeeklyKpiSelectionFlow.jsx.
+  const currentMondayRef = useRef(getMondayOf());
+  const currentMonday = currentMondayRef.current;
   const role = ROLE_IDENTITY[partner];  // undefined for 'test' partner — defensive
 
   useEffect(() => {
@@ -79,7 +83,8 @@ export default function PartnerHub() {
         setError(true);
       })
       .finally(() => setLoading(false));
-  }, [partner, currentMonday, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partner, navigate]);
 
   // kpiReady gating per D-06 — partner has selections, ready to use KPI features
   const kpiReady = kpiSelections.length > 0;
@@ -147,16 +152,31 @@ export default function PartnerHub() {
     }, 500);
   }
 
-  // Cleanup all pending timers on unmount
+  // WR-01: On unmount, flush any pending counter increments rather than just
+  // clearing the debounce timers. Otherwise rapid taps + immediate navigation
+  // shows the optimistic +N in UI but only landed +N-K writes in DB; the
+  // user's count silently reverts on next page load.
   useEffect(() => () => {
-    Object.values(timersRef.current).forEach(clearTimeout);
-  }, []);
+    const partnerSnapshot = partner;
+    const mondaySnapshot = currentMondayRef.current;
+    Object.entries(timersRef.current).forEach(([templateId, t]) => {
+      clearTimeout(t);
+      const delta = pendingDeltaRef.current[templateId] ?? 0;
+      if (delta > 0) {
+        pendingDeltaRef.current[templateId] = 0;
+        counterQueueRef.current = counterQueueRef.current
+          .then(async () => {
+            for (let i = 0; i < delta; i++) {
+              await incrementKpiCounter(partnerSnapshot, mondaySnapshot, templateId);
+            }
+          })
+          .catch((err) => console.error(err));
+      }
+    });
+  }, [partner]);
 
-  // Locked-flag derivation (Pitfall 6 — no schema change; derived from submitted_at presence)
-  const weeklyChoiceLocked = useMemo(
-    () => Boolean(thisWeekCard?.submitted_at),
-    [thisWeekCard]
-  );
+  // IN-06: weeklyChoiceLocked derivation removed — the only consumer was a
+  // ThisWeekKpisSection prop that was eslint-disabled and never read.
 
   // Save handler for self-chosen growth (D-15, D-16). Called from PersonalGrowthSection.
   // No "pending" state — approval_state='approved' means locked on save.
@@ -272,7 +292,6 @@ export default function PartnerHub() {
                   previousSelection={previousSelection}
                   counters={counters}
                   onIncrementCounter={handleIncrementCounter}
-                  weeklyChoiceLocked={weeklyChoiceLocked}
                 />
               )}
 

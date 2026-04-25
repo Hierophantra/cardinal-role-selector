@@ -242,7 +242,16 @@ export default function AdminScorecards() {
                                   </button>
                                 ) : (
                                   <span className="muted" style={{ fontSize: 13 }}>
-                                    {reopened ? 'Reopened' : 'Editable'}
+                                    {/* WR-06: Make label intent explicit. The
+                                        outer guard above filters closed && !reopened
+                                        into the Reopen button branch, so this span
+                                        renders for "currently active" or
+                                        "previously closed but admin reopened". */}
+                                    {!closed
+                                      ? 'Editable'
+                                      : reopened
+                                        ? 'Reopened'
+                                        : 'Closed' /* unreachable today; documents the third state */}
                                   </span>
                                 )}
                               </div>
