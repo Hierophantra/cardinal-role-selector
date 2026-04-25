@@ -549,6 +549,8 @@ export const SCORECARD_COPY = {
     "Add a 'what + by when' commitment to each Pending row before submitting.",
   pendingUpdateNote: 'Update Pending row — locks at Saturday 23:59',
   pendingUpdateCta: 'Update Pending Rows',
+  // UAT B2 — committed_at time line shown beside the submittedNotice in Scorecard.jsx
+  committedAtPrefix: 'Committed ',
   hubCard: {
     title: 'Weekly Scorecard',
     description: 'Check in on your 7 KPIs each week and track your progress over time.',

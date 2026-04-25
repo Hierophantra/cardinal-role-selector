@@ -602,7 +602,24 @@ export default function Scorecard() {
 
             {isSubmitted && (
               <div className="scorecard-commit-gate" style={{ marginBottom: 20 }}>
-                <p className="muted" style={{ margin: 0 }}>{SCORECARD_COPY.submittedNotice}</p>
+                <p className="muted" style={{ margin: 0 }}>
+                  {SCORECARD_COPY.submittedNotice}
+                  {committedAt && (
+                    <>
+                      {' '}
+                      <span style={{ opacity: 0.85 }}>
+                        {SCORECARD_COPY.committedAtPrefix}
+                        {new Date(committedAt).toLocaleString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </>
+                  )}
+                </p>
               </div>
             )}
 

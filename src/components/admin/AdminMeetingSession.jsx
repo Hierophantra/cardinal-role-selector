@@ -1108,7 +1108,13 @@ function IntroStop({ meeting, data, notes, savedFlash, onNoteChange, copy, isEnd
                 {data[p].scorecard
                   ? `Scorecard committed ${new Date(
                       data[p].scorecard.committed_at ?? data[p].scorecard.submitted_at
-                    ).toLocaleDateString()}`
+                    ).toLocaleString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}`
                   : 'No scorecard for this week yet.'}
               </div>
             </div>
