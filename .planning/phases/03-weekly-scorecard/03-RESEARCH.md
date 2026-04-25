@@ -318,12 +318,55 @@ Every user-facing string lives in `src/data/content.js`. Phase 3 appends one new
 
 ## Week Identity Model
 
+> **PHASE 17 SUPERSESSION (2026-04-25):** This section's original Sunday-end semantics
+> were superseded by Phase 17 D-03 / D-04. The current production behavior is:
+>
+> - **Week boundary:** Monday → Saturday 23:59 local (NOT Sunday 23:59).
+> - **Sunday belongs to the NEXT week's cycle.** `getMondayOf(date)` for a Sunday returns
+>   today + 1 (next Monday), not today − 6.
+> - **`getSundayEndOf` was renamed to `getSaturdayEndOf`** and now returns `d + 5` at
+>   23:59:59.999 local.
+> - **`formatWeekRange` returns Mon–Sat** (6 days, e.g. 'Apr 6 – Apr 11'), not Mon–Sun.
+> - **`isWeekClosed`** now compares against `getSaturdayEndOf` and accepts an optional
+>   `now` parameter for test ergonomics.
+> - **New helper `effectiveResult(rawResult, weekOf, now?)`** lives alongside these and
+>   coerces `'pending'` → `'no'` once the week is closed (display-only; no DB write).
+>
+> See `.planning/phases/17-friday-checkpoint-saturday-close-cycle/17-CONTEXT.md` D-03 / D-04
+> and `src/lib/week.js` for the canonical implementation. The mapping table immediately below
+> reflects Phase 17 semantics; the original Phase 3 mapping is preserved further down for
+> historical context.
+>
+> **Phase 17 mapping:**
+>
+> | Day-of-week | day | getMondayOf maps to |
+> |-------------|-----|---------------------|
+> | Mon | 1 | Mon (this week) |
+> | Tue | 2 | Mon (this week) |
+> | Wed | 3 | Mon (this week) |
+> | Thu | 4 | Mon (this week) |
+> | Fri | 5 | Mon (this week) |
+> | Sat | 6 | Mon (this week) |
+> | Sun | 0 | Mon (NEXT week)   ← Phase 17 change |
+
 This is the single most load-bearing decision for SCORE-04 — the planner must wire it consistently across 4 surfaces (hub status, scorecard mount, auto-save payload, history filter).
 
-### Week Boundary
+### Week Boundary (Phase 3 — pre-Phase-17, retained for context)
 
 - **Monday 00:00 local → Sunday 23:59:59.999 local.** Matches D-08 and the existing `001_schema_phase1.sql` line 3 comment.
 - **Timezone:** Single app-local (browser's `Intl` timezone). Cardinal is co-located per `.planning/phases/03-weekly-scorecard/03-CONTEXT.md` deferred note — **do not build timezone-aware logic**.
+
+> **Phase 3 (pre-Phase-17) mapping (superseded — see Phase 17 mapping above):**
+>
+> | Day-of-week | day | getMondayOf maps to |
+> |-------------|-----|---------------------|
+> | Mon | 1 | Mon (this week) |
+> | Tue | 2 | Mon (this week) |
+> | Wed | 3 | Mon (this week) |
+> | Thu | 4 | Mon (this week) |
+> | Fri | 5 | Mon (this week) |
+> | Sat | 6 | Mon (this week) |
+> | Sun | 0 | Mon (this week)   ← changed in Phase 17 |
 
 ### Storage Type — CRITICAL
 
