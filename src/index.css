@@ -2313,3 +2313,117 @@ textarea { resize: vertical; min-height: 120px; }
 .saturday-recap-conversion.not-converted {
   color: var(--miss);
 }
+
+/* =============================================================================
+   Phase 18 — Shared Business Priorities Display (BIZ-02, BIZ-03)
+   New section + card + collapsible toggle + meeting-mode divider.
+   Reuses existing classes (do NOT redefine here):
+     .eyebrow, .hub-section, .day-in-life-list (+ li / li::before),
+     .meeting-stop-eyebrow, .meeting-stop-heading, .meeting-stop-subtext,
+     .meeting-growth-cell, .meeting-partner-name, .meeting-notes-area
+   Color variables (existing): --surface, --border, --muted, --text
+   ========================================================================== */
+
+.business-priorities-section h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.business-priorities-subtext {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0 0 16px 0;
+}
+
+.business-priorities-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.business-priority-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.business-priority-card h4 {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text);
+  margin: 0;
+}
+
+.business-priority-description {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--text);
+  margin: 0;
+}
+
+.business-priority-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  text-align: left;
+  align-self: flex-start;
+  transition: color 0.15s ease;
+}
+
+.business-priority-toggle:hover {
+  color: var(--text);
+}
+
+.business-priority-toggle-chevron {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.business-priority-deliverables {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.22s ease;
+}
+
+.business-priority-deliverables.expanded {
+  max-height: 800px;
+}
+
+.business-priorities-empty {
+  font-size: 15px;
+  color: var(--muted);
+  font-style: italic;
+  padding: 16px 0;
+}
+
+/* Friday meeting business-stop layout (BIZ-03 — used by AdminMeetingSession GrowthStop kind='business') */
+.meeting-shared-priority-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+/* Reserved modifier for future meeting-mode tweaks; intentionally empty in Phase 18 */
+.business-priority-card--meeting {
+  /* placeholder — see UI-SPEC §"Friday meeting GrowthStop extension" */
+}
