@@ -3,11 +3,11 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   fetchMeeting,
   fetchMeetingNotes,
-  fetchScorecards,
-  fetchKpiSelections,
+  fetchScorecard,
   fetchGrowthPriorities,
 } from '../lib/supabase.js';
 import { formatWeekRange, effectiveResult } from '../lib/week.js';
+import { composePartnerKpis } from '../lib/partnerKpis.js';
 import {
   VALID_PARTNERS,
   PARTNER_DISPLAY,
@@ -18,6 +18,8 @@ import {
   KPI_STOP_COUNT,
 } from '../data/content.js';
 
+const PARTNERS = ['theo', 'jerry'];
+
 export default function MeetingSummary() {
   const { partner, id } = useParams();
   const navigate = useNavigate();
@@ -27,9 +29,13 @@ export default function MeetingSummary() {
   const [empty, setEmpty] = useState(false);
   const [meeting, setMeeting] = useState(null);
   const [notesByStop, setNotesByStop] = useState({});
-  const [scorecard, setScorecard] = useState(null);
-  const [kpiSelections, setKpiSelections] = useState([]);
-  const [growth, setGrowth] = useState([]);
+  // UAT B3+B4: render both partners side-by-side per KPI/growth stop. data shape:
+  //   { theo: { kpis, scorecard, growth }, jerry: { ... } }
+  // Mirrors AdminMeetingSession's data shape so KPI + growth blocks render symmetrically.
+  const [data, setData] = useState({
+    theo: { kpis: [], scorecard: null, growth: [] },
+    jerry: { kpis: [], scorecard: null, growth: [] },
+  });
 
   useEffect(() => {
     if (!VALID_PARTNERS.includes(partner)) {
@@ -52,11 +58,25 @@ export default function MeetingSummary() {
 
         setMeeting(ended);
 
-        const [noteRows, scorecards, kpis, growthRows] = await Promise.all([
+        // Fetch both partners' KPI compositions, scorecards, and growth priorities
+        // for the week-of of the ended meeting. Composition mirrors AdminMeetingSession
+        // (template_id-keyed) so kpi_results lookups line up across surfaces.
+        const [
+          noteRows,
+          theoKpis,
+          jerryKpis,
+          theoScorecard,
+          jerryScorecard,
+          theoGrowth,
+          jerryGrowth,
+        ] = await Promise.all([
           fetchMeetingNotes(ended.id),
-          fetchScorecards(partner),
-          fetchKpiSelections(partner),
-          fetchGrowthPriorities(partner),
+          composePartnerKpis('theo', ended.week_of),
+          composePartnerKpis('jerry', ended.week_of),
+          fetchScorecard('theo', ended.week_of),
+          fetchScorecard('jerry', ended.week_of),
+          fetchGrowthPriorities('theo'),
+          fetchGrowthPriorities('jerry'),
         ]);
 
         if (!alive) return;
@@ -66,12 +86,19 @@ export default function MeetingSummary() {
           notesMap[row.agenda_stop_key] = row.body ?? '';
         }
 
-        const thisWeekCard = scorecards?.find((s) => s.week_of === ended.week_of) ?? null;
-
         setNotesByStop(notesMap);
-        setScorecard(thisWeekCard);
-        setKpiSelections(kpis ?? []);
-        setGrowth(growthRows ?? []);
+        setData({
+          theo: {
+            kpis: theoKpis ?? [],
+            scorecard: theoScorecard ?? null,
+            growth: theoGrowth ?? [],
+          },
+          jerry: {
+            kpis: jerryKpis ?? [],
+            scorecard: jerryScorecard ?? null,
+            growth: jerryGrowth ?? [],
+          },
+        });
         setLoading(false);
       } catch (err) {
         console.error(err);
@@ -90,7 +117,6 @@ export default function MeetingSummary() {
 
   if (loading) return null;
 
-  const partnerName = PARTNER_DISPLAY[partner] ?? partner;
   // Select stop array based on meeting type; meeting may be null when error/empty shown
   const stops = meeting?.meeting_type === 'monday_prep' ? MONDAY_STOPS : FRIDAY_STOPS;
 
@@ -134,10 +160,7 @@ export default function MeetingSummary() {
                   stopKey={stopKey}
                   stopIndex={i}
                   notesByStop={notesByStop}
-                  scorecard={scorecard}
-                  kpiSelections={kpiSelections}
-                  growth={growth}
-                  partnerName={partnerName}
+                  data={data}
                   meeting={meeting}
                 />
               ))}
@@ -153,7 +176,7 @@ export default function MeetingSummary() {
 // StopBlock — renders one agenda stop in read-only summary view
 // --------------------------------------------------------------------------
 
-function StopBlock({ stopKey, stopIndex, notesByStop, scorecard, kpiSelections, growth, partnerName, meeting }) {
+function StopBlock({ stopKey, stopIndex, notesByStop, data, meeting }) {
   const note = notesByStop[stopKey];
 
   // UAT A4 (2026-04-25): handle Phase 17 gate stop explicitly so it doesn't fall
@@ -202,41 +225,65 @@ function StopBlock({ stopKey, stopIndex, notesByStop, scorecard, kpiSelections, 
   // so the Phase 17 'kpi_review_optional' gate stop is NOT rendered as a KPI
   // (was producing "KPI NaN of Undefined" because Number('review') === NaN).
   // Same regex tightening Phase 17 Wave 1 applied to AdminMeetingSession StopRenderer.
+  // UAT B4 (2026-04-25): render BOTH partners side-by-side per KPI stop using
+  // composePartnerKpis output (template_id-keyed) so kpi_results lookups match the
+  // write contract on both columns.
   if (/^kpi_\d+$/.test(stopKey)) {
     const kpiIndex = Number(stopKey.split('_')[1]) - 1;
-    // Lookup by template_id (kpi_results JSONB is keyed by kpi_template_id per the
-    // v2.0 Scorecard write contract — see Scorecard.jsx buildKpiResultsPayload).
-    const kpi = kpiSelections[kpiIndex];
-    const entry = scorecard?.kpi_results?.[kpi?.template_id];
-    const label = entry?.label ?? kpi?.label_snapshot ?? '(unknown KPI)';
-    const rawResult = entry?.result ?? null;
-    // Phase 17 D-02: coerce post-Saturday-close pending to 'no' for label/cell so
-    // historical meeting summaries reflect the same season-aggregation semantics
-    // applied everywhere else. The raw 'pending' label is only retained at live
-    // (week-not-yet-closed) viewing time, which doesn't normally happen in
-    // MeetingSummary (it's a post-meeting recap view).
-    const result = effectiveResult(rawResult, scorecard?.week_of);
-    const reflection = entry?.reflection ?? '';
-    const resultLabel = result === 'yes' ? 'Hit' : result === 'no' ? 'Miss' : 'Pending';
-    const cellClass = result === 'yes' ? 'yes' : result === 'no' ? 'no' : 'null';
     const n = kpiIndex + 1;
-
     return (
       <div className="meeting-stop" style={{ marginBottom: 24 }}>
         <div className="eyebrow meeting-stop-eyebrow">{MEETING_COPY.stops.kpiEyebrow(n, KPI_STOP_COUNT)}</div>
         <h3 className="meeting-stop-heading">KPI {n}</h3>
 
         <div className="meeting-kpi-grid">
-          <div className={`meeting-kpi-cell ${cellClass}`}>
-            <div className="meeting-partner-name">{partnerName}</div>
-            <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.4 }}>{label}</div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>{resultLabel}</div>
-            {reflection && (
-              <div className="muted" style={{ fontSize: 14, fontStyle: 'italic' }}>
-                {reflection}
+          {PARTNERS.map((p) => {
+            const locked = data[p].kpis[kpiIndex];
+            const partnerName = PARTNER_DISPLAY[p] ?? p;
+            if (!locked) {
+              return (
+                <div key={p} className="meeting-kpi-cell null">
+                  <div className="meeting-partner-name">{partnerName}</div>
+                  <div className="muted" style={{ fontSize: 14 }}>Not locked</div>
+                </div>
+              );
+            }
+            const kpiId = locked.id;
+            const sc = data[p].scorecard;
+            const entry = sc?.kpi_results?.[kpiId];
+            const label = entry?.label ?? locked.label_snapshot ?? '(unknown KPI)';
+            const rawResult = entry?.result ?? null;
+            const result = effectiveResult(rawResult, sc?.week_of);
+            const reflection = entry?.reflection ?? '';
+            const pendingText = (entry?.pending_text ?? '').trim();
+            const resultLabel =
+              result === 'yes' ? 'Hit'
+              : result === 'no' ? 'Miss'
+              : result === 'pending' ? 'Pending'
+              : '—';
+            const cellClass =
+              result === 'yes' ? 'yes'
+              : result === 'no' ? 'no'
+              : result === 'pending' ? 'pending'
+              : 'null';
+            return (
+              <div key={p} className={`meeting-kpi-cell ${cellClass}`}>
+                <div className="meeting-partner-name">{partnerName}</div>
+                <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.4 }}>{label}</div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>{resultLabel}</div>
+                {rawResult === 'pending' && pendingText !== '' && (
+                  <div className="muted" style={{ fontSize: 13, fontStyle: 'italic' }}>
+                    By Saturday: {pendingText}
+                  </div>
+                )}
+                {reflection && (
+                  <div className="muted" style={{ fontSize: 14, fontStyle: 'italic' }}>
+                    {reflection}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })}
         </div>
 
         {note
@@ -246,37 +293,41 @@ function StopBlock({ stopKey, stopIndex, notesByStop, scorecard, kpiSelections, 
     );
   }
 
+  // UAT B3: per-partner growth render using both partners' growth arrays. The
+  // personal stop is naturally per-partner; the business stops in v2.0 are
+  // shared (Phase 18 BIZ-03 — same priority for both partners) so we surface
+  // both partners' notes columns even when the priority itself is identical.
   if (stopKey === 'growth_personal') {
-    const priority = growth.filter((g) => g.type === 'personal')[0];
     return (
       <GrowthStopBlock
-        stopKey={stopKey}
         eyebrow={MEETING_COPY.stops.growthPersonalEyebrow}
-        priority={priority}
+        kind="personal"
+        ordinal={1}
+        data={data}
         note={note}
       />
     );
   }
 
   if (stopKey === 'growth_business_1') {
-    const priority = growth.filter((g) => g.type === 'business')[0];
     return (
       <GrowthStopBlock
-        stopKey={stopKey}
         eyebrow={MEETING_COPY.stops.growthBusinessEyebrow(1)}
-        priority={priority}
+        kind="business"
+        ordinal={1}
+        data={data}
         note={note}
       />
     );
   }
 
   if (stopKey === 'growth_business_2') {
-    const priority = growth.filter((g) => g.type === 'business')[1];
     return (
       <GrowthStopBlock
-        stopKey={stopKey}
         eyebrow={MEETING_COPY.stops.growthBusinessEyebrow(2)}
-        priority={priority}
+        kind="business"
+        ordinal={2}
+        data={data}
         note={note}
       />
     );
@@ -352,21 +403,32 @@ function StopBlock({ stopKey, stopIndex, notesByStop, scorecard, kpiSelections, 
       <div className="meeting-stop" style={{ marginBottom: 24 }}>
         <div className="eyebrow meeting-stop-eyebrow">GROWTH CHECK-IN</div>
         <h3 className="meeting-stop-heading">Growth Priority Pulse</h3>
-        {growth && growth.length > 0 && (
-          <div style={{ marginBottom: 12 }}>
-            {growth.map((g) => (
-              <div key={g.id} style={{ fontSize: 14, lineHeight: 1.55 }}>
-                <span className={`growth-status-badge ${g.status ?? 'active'}`}>
-                  {GROWTH_STATUS_COPY[g.status ?? 'active']}
-                </span>
-                {' '}{g.description || g.custom_text || '\u2014'}
+        <div className="meeting-growth-grid">
+          {PARTNERS.map((p) => {
+            const list = data[p].growth ?? [];
+            const partnerName = PARTNER_DISPLAY[p] ?? p;
+            return (
+              <div key={p} className="meeting-growth-cell">
+                <div className="meeting-partner-name">{partnerName}</div>
+                {list.length === 0 ? (
+                  <div className="muted" style={{ fontSize: 14 }}>No growth priorities set.</div>
+                ) : (
+                  list.map((g) => (
+                    <div key={g.id} style={{ fontSize: 14, lineHeight: 1.55 }}>
+                      <span className={`growth-status-badge ${g.status ?? 'active'}`}>
+                        {GROWTH_STATUS_COPY[g.status ?? 'active']}
+                      </span>
+                      {' '}{g.description || g.custom_text || '\u2014'}
+                    </div>
+                  ))
+                )}
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
         {gcNote
-          ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{gcNote}</p>
-          : <p className="muted">No notes for this stop.</p>}
+          ? <p style={{ fontSize: 15, lineHeight: 1.6, marginTop: 12 }}>{gcNote}</p>
+          : <p className="muted" style={{ marginTop: 12 }}>No notes for this stop.</p>}
       </div>
     );
   }
@@ -387,32 +449,49 @@ function StopBlock({ stopKey, stopIndex, notesByStop, scorecard, kpiSelections, 
   return null;
 }
 
-function GrowthStopBlock({ stopKey, eyebrow, priority, note }) {
-  const status = priority?.status ?? 'active';
-  const statusLabel = GROWTH_STATUS_COPY[status] ?? GROWTH_STATUS_COPY.active;
-
+// UAT B3: render BOTH partners side-by-side per growth slot. For 'personal'
+// each partner has their own priority; for 'business' (Phase 18 BIZ-03) the
+// priority is shared so the title row appears once but both partners' status
+// + notes still surface.
+function GrowthStopBlock({ eyebrow, kind, ordinal, data, note }) {
   return (
     <div className="meeting-stop" style={{ marginBottom: 24 }}>
       <div className="eyebrow meeting-stop-eyebrow">{eyebrow}</div>
       <h3 className="meeting-stop-heading">Growth Priority</h3>
 
-      {priority ? (
-        <div className="meeting-growth-grid">
-          <div className="meeting-growth-cell">
-            <div style={{ fontSize: 15, lineHeight: 1.55 }}>
-              {priority.description || priority.custom_text || '\u2014'}
+      <div className="meeting-growth-grid">
+        {['theo', 'jerry'].map((p) => {
+          const list = (data[p].growth ?? []).filter((g) => g.type === kind);
+          const priority = list[ordinal - 1];
+          const partnerName = PARTNER_DISPLAY[p] ?? p;
+          if (!priority) {
+            return (
+              <div key={p} className="meeting-growth-cell">
+                <div className="meeting-partner-name">{partnerName}</div>
+                <div className="muted" style={{ fontSize: 14 }}>
+                  No {kind} growth priority locked.
+                </div>
+              </div>
+            );
+          }
+          const status = priority.status ?? 'active';
+          const statusLabel = GROWTH_STATUS_COPY[status] ?? GROWTH_STATUS_COPY.active;
+          return (
+            <div key={p} className="meeting-growth-cell">
+              <div className="meeting-partner-name">{partnerName}</div>
+              <div style={{ fontSize: 15, lineHeight: 1.55 }}>
+                {priority.description || priority.custom_text || '\u2014'}
+              </div>
+              <div>
+                <span className={`growth-status-badge ${status}`}>{statusLabel}</span>
+              </div>
+              {priority.admin_note && (
+                <div className="growth-admin-note">{priority.admin_note}</div>
+              )}
             </div>
-            <div>
-              <span className={`growth-status-badge ${status}`}>{statusLabel}</span>
-            </div>
-            {priority.admin_note && (
-              <div className="growth-admin-note">{priority.admin_note}</div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <p className="muted">No growth priority set for this slot.</p>
-      )}
+          );
+        })}
+      </div>
 
       {note
         ? <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 12 }}>{note}</p>

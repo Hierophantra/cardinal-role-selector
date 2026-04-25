@@ -7,14 +7,12 @@ import {
   upsertMeetingNote,
   endMeeting,
   adminOverrideScorecardEntry,
-  fetchKpiTemplates,
   fetchGrowthPriorities,
   fetchScorecard,
-  fetchWeeklyKpiSelection,
-  fetchAdminSetting,
   fetchBusinessPriorities,
 } from '../../lib/supabase.js';
 import { formatWeekRange, effectiveResult } from '../../lib/week.js';
+import { composePartnerKpis } from '../../lib/partnerKpis.js';
 import {
   MEETING_COPY,
   MONDAY_PREP_COPY,
@@ -25,7 +23,6 @@ import {
   PARTNER_DISPLAY,
   SCORECARD_COPY,
   BUSINESS_GROWTH_STOP_MAPPING,
-  effectivePartnerScope,
 } from '../../data/content.js';
 
 // Stop arrays are now imported from content.js (FRIDAY_STOPS, MONDAY_STOPS).
@@ -47,62 +44,6 @@ function getLabelForEntry(kpiId, entry, lockedKpis) {
   if (entry && entry.label) return entry.label;
   const match = lockedKpis.find((k) => k.id === kpiId);
   return match?.label_snapshot ?? '(unknown KPI)';
-}
-
-// UAT A3 + A5/A6/A7/A8 (2026-04-25): Compose a partner's 7-row KPI list deterministically.
-// Mirrors Scorecard.jsx Pattern 5 composition (mandatory templates + weekly choice) so:
-//  - data[p].kpis[i].id IS THE template_id (consistent with kpi_results JSONB keys, the v2.0
-//    Scorecard write contract — Phase 16 D-XX). Earlier code used kpi_selections.id which
-//    caused admin overrides to write under the wrong key, corrupting the scorecard for the
-//    partner's later view (A5/A6) and producing partner desync on the same kpi_* stop (A8).
-//  - The list includes the weekly choice in slot 6 (kpi_7), fixing "Not locked" at kpi_7 (A7)
-//    and the IntroStop "X/6 hit" denominator that should be 7 (A3).
-//  - Both partners' lists use the same ordering rule (shared first by id, partner-specific
-//    by id, weekly last) so the same kpi_index points to a parallel/identical template
-//    across partners — fixes A8 desync.
-// Returns { id, label_snapshot, kpi_templates: { mandatory, countable } } shape compatible
-// with all existing KpiStop / handleOverrideResult / getLabelForEntry consumers.
-async function composePartnerKpis(partner, weekOf) {
-  const [templates, sel, jerryActive] = await Promise.all([
-    fetchKpiTemplates(),
-    fetchWeeklyKpiSelection(partner, weekOf),
-    partner === 'jerry'
-      ? fetchAdminSetting('jerry_sales_kpi_active').then((r) => r?.value === true).catch(() => false)
-      : Promise.resolve(false),
-  ]);
-  const scope = effectivePartnerScope(partner);
-  // Mandatory templates the partner actually owns (shared 'both' OR partner scope).
-  const matchesScope = (t) =>
-    t.partner_scope === scope || t.partner_scope === 'both' || t.partner_scope === 'shared';
-  const mandatoryAll = templates.filter(
-    (t) => t.mandatory === true && matchesScope(t) && t.conditional === false
-  );
-  // Sort: shared ('both') first, then partner-specific, both groups by id ascending.
-  // Identical sort is applied for both partners, so kpi_1 / kpi_2 line up across partners
-  // when those templates are partner_scope='both'.
-  const ranked = mandatoryAll.slice().sort((a, b) => {
-    const aShared = a.partner_scope === 'both' || a.partner_scope === 'shared';
-    const bShared = b.partner_scope === 'both' || b.partner_scope === 'shared';
-    if (aShared !== bShared) return aShared ? -1 : 1;
-    return String(a.id).localeCompare(String(b.id));
-  });
-  const conditional =
-    partner === 'jerry' && jerryActive
-      ? templates.find((t) => t.conditional === true && t.partner_scope === 'jerry')
-      : null;
-  const weeklyTpl =
-    sel?.kpi_template_id ? templates.find((t) => t.id === sel.kpi_template_id) : null;
-  const composed = [
-    ...ranked,
-    ...(conditional ? [conditional] : []),
-    ...(weeklyTpl ? [weeklyTpl] : []),
-  ];
-  // Project to the shape the meeting renderers expect.
-  return composed.map((t) => ({
-    id: t.id, // template_id — kpi_results JSONB key (v2.0 contract)
-    label_snapshot: t.label,
-    kpi_templates: { mandatory: t.mandatory, countable: t.countable },
-  }));
 }
 
 // Phase 17 Wave 3: derive the previous week's Monday from a current Monday string,
