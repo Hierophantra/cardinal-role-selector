@@ -671,6 +671,11 @@ export const MEETING_COPY = {
     kpiReviewOptionalReviewSummary: 'Reviewing KPIs.',
     growthPersonalEyebrow: 'PERSONAL GROWTH',
     growthBusinessEyebrow: (n) => `BUSINESS GROWTH ${n} of 2`,
+    growthBusinessSubtext:
+      'Shared focus area for the business — same for both partners. Capture per-partner discussion below.',
+    businessPriorityCardEyebrow: (n) => `BUSINESS PRIORITY ${n} of 2`,
+    businessPriorityToggleShow: 'Show deliverables',
+    businessPriorityToggleHide: 'Hide deliverables',
     wrapHeading: "This Week's Checkpoint",
     wrapSubtext:
       'Capture follow-ups. Pending commitments lock in at Saturday 23:59. See you Monday for the recap.',
@@ -725,6 +730,11 @@ export const MONDAY_PREP_COPY = {
     kpiEyebrow: (n, total) => `KPI ${n} of ${total}`,
     growthPersonalEyebrow: 'PERSONAL GROWTH',
     growthBusinessEyebrow: (n) => `BUSINESS GROWTH ${n} of 2`,
+    growthBusinessSubtext:
+      'Shared focus area for the business — same for both partners. Capture per-partner discussion below.',
+    businessPriorityCardEyebrow: (n) => `BUSINESS PRIORITY ${n} of 2`,
+    businessPriorityToggleShow: 'Show deliverables',
+    businessPriorityToggleHide: 'Hide deliverables',
     wrapHeading: 'Action Items & Commitments',
     wrapSubtext: 'Capture commitments and action items before starting the week.',
   },
@@ -762,6 +772,14 @@ export const MONDAY_STOPS = [
 // Phase 17: filter narrowed to numbered kpi stops only ('kpi_1'..'kpi_7') so the new
 // 'kpi_review_optional' gate (which also starts with 'kpi_') is not counted.
 export const KPI_STOP_COUNT = FRIDAY_STOPS.filter(s => /^kpi_\d+$/.test(s)).length;
+
+// Phase 18 (BIZ-03, D-14): maps Friday Review business-growth stop keys -> business_priorities.id.
+// Used by AdminMeetingSession GrowthStop kind='business' to look up the shared priority card content.
+// Single source of truth for the stop->priority binding.
+export const BUSINESS_GROWTH_STOP_MAPPING = {
+  growth_business_1: 'lead_abatement_activation',
+  growth_business_2: 'salesmen_onboarding',
+};
 
 // --- Phase 11: Season Overview & Progress ---
 
