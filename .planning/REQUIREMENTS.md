@@ -74,9 +74,6 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 
 - [x] **GROWTH-01**: Mandatory personal growth priority auto-assigned per partner from seed (Theo: leave work at set time 2+ days/week; Jerry: initiate one difficult conversation weekly)
 - [x] **GROWTH-02**: Self-chosen personal growth priority: partner enters from hub via an inline textarea; on save, the value locks with `approval_state='approved'` — no pending state. Trace can edit the locked value from admin UI (ADMIN-04).
-- [ ] **GROWTH-03**: Business growth priorities: 2 shared between partners, seeded from the 7 options in spec section 5 (or custom entry), locked once both partners confirm and Trace approves
-- [ ] **GROWTH-04**: Business growth priority Day-60 milestone badge appears on hub + comparison view starting at engagement day 60 if no `milestone_at` recorded
-- [ ] **GROWTH-05**: Business growth priority selection happens via a dedicated selection flow accessible from hub (no meeting-mode interactive selection in v2.0)
 
 ### Friday-Checkpoint / Saturday-Close Cycle (Phase 17)
 
@@ -86,15 +83,11 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 - [ ] **MEET-07**: `FRIDAY_STOPS` includes a `kpi_review_optional` gate stop placed after `clear_the_air` and before `intro` (so order becomes `clear_the_air, kpi_review_optional, intro, kpi_1..kpi_7, growth_*, wrap`); in `AdminMeetingSession.jsx`, choosing "No, skip KPI review" advances past every `kpi_*` stop to the next non-KPI stop while "Yes" continues to `intro`/`kpi_1`; the gate choice persists in `meeting_notes` (`agenda_stop_key='kpi_review_optional'`, value in `agenda_notes`) so resume replays the chosen path; `MONDAY_STOPS` is unaffected — Monday has no `kpi_*` stops to gate (rationale: D-09 in 17-CONTEXT.md, same user-override pattern as Phase 16 D-02); meeting copy reframes Friday as a "checkpoint" rather than a final tally via MEETING_COPY edits in `src/data/content.js`
 - [ ] **MEET-08**: `MONDAY_STOPS` includes a `saturday_recap` stop placed immediately after `clear_the_air`; the stop renders only when last week's scorecard contains ≥1 row with `result='pending'`; for each Pending row the UI renders the KPI label, the stored follow-through text, and the conversion state (Yes / still No after Saturday close); `meeting_notes` CHECK constraint expanded to accept `saturday_recap` for Monday meetings via the Phase 14 idempotent DROP+ADD migration pattern
 
-### Side-by-Side Comparison
+### Shared Business Priorities Display (Phase 18)
 
-> **Note (2026-04-25):** ROADMAP.md Phase 18 was rewritten to "Shared Business Priorities Display" (BIZ-01..03). The COMP-* and GROWTH-03..05 IDs below predate that rewrite and may be deprecated when Phase 18 is planned. Left in place for now — sync during `/gsd-plan-phase 18`.
-
-- [ ] **COMP-01**: Comparison view shows both partners' role titles, self-quotes, and role narratives at top
-- [ ] **COMP-02**: Comparison view shows both partners' mandatory KPIs as a side-by-side list
-- [ ] **COMP-03**: Comparison view shows both partners' current weekly KPI selection with label
-- [ ] **COMP-04**: Comparison view shows both partners' progress against the 2 shared business growth priorities, including Day-60 milestone status
-- [ ] **COMP-05**: Comparison view layout accommodates new content without collapsing on the current desktop breakpoint
+- [ ] **BIZ-01**: New `business_priorities` table created via the next available migration (numbered after Phase 17's migration 010) with columns `id text primary key`, `title text not null`, `description text not null`, `deliverables jsonb not null` (array of strings), `created_at timestamptz default now()`. Seeded with exactly 2 rows: `id='lead_abatement_activation'` and `id='salesmen_onboarding'`, each with title, description, and deliverables array provided in `Cardinal_Role_KPI_Summary.pdf` / `Cardinal_ClaudeCode_Spec.md` §5 (or per partner-confirmed content delivered during planning). Rows are NOT partner-scoped — both partners read the same two rows. RLS policies match existing partner+admin read patterns from `kpi_templates`.
+- [ ] **BIZ-02**: A "Business Priorities" section renders identically on `PartnerHub.jsx`, `PartnerProfile.jsx` (admin view of either partner), and `AdminProfile.jsx` (Trace's view) — the section lists both rows from `business_priorities` with the same level of prominence as the existing Personal Growth section; each priority shows title, description, and a deliverables list rendered as a collapsible (default collapsed on desktop, same `useState` + CSS `max-height` pattern as Phase 15 ROLE-03..04 collapsibles). Section content is identical for Theo, Jerry, and Trace's view of either partner — no per-partner variance, no per-partner progress data.
+- [ ] **BIZ-03**: `AdminMeetingSession.jsx` `growth_business_1` and `growth_business_2` stop renderers each render the corresponding `business_priorities` row's title and deliverables list as read-only context above the existing `agenda_notes` textarea — `growth_business_1` shows `lead_abatement_activation`, `growth_business_2` shows `salesmen_onboarding` (mapping fixed in `src/data/content.js` MEETING_COPY or equivalent constant). No new progress table or per-stop progress column; per-stop discussion is captured via the existing `meeting_notes.agenda_notes` column unchanged.
 
 ## Deferred (future milestones)
 
@@ -104,12 +97,17 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 - **Monday Prep weekly KPI selection stop** — interactive selection during the meeting; moved to hub-only for v2.0 (may return as display-only reminder)
 - **TEST-01** — Monday Prep mock session in admin test account; dropped from v1.3, remains deferred
 
-### Deprecated in 2026-04-25 Phase 17 rewrite
+### Deprecated in 2026-04-25 ROADMAP.md rewrite (commit 913cc9f)
 
-ROADMAP.md commit 913cc9f replaced the original "Meeting Stops + Admin Controls" Phase 17 with "Friday-Checkpoint / Saturday-Close Cycle". The IDs below were never implemented and are formally retired from v2.0 scope. They are listed here for traceability — do not re-introduce without an explicit roadmap entry.
+ROADMAP.md commit 913cc9f replaced both Phase 17 ("Meeting Stops + Admin Controls" → "Friday-Checkpoint / Saturday-Close Cycle") and Phase 18 ("Comparison + Business Growth + Polish" → "Shared Business Priorities Display"). The IDs below were never implemented and are formally retired from v2.0 scope. They are listed here for traceability — do not re-introduce without an explicit roadmap entry.
 
+**Phase 17 deprecations:**
 - **MEET-01..06** — `role_check` stop in `FRIDAY_STOPS`/`MONDAY_STOPS`, `RoleCheckStop.jsx`, derived `KPI_START_INDEX`, meeting-notes CHECK expansion for `role_check`, stop-count copy updates. Replaced by Phase 17 KPI-checkpoint cycle (WEEK-01, KPI-01..02, MEET-07..08).
 - **ADMIN-01..06** — Admin KPI Management (Jerry conditional sales toggle, Theo closing-rate threshold field, weekly rotation history view, growth-priority edit, edit-template fields, mandatory-template delete lock). Not in scope for v2.0; admin tooling will be revisited in a later milestone if needed.
+
+**Phase 18 deprecations:**
+- **COMP-01..05** — Side-by-side comparison view extension (role titles + self-quotes + narratives, mandatory KPIs side-by-side, current weekly selection, business growth Day-60 milestone, layout reflow). Replaced by Phase 18 shared-priorities display (BIZ-01..03), which surfaces priority content on existing partner + admin profile views rather than rebuilding the comparison view.
+- **GROWTH-03..05** — Selectable business growth priorities (2 of 7 chosen + locked, Day-60 milestone badge, dedicated selection flow). Replaced by 2 hardcoded shared priorities seeded into `business_priorities` (BIZ-01); no selection flow, no Day-60 milestone, no `milestone_at` tracking.
 
 ## Out of Scope
 
@@ -178,23 +176,20 @@ ROADMAP.md commit 913cc9f replaced the original "Meeting Stops + Admin Controls"
 | KPI-02 | Phase 17 | Pending |
 | MEET-07 | Phase 17 | Pending |
 | MEET-08 | Phase 17 | Pending |
+| BIZ-01 | Phase 18 | Pending |
+| BIZ-02 | Phase 18 | Pending |
+| BIZ-03 | Phase 18 | Pending |
 | MEET-01..06 | (retired) | Deprecated in 2026-04-25 rewrite |
 | ADMIN-01..06 | (retired) | Deprecated in 2026-04-25 rewrite |
-| COMP-01 | Phase 18 | Pending |
-| COMP-02 | Phase 18 | Pending |
-| COMP-03 | Phase 18 | Pending |
-| COMP-04 | Phase 18 | Pending |
-| COMP-05 | Phase 18 | Pending |
-| GROWTH-03 | Phase 18 | Pending |
-| GROWTH-04 | Phase 18 | Pending |
-| GROWTH-05 | Phase 18 | Pending |
+| COMP-01..05 | (retired) | Deprecated in 2026-04-25 rewrite |
+| GROWTH-03..05 | (retired) | Deprecated in 2026-04-25 rewrite |
 
 **Coverage:**
-- v2.0 requirements: 49 total (56 original − 12 deprecated MEET/ADMIN + 5 new Phase 17 IDs)
-- Mapped to phases: 49
+- v2.0 requirements: 44 total (56 original − 20 deprecated MEET/ADMIN/COMP/GROWTH + 8 new Phase 17/18 IDs)
+- Mapped to phases: 44
 - Unmapped: 0
-- Deprecated (out of v2.0 scope): MEET-01..06, ADMIN-01..06
+- Deprecated (out of v2.0 scope): MEET-01..06, ADMIN-01..06, COMP-01..05, GROWTH-03..05
 
 ---
 *Requirements defined: 2026-04-16*
-*Last updated: 2026-04-25 — Phase 17 sync after ROADMAP.md rewrite (commit 913cc9f): added WEEK-01, KPI-01, KPI-02, MEET-07, MEET-08; deprecated MEET-01..06, ADMIN-01..06*
+*Last updated: 2026-04-25 — Phase 17/18 sync after ROADMAP.md rewrite (commit 913cc9f): added WEEK-01, KPI-01, KPI-02, MEET-07, MEET-08, BIZ-01, BIZ-02, BIZ-03; deprecated MEET-01..06, ADMIN-01..06, COMP-01..05, GROWTH-03..05*
