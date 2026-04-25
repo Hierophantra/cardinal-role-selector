@@ -91,6 +91,16 @@ export default function Scorecard() {
   // Ref to skip weekRating auto-save on initial mount
   const weekRatingInitialized = useRef(false);
 
+  // BUG-2026-04-25 hydration gate: persistDraft writes the ENTIRE row from
+  // React state via Supabase upsert (which only updates supplied columns).
+  // If any persist trigger fires BEFORE the mount fetch hydrates state,
+  // every supplied column (kpi_results, weekly_win, weekly_learning,
+  // week_rating, growth_followup, etc.) is written from initial useState
+  // defaults — empty/null — overwriting the partner's submitted data.
+  // We flip this ref to true only after the Promise.all hydration completes,
+  // and gate every persist path on it.
+  const hydratedRef = useRef(false);
+
   // ---- Derived values (before early returns) ----
 
   const weekClosed = useMemo(() => isWeekClosed(currentWeekOf), [currentWeekOf]);
@@ -199,7 +209,17 @@ export default function Scorecard() {
         console.error(err);
         setLoadError(true);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        // BUG-2026-04-25: flip hydration gate AFTER the Promise.all chain
+        // resolves (success or failure). Set BEFORE setLoading(false) so
+        // any blur/keystroke that fires immediately on the first painted
+        // frame already sees hydratedRef=true. The .catch path also flips
+        // it because setLoadError renders a different UI (no inputs), so
+        // a stale persist can't be triggered there anyway — but keeping
+        // the flip in .finally ensures the gate doesn't permanently block.
+        hydratedRef.current = true;
+        setLoading(false);
+      });
 
     return cleanup;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -256,6 +276,19 @@ export default function Scorecard() {
   // effect calls `persistDraft()` with no arg so it reads the latest state.
   async function persistDraft(nextKpiResults) {
     if (weekClosed) return;
+    // BUG-2026-04-25 hydration gate: never write before mount fetch hydrates
+    // state from DB. Without this, any path that calls persistDraft pre-
+    // hydration writes the initial useState defaults (kpi_results={}, win='',
+    // learning='', week_rating=null, growth_followup={}) over the partner's
+    // submitted row. The upsert preserves submitted_at because it isn't in
+    // the payload, leaving a row with submitted_at + everything else wiped.
+    if (!hydratedRef.current) return;
+    // BUG-2026-04-25 rows guard: buildKpiResultsPayload returns {} when
+    // rows=[]; calling upsertScorecard with kpi_results={} unconditionally
+    // overwrites a previously-good submission. There is no legitimate
+    // reason to persist a draft when the row composition has not loaded —
+    // the partner cannot have edited anything yet — so bail.
+    if (rows.length === 0) return;
     // Phase 17 D-16: in submitted+open mode, allow draft persistence ONLY when at least one
     // row is Pending (the partner is editing a pending commitment). Without this, post-submit
     // edits to pending_text via setPendingTextLocal → onBlur persistField() would no-op.

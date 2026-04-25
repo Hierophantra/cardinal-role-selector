@@ -109,6 +109,71 @@ export async function fetchScorecard(partner, weekOf) {
 }
 
 export async function upsertScorecard(record) {
+  // BUG-2026-04-25 lib-level guard: catastrophic data loss can occur when a
+  // caller passes kpi_results={} for a (partner,week_of) that already has a
+  // submitted row with non-empty kpi_results. Supabase upsert() updates only
+  // supplied columns, so {} replaces the existing JSONB while submitted_at,
+  // committed_at, etc. (if not in the new record) survive — leaving a "row
+  // exists, kpi_results blank" zombie. We refuse the write outright when:
+  //
+  //   - the new record's kpi_results is an empty object, AND
+  //   - an existing row exists for (partner, week_of) with non-empty kpi_results
+  //
+  // This is a belt-and-suspenders backstop. The caller (Scorecard.jsx
+  // persistDraft) also has a rows-length / hydration gate, but a lib-level
+  // refusal protects against any future caller with the same shape.
+  //
+  // We also refuse when the existing row has submitted_at set and the new
+  // record would clear submitted_at semantics by overwriting kpi_results
+  // with {} (same shape — covered by the same condition since a submitted
+  // row by definition has non-empty kpi_results).
+  //
+  // The check is best-effort: if the read fails, we let the original upsert
+  // proceed rather than fail the user's submit. This errs on the side of
+  // availability for the common case while still catching the documented
+  // corruption pattern.
+  if (
+    record &&
+    record.kpi_results !== undefined &&
+    typeof record.kpi_results === 'object' &&
+    record.kpi_results !== null &&
+    Object.keys(record.kpi_results).length === 0
+  ) {
+    try {
+      const { data: existing } = await supabase
+        .from('scorecards')
+        .select('kpi_results, submitted_at')
+        .eq('partner', record.partner)
+        .eq('week_of', record.week_of)
+        .maybeSingle();
+      const existingKpis = existing?.kpi_results;
+      const existingHasData =
+        existingKpis &&
+        typeof existingKpis === 'object' &&
+        Object.keys(existingKpis).length > 0;
+      if (existingHasData) {
+        // Refuse the destructive write. Throw a typed error so callers can
+        // surface a useful message instead of silently corrupting data.
+        const err = new Error(
+          'Refusing to overwrite non-empty kpi_results with empty object. ' +
+            'This is the BUG-2026-04-25 guard — caller passed kpi_results={} ' +
+            'against an existing submitted/in-progress scorecard row.'
+        );
+        err.code = 'SCORECARD_EMPTY_OVERWRITE_BLOCKED';
+        err.partner = record.partner;
+        err.week_of = record.week_of;
+        throw err;
+      }
+    } catch (probeErr) {
+      // Re-throw our own guard error; swallow other probe errors so a
+      // network blip on the read doesn't block legitimate writes.
+      if (probeErr && probeErr.code === 'SCORECARD_EMPTY_OVERWRITE_BLOCKED') {
+        throw probeErr;
+      }
+      // fall through — proceed with the upsert
+    }
+  }
+
   const { data, error } = await supabase
     .from('scorecards')
     .upsert(record, { onConflict: 'partner,week_of' })
