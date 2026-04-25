@@ -1240,6 +1240,12 @@ function KpiStop({
   copy,
   isEnded,
 }) {
+  // UAT B1: per-partner override toggle. Default mode is read-only — partner's
+  // submitted result + reflection + pending_text render verbatim. Clicking
+  // "Override" on a partner cell flips that cell into the existing 3-button
+  // editor (Yes / No / Pending) so Trace can correct the call when needed.
+  // Hook lives BEFORE any conditional return per Phase 15 P-U2.
+  const [overriding, setOverriding] = useState({}); // { theo: bool, jerry: bool }
   const n = kpiIndex + 1;
   return (
     <>
@@ -1248,7 +1254,8 @@ function KpiStop({
       </div>
       <h3 className="meeting-stop-heading">KPI Review</h3>
       <p className="meeting-stop-subtext">
-        Flip yes/no as you discuss. Override stamps admin_override_at.
+        Partner's submitted result is shown read-only. Use Override to correct the call —
+        admin_override_at stamps when used.
       </p>
 
       <div className="meeting-kpi-grid">
@@ -1281,6 +1288,19 @@ function KpiStop({
             'null';
           const override = data[p].scorecard?.admin_override_at;
 
+          // UAT B1: read-only by default; per-partner override toggle.
+          const isOverriding = Boolean(overriding[p]);
+          const resultLabel =
+            result === 'yes' ? 'Met'
+            : result === 'no' ? 'Not Met'
+            : result === 'pending' ? 'Pending'
+            : 'Not yet rated';
+          const resultBadgeClass =
+            result === 'yes' ? 'meeting-result-badge yes'
+            : result === 'no' ? 'meeting-result-badge no'
+            : result === 'pending' ? 'meeting-result-badge pending'
+            : 'meeting-result-badge null';
+
           return (
             <div key={p} className={`meeting-kpi-cell ${cellStateClass}`}>
               <div className="meeting-partner-name">{PARTNER_DISPLAY[p]}</div>
@@ -1302,55 +1322,111 @@ function KpiStop({
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  type="button"
-                  className="meeting-yn-override scorecard-yn-btn"
-                  aria-pressed={result === 'yes'}
-                  disabled={isEnded}
-                  style={{
-                    ...(result === 'yes'
-                      ? {
-                          background: 'rgba(45,143,94,0.18)',
-                          borderColor: 'var(--success)',
-                          color: 'var(--text)',
-                        }
-                      : {}),
-                    ...(isEnded ? { opacity: 0.35 } : {}),
-                  }}
-                  onClick={() => onOverrideResult(p, kpiId, 'yes')}
-                >
-                  Yes
-                </button>
-                <button
-                  type="button"
-                  className="meeting-yn-override scorecard-yn-btn"
-                  aria-pressed={result === 'no'}
-                  disabled={isEnded}
-                  style={{
-                    ...(result === 'no'
-                      ? {
-                          background: 'rgba(196,30,58,0.18)',
-                          borderColor: 'var(--red)',
-                          color: 'var(--text)',
-                        }
-                      : {}),
-                    ...(isEnded ? { opacity: 0.35 } : {}),
-                  }}
-                  onClick={() => onOverrideResult(p, kpiId, 'no')}
-                >
-                  No
-                </button>
-              </div>
+              {!isOverriding ? (
+                // ----- READ-ONLY MODE (UAT B1 default) -----
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                    <span
+                      className={resultBadgeClass}
+                      style={{
+                        fontWeight: 700,
+                        fontSize: 15,
+                        padding: '4px 10px',
+                        borderRadius: 6,
+                        ...(result === 'yes'
+                          ? { background: 'rgba(45,143,94,0.18)', color: 'var(--success, #2d8f5e)' }
+                          : result === 'no'
+                            ? { background: 'rgba(196,30,58,0.18)', color: 'var(--red, #c41e3a)' }
+                            : result === 'pending'
+                              ? { background: 'rgba(214,158,46,0.18)', color: 'var(--gold, #d69e2e)' }
+                              : { background: 'rgba(255,255,255,0.06)', color: 'var(--muted)' }),
+                      }}
+                    >
+                      {resultLabel}
+                    </span>
+                    {!isEnded && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        style={{ fontSize: 12, padding: '4px 10px' }}
+                        onClick={() => setOverriding((s) => ({ ...s, [p]: true }))}
+                      >
+                        Override
+                      </button>
+                    )}
+                  </div>
 
-              <textarea
-                className="textarea"
-                placeholder="Reflection..."
-                value={reflection}
-                onChange={(e) => onReflectionChange(p, kpiId, e.target.value)}
-                readOnly={isEnded}
-                style={{ minHeight: 72, ...(isEnded ? { cursor: 'default', resize: 'none' } : {}) }}
-              />
+                  {reflection && (
+                    <div
+                      className="muted"
+                      style={{ fontSize: 14, fontStyle: 'italic', marginTop: 8, lineHeight: 1.55 }}
+                    >
+                      {reflection}
+                    </div>
+                  )}
+                </>
+              ) : (
+                // ----- OVERRIDE / EDIT MODE -----
+                <>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="meeting-yn-override scorecard-yn-btn"
+                      aria-pressed={result === 'yes'}
+                      disabled={isEnded}
+                      style={{
+                        ...(result === 'yes'
+                          ? {
+                              background: 'rgba(45,143,94,0.18)',
+                              borderColor: 'var(--success)',
+                              color: 'var(--text)',
+                            }
+                          : {}),
+                        ...(isEnded ? { opacity: 0.35 } : {}),
+                      }}
+                      onClick={() => onOverrideResult(p, kpiId, 'yes')}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      type="button"
+                      className="meeting-yn-override scorecard-yn-btn"
+                      aria-pressed={result === 'no'}
+                      disabled={isEnded}
+                      style={{
+                        ...(result === 'no'
+                          ? {
+                              background: 'rgba(196,30,58,0.18)',
+                              borderColor: 'var(--red)',
+                              color: 'var(--text)',
+                            }
+                          : {}),
+                        ...(isEnded ? { opacity: 0.35 } : {}),
+                      }}
+                      onClick={() => onOverrideResult(p, kpiId, 'no')}
+                    >
+                      No
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      style={{ fontSize: 12, padding: '4px 10px' }}
+                      onClick={() => setOverriding((s) => ({ ...s, [p]: false }))}
+                    >
+                      Done
+                    </button>
+                  </div>
+
+                  <textarea
+                    className="textarea"
+                    placeholder="Reflection..."
+                    value={reflection}
+                    onChange={(e) => onReflectionChange(p, kpiId, e.target.value)}
+                    readOnly={isEnded}
+                    style={{ minHeight: 72, ...(isEnded ? { cursor: 'default', resize: 'none' } : {}) }}
+                  />
+                </>
+              )}
 
               {override && (
                 <div className="meeting-admin-override-marker">
