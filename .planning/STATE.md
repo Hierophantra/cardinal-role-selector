@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role Identity & Weekly KPI Rotation
-status: Phase 17 complete (Wave 3 shipped) — ready for verification
-stopped_at: Phase 17 Plan 04 SUMMARY committed
-last_updated: "2026-04-25T19:00:00.000Z"
+status: Phase 18 in progress (Plan 18-01 Wave 0 shipped)
+stopped_at: Phase 18 Plan 01 SUMMARY committed
+last_updated: "2026-04-25T12:30:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 15
-  completed_plans: 10
-  percent: 67
+  completed_plans: 11
+  percent: 73
 ---
 
 # Project State
@@ -24,8 +24,8 @@ See: .planning/PROJECT.md (updated 2026-04-16 — v2.0 milestone started)
 
 ## Current Position
 
-Phase: 17 (friday-checkpoint-saturday-close-cycle) — COMPLETE (Wave 3 shipped 2026-04-25)
-Plan: 4 of 4 — all 4 plans (17-01..17-04) complete; ready for phase verification
+Phase: 18 (shared-business-priorities-display) — IN PROGRESS (Wave 0 shipped 2026-04-25)
+Plan: 1 of 3 — 18-01 complete (foundation); 18-02 (component + CSS) and 18-03 (integration) remaining
 
 ## Shipped Milestones
 
@@ -99,6 +99,10 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 - [Phase 17-friday-checkpoint-saturday-close-cycle]: Plan 17-04: AdminProfile.jsx + AdminComparison.jsx have no KPI scorecard history render block today; D-02 audit footprint imported (effectiveResult + SCORECARD_COPY.commitmentPrefix + pending-badge marker) — Rule 1 deviation, follow-up plan can wire actual KPI history rendering using these imports
 - [Phase 17-friday-checkpoint-saturday-close-cycle]: Plan 17-04: PartnerHub answered-count + complete-check accept 'pending' as terminal answered state alongside 'yes'/'no' (with non-empty pending_text required for complete)
 - [Phase 17-friday-checkpoint-saturday-close-cycle]: Plan 17-04: AdminPartners missCount + seasonStats aggregation/streak loops + MeetingSummary label/cell + AdminMeetingSession IntroStop hit aggregation all read entry.result through effectiveResult — D-02 read-side audit complete
+- [Phase 18-shared-business-priorities-display]: Plan 18-01: Migration 011 omits RLS — researcher A1 confirmed zero RLS across migrations 001-010 including kpi_templates; CONTEXT D-01 'match kpi_templates RLS pattern' reinterpreted as 'match kpi_templates posture' (no RLS)
+- [Phase 18-shared-business-priorities-display]: Plan 18-01: business_priorities seeded with literal '[TBD: replace via UPDATE before partner UAT]' content per D-13 — visible TBD strings are the pre-UAT safety signal; UPDATE recipe templates documented at end of migration 011
+- [Phase 18-shared-business-priorities-display]: Plan 18-01: fetchBusinessPriorities is read-only (no upsert per D-04) — content edited via SQL UPDATE on the migration footer recipe; admin-tooling write-path deferred to a future phase
+- [Phase 18-shared-business-priorities-display]: Plan 18-01: BUSINESS_GROWTH_STOP_MAPPING in content.js is the single source of truth for growth_business_1/2 stop->priority binding (D-14); MEETING_COPY and MONDAY_PREP_COPY both gain 4 parity copy keys (growthBusinessSubtext, businessPriorityCardEyebrow, businessPriorityToggleShow/Hide) — no new PHASE18_COPY namespace introduced
 
 ### Pending Todos
 
@@ -121,6 +125,6 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 
 ## Session Continuity
 
-Last session: 2026-04-25T19:00:00.000Z
-Stopped at: Phase 17 Plan 04 SUMMARY committed — Wave 3 shipped, phase ready for verification
-Resume file: .planning/phases/17-friday-checkpoint-saturday-close-cycle/17-04-SUMMARY.md
+Last session: 2026-04-25T12:30:00.000Z
+Stopped at: Phase 18 Plan 01 SUMMARY committed — Wave 0 foundation shipped (migration 011 + supabase.js fetchBusinessPriorities + content.js mapping & copy keys); ready for Plan 18-02
+Resume file: .planning/phases/18-shared-business-priorities-display/18-01-SUMMARY.md
