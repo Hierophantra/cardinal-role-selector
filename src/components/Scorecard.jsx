@@ -8,7 +8,7 @@ import {
   fetchScorecards,
   upsertScorecard,
 } from '../lib/supabase.js';
-import { getMondayOf, isWeekClosed, formatWeekRange } from '../lib/week.js';
+import { getMondayOf, isWeekClosed, formatWeekRange, effectiveResult } from '../lib/week.js';
 import { VALID_PARTNERS, PARTNER_DISPLAY, SCORECARD_COPY, effectivePartnerScope } from '../data/content.js';
 
 // Motion props shared by all views — matches KpiSelection.jsx pattern
@@ -145,6 +145,7 @@ export default function Scorecard() {
             result: existing?.result ?? null,
             reflection: existing?.reflection ?? '',
             count: existing?.count ?? sel.counter_value?.[tpl.id] ?? 0,
+            pending_text: existing?.pending_text ?? '',
           };
         });
         setKpiResults(seededResults);
@@ -197,7 +198,7 @@ export default function Scorecard() {
   function buildKpiResultsPayload(draft) {
     return Object.fromEntries(
       rows.map((tpl) => {
-        const entry = draft[tpl.id] ?? { result: null, reflection: '', count: 0 };
+        const entry = draft[tpl.id] ?? { result: null, reflection: '', count: 0, pending_text: '' };
         const payload = {
           result: entry.result ?? null,
           reflection: entry.reflection ?? '',
@@ -205,6 +206,15 @@ export default function Scorecard() {
         };
         if (tpl.countable) {
           payload.count = Number(entry.count ?? 0);
+        }
+        // Phase 17 D-01 + Pitfall 4 (Q1 strategy a): persist pending_text whenever the entry has it.
+        // - When result === 'pending', pending_text holds the active commitment.
+        // - When result === 'yes' (yes-conversion), preserve prior pending_text so SaturdayRecapStop
+        //   can attribute the conversion at next Monday's recap.
+        if (entry.result === 'pending') {
+          payload.pending_text = entry.pending_text ?? '';
+        } else if ((entry.pending_text ?? '') !== '') {
+          payload.pending_text = entry.pending_text;
         }
         return [tpl.id, payload];
       })
@@ -218,7 +228,15 @@ export default function Scorecard() {
   // WR-04: this keeps the single source of truth consistent — the weekRating
   // effect calls `persistDraft()` with no arg so it reads the latest state.
   async function persistDraft(nextKpiResults) {
-    if (weekClosed || view === 'submitted') return;
+    if (weekClosed) return;
+    // Phase 17 D-16: in submitted+open mode, allow draft persistence ONLY when at least one
+    // row is Pending (the partner is editing a pending commitment). Without this, post-submit
+    // edits to pending_text via setPendingTextLocal → onBlur persistField() would no-op.
+    if (view === 'submitted') {
+      const draftCheck = nextKpiResults ?? kpiResults;
+      const hasReopenable = rows.some((tpl) => draftCheck[tpl.id]?.result === 'pending');
+      if (!hasReopenable) return;
+    }
     const draft = nextKpiResults ?? kpiResults;
     setSaving(true);
     setSaveError(null);
@@ -258,13 +276,22 @@ export default function Scorecard() {
   }
 
   function setResult(templateId, result) {
-    if (weekClosed || view === 'submitted') return;
+    // D-16: allow editing a Pending row in submitted mode while week is open.
+    // The textarea is only mounted when result === 'pending' (silent UI collapse on toggle-away);
+    // pending_text is PRESERVED in state on toggle (Q1 strategy a) so SaturdayRecap can detect
+    // yes-conversion on the resulting persisted row.
+    const isPendingReopen =
+      view === 'submitted' && !weekClosed && kpiResults[templateId]?.result === 'pending';
+    if (weekClosed) return;
+    if (view === 'submitted' && !isPendingReopen) return;
+    const current = kpiResults[templateId] ?? { result: null, reflection: '', count: 0, pending_text: '' };
     const next = {
       ...kpiResults,
       [templateId]: {
         result,
-        reflection: kpiResults[templateId]?.reflection ?? '',
-        count: kpiResults[templateId]?.count ?? 0,
+        reflection: current.reflection ?? '',
+        count: current.count ?? 0,
+        pending_text: current.pending_text ?? '',
       },
     };
     setKpiResults(next);
@@ -278,6 +305,19 @@ export default function Scorecard() {
         result: prev[templateId]?.result ?? null,
         reflection: text,
         count: prev[templateId]?.count ?? 0,
+        pending_text: prev[templateId]?.pending_text ?? '',
+      },
+    }));
+  }
+
+  function setPendingTextLocal(templateId, text) {
+    setKpiResults((prev) => ({
+      ...prev,
+      [templateId]: {
+        result: prev[templateId]?.result ?? null,
+        reflection: prev[templateId]?.reflection ?? '',
+        count: prev[templateId]?.count ?? 0,
+        pending_text: text,
       },
     }));
   }
@@ -290,12 +330,20 @@ export default function Scorecard() {
         result: prev[templateId]?.result ?? null,
         reflection: prev[templateId]?.reflection ?? '',
         count: Number.isFinite(numeric) ? numeric : 0,
+        pending_text: prev[templateId]?.pending_text ?? '',
       },
     }));
   }
 
   function persistField() {
-    if (weekClosed || view === 'submitted') return;
+    // Phase 17 D-16: allow persisting pending_text edits in submitted+open mode.
+    // The submit gate downstream still validates pending_text non-empty before the
+    // partner triggers the "Update Pending Rows" submit; mid-edit blur persists drafts.
+    if (weekClosed) return;
+    if (view === 'submitted') {
+      const hasReopenable = rows.some((tpl) => kpiResults[tpl.id]?.result === 'pending');
+      if (!hasReopenable) return;
+    }
     persistDraft(kpiResults);
   }
 
@@ -324,10 +372,20 @@ export default function Scorecard() {
     }
     const incomplete = rows.some((tpl) => {
       const r = kpiResults[tpl.id]?.result;
-      return r !== 'yes' && r !== 'no';
+      return r !== 'yes' && r !== 'no' && r !== 'pending';
     });
     if (incomplete) {
       setSubmitError(SCORECARD_COPY.submitErrorIncomplete);
+      return;
+    }
+    // Phase 17 D-06 / KPI-02: every Pending row needs a non-empty 'what + by when' commitment.
+    const pendingMissingText = rows.some((tpl) => {
+      const entry = kpiResults[tpl.id];
+      if (entry?.result !== 'pending') return false;
+      return (entry.pending_text ?? '').trim().length === 0;
+    });
+    if (pendingMissingText) {
+      setSubmitError(SCORECARD_COPY.submitErrorPendingTextRequired);
       return;
     }
     setSubmitting(true);
@@ -382,13 +440,15 @@ export default function Scorecard() {
               // Admin overrides can leave a row with result=null; counting those
               // would render misleading fractions like "3/7" when one of the 7
               // was never rated.
+              // Phase 17 D-02: aggregate via effectiveResult — historical rows are
+              // by definition closed weeks, so any raw 'pending' coerces to 'no'.
               const answeredIds = allResultIds.filter((id) => {
-                const r = rowResults[id]?.result;
-                return r === 'yes' || r === 'no';
+                const eff = effectiveResult(rowResults[id]?.result, row.week_of);
+                return eff === 'yes' || eff === 'no';
               });
               const totalKpis = answeredIds.length;
               const hitCount = answeredIds.reduce(
-                (n, id) => (rowResults[id]?.result === 'yes' ? n + 1 : n),
+                (n, id) => (effectiveResult(rowResults[id]?.result, row.week_of) === 'yes' ? n + 1 : n),
                 0
               );
               return (
@@ -410,8 +470,8 @@ export default function Scorecard() {
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                       <div className="scorecard-dots">
                         {allResultIds.map((id) => {
-                          const r = rowResults[id]?.result;
-                          const cls = r === 'yes' ? 'yes' : r === 'no' ? 'no' : 'null';
+                          const eff = effectiveResult(rowResults[id]?.result, row.week_of);
+                          const cls = eff === 'yes' ? 'yes' : eff === 'no' ? 'no' : 'null';
                           return <span key={id} className={`scorecard-dot ${cls}`} />;
                         })}
                       </div>
@@ -422,14 +482,32 @@ export default function Scorecard() {
                     <div className="scorecard-history-detail">
                       {allResultIds.map((id) => {
                         const r = rowResults[id];
-                        const result = r?.result;
+                        const rawResult = r?.result;
+                        // Phase 17 D-02: read-time coercion. Historical rows are closed weeks,
+                        // so any raw 'pending' renders as Not Met with a muted "Pending \u2192 No" badge.
+                        const effective = effectiveResult(rawResult, row.week_of);
                         const label = r?.label || currentLabelMap[id] || '(Previous KPI)';
-                        const resultLabel = result === 'yes' ? 'Met' : result === 'no' ? 'Not Met' : '\u2014';
-                        const resultClass = result === 'yes' ? 'yes' : result === 'no' ? 'no' : 'null';
+                        const resultLabel = effective === 'yes' ? 'Met' : effective === 'no' ? 'Not Met' : '\u2014';
+                        const resultClass = effective === 'yes' ? 'yes' : effective === 'no' ? 'no' : 'null';
+                        const isLivePending = rawResult === 'pending' && effective === 'pending';
+                        const isClosedPending = rawResult === 'pending' && effective === 'no';
                         return (
                           <div key={id} className="scorecard-history-kpi-detail">
-                            <div className="scorecard-history-kpi-label">{label}</div>
+                            <div className="scorecard-history-kpi-label">
+                              {label}
+                              {isLivePending && (
+                                <span className="pending-badge">{SCORECARD_COPY.pendingBadge}</span>
+                              )}
+                              {isClosedPending && (
+                                <span className="pending-badge muted">{SCORECARD_COPY.pendingBadgeMuted}</span>
+                              )}
+                            </div>
                             <div className={`scorecard-history-kpi-result ${resultClass}`}>{resultLabel}</div>
+                            {rawResult === 'pending' && (r?.pending_text ?? '').trim() !== '' && (
+                              <div className="scorecard-history-kpi-reflection" style={{ fontStyle: 'italic' }}>
+                                {SCORECARD_COPY.bySaturdayPrefix}{r.pending_text}
+                              </div>
+                            )}
                             {r?.reflection && (
                               <div className="scorecard-history-kpi-reflection">{r.reflection}</div>
                             )}
@@ -549,36 +627,53 @@ export default function Scorecard() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {rows.map((tpl) => {
-                const entry = kpiResults[tpl.id] || { result: null, reflection: '', count: 0 };
+                const entry = kpiResults[tpl.id] || { result: null, reflection: '', count: 0, pending_text: '' };
+                // Phase 17 D-02 / D-07: derive effective result + closed-pending modifier.
+                const effective = effectiveResult(entry.result, currentWeekOf);
+                const isLivePending = entry.result === 'pending' && effective === 'pending';
+                const isClosedPending = entry.result === 'pending' && effective === 'no';
+                // D-16: in submitted mode, Pending rows specifically remain editable until Saturday close.
+                const isPendingReopen = isSubmitted && !weekClosed && entry.result === 'pending';
                 const rowClass = [
                   'scorecard-kpi-row',
                   entry.result === 'yes' ? 'yes' : '',
                   entry.result === 'no' ? 'no' : '',
+                  entry.result === 'pending' ? 'pending' : '',
+                  isClosedPending ? 'muted' : '',
                 ].filter(Boolean).join(' ');
-                const disabled = weekClosed || isSubmitted;
+                // Picker editability: editable when the week is open AND either we're still in editing view
+                // OR we're in submitted view but this specific row is a Pending re-open.
+                const pickerDisabled = weekClosed || (isSubmitted && !isPendingReopen);
+                // Row body (count, reflection) stays read-only on submit even for re-open rows.
+                const bodyDisabled = weekClosed || isSubmitted;
+                // Render picker as buttons whenever editable (initial editing OR Pending re-open).
+                const showEditablePicker = !weekClosed && (!isSubmitted || isPendingReopen);
                 return (
                   <div key={tpl.id} className={rowClass}>
-                    <div className="scorecard-baseline-label">{tpl.baseline_action}</div>
+                    <div className="scorecard-baseline-label">
+                      {tpl.baseline_action}
+                      {isLivePending && (
+                        <span className="pending-badge">{SCORECARD_COPY.pendingBadge}</span>
+                      )}
+                      {isClosedPending && (
+                        <span className="pending-badge muted">{SCORECARD_COPY.pendingBadgeMuted}</span>
+                      )}
+                    </div>
                     <div className="scorecard-growth-clause">
                       {SCORECARD_COPY.growthPrefix} {tpl.growth_clause}
                     </div>
 
-                    {isSubmitted ? (
-                      <div className="scorecard-yn-row">
-                        <span
-                          className={`scorecard-yn-btn ${entry.result === 'yes' ? 'yes active' : entry.result === 'no' ? 'no active' : ''}`}
-                          style={{ cursor: 'default' }}
-                        >
-                          {entry.result === 'yes' ? 'Met' : entry.result === 'no' ? 'Not Met' : '\u2014'}
-                        </span>
-                      </div>
-                    ) : (
+                    {isPendingReopen && (
+                      <div className="scorecard-pending-update-note">{SCORECARD_COPY.pendingUpdateNote}</div>
+                    )}
+
+                    {showEditablePicker ? (
                       <div className="scorecard-yn-row">
                         <button
                           type="button"
                           className={`scorecard-yn-btn yes${entry.result === 'yes' ? ' active' : ''}`}
                           onClick={() => setResult(tpl.id, 'yes')}
-                          disabled={disabled}
+                          disabled={pickerDisabled}
                         >
                           Met
                         </button>
@@ -586,17 +681,64 @@ export default function Scorecard() {
                           type="button"
                           className={`scorecard-yn-btn no${entry.result === 'no' ? ' active' : ''}`}
                           onClick={() => setResult(tpl.id, 'no')}
-                          disabled={disabled}
+                          disabled={pickerDisabled}
                         >
                           Not Met
                         </button>
+                        <button
+                          type="button"
+                          className={`scorecard-yn-btn pending${entry.result === 'pending' ? ' active' : ''}`}
+                          onClick={() => setResult(tpl.id, 'pending')}
+                          disabled={pickerDisabled}
+                        >
+                          {SCORECARD_COPY.pendingBtn}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="scorecard-yn-row">
+                        <span
+                          className={`scorecard-yn-btn ${effective === 'yes' ? 'yes active' : effective === 'no' ? 'no active' : ''}`}
+                          style={{ cursor: 'default' }}
+                        >
+                          {effective === 'yes' ? 'Met' : effective === 'no' ? 'Not Met' : '\u2014'}
+                        </span>
                       </div>
                     )}
+
+                    {/* Pending follow-through textarea reveal \u2014 D-06.
+                        Mounted only when result === 'pending'; the .expanded modifier drives
+                        the CSS max-height transition. Read-only when not editable. */}
+                    <div className={`scorecard-pending-reveal${entry.result === 'pending' ? ' expanded' : ''}`}>
+                      {entry.result === 'pending' && (
+                        showEditablePicker ? (
+                          <>
+                            <label className="scorecard-reflection-label" htmlFor={`pending-${tpl.id}`}>
+                              {SCORECARD_COPY.pendingFollowThroughLabel}
+                            </label>
+                            <textarea
+                              id={`pending-${tpl.id}`}
+                              rows={2}
+                              value={entry.pending_text ?? ''}
+                              onChange={(e) => setPendingTextLocal(tpl.id, e.target.value)}
+                              onBlur={persistField}
+                              placeholder={SCORECARD_COPY.pendingFollowThroughPlaceholder}
+                              disabled={pickerDisabled}
+                            />
+                          </>
+                        ) : (
+                          (entry.pending_text ?? '').trim() !== '' && (
+                            <div style={{ fontStyle: 'italic', color: 'var(--muted)', marginTop: 8 }}>
+                              {SCORECARD_COPY.bySaturdayPrefix}{entry.pending_text}
+                            </div>
+                          )
+                        )
+                      )}
+                    </div>
 
                     {tpl.countable && (
                       <div className="scorecard-count-field" style={{ marginTop: 12 }}>
                         <label className="scorecard-reflection-label">{SCORECARD_COPY.countLabel}</label>
-                        {isSubmitted ? (
+                        {bodyDisabled ? (
                           <span>{entry.count ?? 0}</span>
                         ) : (
                           <input
@@ -606,7 +748,7 @@ export default function Scorecard() {
                             value={entry.count ?? 0}
                             onChange={(e) => setCountLocal(tpl.id, e.target.value)}
                             onBlur={persistField}
-                            disabled={disabled}
+                            disabled={bodyDisabled}
                           />
                         )}
                       </div>
@@ -614,14 +756,14 @@ export default function Scorecard() {
 
                     <div className="scorecard-reflection" style={{ marginTop: 12 }}>
                       <label className="scorecard-reflection-label">{SCORECARD_COPY.reflectionLabel}</label>
-                      {isSubmitted ? (
+                      {bodyDisabled ? (
                         <p className="muted" style={{ margin: 0 }}>{entry.reflection || '\u2014'}</p>
                       ) : (
                         <textarea
                           value={entry.reflection}
                           onChange={(e) => setReflectionLocal(tpl.id, e.target.value)}
                           onBlur={persistField}
-                          disabled={disabled}
+                          disabled={bodyDisabled}
                           rows={3}
                           placeholder={SCORECARD_COPY.reflectionPlaceholder}
                         />
@@ -733,10 +875,10 @@ export default function Scorecard() {
               </div>
             </div>
 
-            {saveError && !isSubmitted && (
+            {saveError && (
               <p className="muted" style={{ color: 'var(--red)', textAlign: 'center', marginTop: 8 }}>{saveError}</p>
             )}
-            {submitError && !isSubmitted && (
+            {submitError && (
               <p className="muted" style={{ color: 'var(--miss)', textAlign: 'center', marginTop: 8 }}>{submitError}</p>
             )}
 
@@ -745,21 +887,32 @@ export default function Scorecard() {
         </AnimatePresence>
       </div>
 
-      {!isSubmitted && !weekClosed && (
-        <div className="scorecard-sticky-bar">
-          <span className="muted" style={{ fontSize: 12, fontStyle: 'italic' }}>
-            {SCORECARD_COPY.stickyNote}
-          </span>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
-            {SCORECARD_COPY.submitCta}
-          </button>
-        </div>
-      )}
+      {/* Phase 17 D-16: sticky submit bar shows in editing mode AND in submitted+open mode
+          when at least one row is still Pending (the partner can update commitments until
+          Saturday close). After Saturday close the bar disappears entirely. */}
+      {(() => {
+        if (weekClosed) return null;
+        const hasReopenablePending = isSubmitted && rows.some(
+          (tpl) => kpiResults[tpl.id]?.result === 'pending'
+        );
+        if (isSubmitted && !hasReopenablePending) return null;
+        const ctaLabel = hasReopenablePending ? SCORECARD_COPY.pendingUpdateCta : SCORECARD_COPY.submitCta;
+        return (
+          <div className="scorecard-sticky-bar">
+            <span className="muted" style={{ fontSize: 12, fontStyle: 'italic' }}>
+              {SCORECARD_COPY.stickyNote}
+            </span>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleSubmit}
+              disabled={submitting}
+            >
+              {ctaLabel}
+            </button>
+          </div>
+        );
+      })()}
     </div>
   );
 }
