@@ -20,6 +20,15 @@ import {
 
 const PARTNERS = ['theo', 'jerry'];
 
+// UAT C2/C3/C4: same set as AdminMeetingSession — drives per-partner render
+// dispatch in StopBlock for the three Monday Prep stops that capture separate
+// Theo + Jerry notes (notes_theo / notes_jerry columns from migration 013).
+const PER_PARTNER_NOTE_STOPS = new Set([
+  'priorities_focus',
+  'risks_blockers',
+  'commitments',
+]);
+
 export default function MeetingSummary() {
   const { partner, id } = useParams();
   const navigate = useNavigate();
@@ -29,6 +38,10 @@ export default function MeetingSummary() {
   const [empty, setEmpty] = useState(false);
   const [meeting, setMeeting] = useState(null);
   const [notesByStop, setNotesByStop] = useState({});
+  // UAT C2/C3/C4: parallel map for per-partner stops keyed by stopKey ->
+  // { theo, jerry }. notesByStop continues to map stopKey -> body for shared
+  // stops; per-partner stops read from this map instead.
+  const [perPartnerNotesByStop, setPerPartnerNotesByStop] = useState({});
   // UAT B3+B4: render both partners side-by-side per KPI/growth stop. data shape:
   //   { theo: { kpis, scorecard, growth }, jerry: { ... } }
   // Mirrors AdminMeetingSession's data shape so KPI + growth blocks render symmetrically.
@@ -82,11 +95,21 @@ export default function MeetingSummary() {
         if (!alive) return;
 
         const notesMap = {};
+        const perPartnerMap = {};
         for (const row of noteRows ?? []) {
-          notesMap[row.agenda_stop_key] = row.body ?? '';
+          const key = row.agenda_stop_key;
+          if (PER_PARTNER_NOTE_STOPS.has(key)) {
+            perPartnerMap[key] = {
+              theo: row.notes_theo ?? '',
+              jerry: row.notes_jerry ?? '',
+            };
+          } else {
+            notesMap[key] = row.body ?? '';
+          }
         }
 
         setNotesByStop(notesMap);
+        setPerPartnerNotesByStop(perPartnerMap);
         setData({
           theo: {
             kpis: theoKpis ?? [],
@@ -160,6 +183,7 @@ export default function MeetingSummary() {
                   stopKey={stopKey}
                   stopIndex={i}
                   notesByStop={notesByStop}
+                  perPartnerNotesByStop={perPartnerNotesByStop}
                   data={data}
                   meeting={meeting}
                 />
@@ -176,8 +200,11 @@ export default function MeetingSummary() {
 // StopBlock — renders one agenda stop in read-only summary view
 // --------------------------------------------------------------------------
 
-function StopBlock({ stopKey, stopIndex, notesByStop, data, meeting }) {
+function StopBlock({ stopKey, stopIndex, notesByStop, perPartnerNotesByStop, data, meeting }) {
   const note = notesByStop[stopKey];
+  // UAT C2/C3/C4: per-partner notes lookup; null when stop is not in the
+  // per-partner set or no row was written for this meeting.
+  const perPartnerNotes = perPartnerNotesByStop?.[stopKey] ?? null;
 
   // UAT A4 (2026-04-25): handle Phase 17 gate stop explicitly so it doesn't fall
   // into the kpi_* block. notes['kpi_review_optional'] holds 'review' | 'skip'.
@@ -372,28 +399,22 @@ function StopBlock({ stopKey, stopIndex, notesByStop, data, meeting }) {
   }
 
   if (stopKey === 'priorities_focus') {
-    const pfNote = notesByStop[stopKey] || '';
     return (
-      <div className="meeting-stop" style={{ marginBottom: 24 }}>
-        <div className="eyebrow meeting-stop-eyebrow">PRIORITIES &amp; FOCUS</div>
-        <h3 className="meeting-stop-heading">Top 2-3 Priorities</h3>
-        {pfNote
-          ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{pfNote}</p>
-          : <p className="muted">No notes for this stop.</p>}
-      </div>
+      <PerPartnerNotesStopBlock
+        eyebrow="PRIORITIES & FOCUS"
+        heading="Top 2-3 Priorities"
+        perPartnerNotes={perPartnerNotes}
+      />
     );
   }
 
   if (stopKey === 'risks_blockers') {
-    const rbNote = notesByStop[stopKey] || '';
     return (
-      <div className="meeting-stop" style={{ marginBottom: 24 }}>
-        <div className="eyebrow meeting-stop-eyebrow">RISKS &amp; BLOCKERS</div>
-        <h3 className="meeting-stop-heading">Risks &amp; Blockers</h3>
-        {rbNote
-          ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{rbNote}</p>
-          : <p className="muted">No notes for this stop.</p>}
-      </div>
+      <PerPartnerNotesStopBlock
+        eyebrow="RISKS & BLOCKERS"
+        heading="Risks & Blockers"
+        perPartnerNotes={perPartnerNotes}
+      />
     );
   }
 
@@ -434,19 +455,43 @@ function StopBlock({ stopKey, stopIndex, notesByStop, data, meeting }) {
   }
 
   if (stopKey === 'commitments') {
-    const cmNote = notesByStop[stopKey] || '';
     return (
-      <div className="meeting-stop" style={{ marginBottom: 24 }}>
-        <div className="eyebrow meeting-stop-eyebrow">COMMITMENTS</div>
-        <h3 className="meeting-stop-heading">Walk-Away Commitments</h3>
-        {cmNote
-          ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{cmNote}</p>
-          : <p className="muted">No notes for this stop.</p>}
-      </div>
+      <PerPartnerNotesStopBlock
+        eyebrow="COMMITMENTS"
+        heading="Walk-Away Commitments"
+        perPartnerNotes={perPartnerNotes}
+      />
     );
   }
 
   return null;
+}
+
+// UAT C2/C3/C4: read-only per-partner notes summary block. Renders Theo's and
+// Jerry's notes side-by-side. Mirrors the side-by-side KPI/growth treatment
+// other Phase B/UAT C rollouts established. perPartnerNotes is null when no
+// row was saved for this meeting -- both columns render the empty placeholder.
+function PerPartnerNotesStopBlock({ eyebrow, heading, perPartnerNotes }) {
+  const cur = perPartnerNotes ?? { theo: '', jerry: '' };
+  return (
+    <div className="meeting-stop" style={{ marginBottom: 24 }}>
+      <div className="eyebrow meeting-stop-eyebrow">{eyebrow}</div>
+      <h3 className="meeting-stop-heading">{heading}</h3>
+      <div className="meeting-growth-grid">
+        {PARTNERS.map((p) => {
+          const text = (cur[p] ?? '').trim();
+          return (
+            <div key={p} className="meeting-growth-cell">
+              <div className="meeting-partner-name">{PARTNER_DISPLAY[p] ?? p}</div>
+              {text
+                ? <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 6 }}>{text}</p>
+                : <p className="muted" style={{ fontSize: 13, marginTop: 6 }}>No notes for {PARTNER_DISPLAY[p] ?? p}.</p>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 // UAT B3: render BOTH partners side-by-side per growth slot. For 'personal'
