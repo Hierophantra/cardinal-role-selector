@@ -367,11 +367,8 @@ export default function PartnerHub() {
                   </Link>
                 )}
 
-                {/* View Questionnaire (was "Role Definition", retitled D-08) */}
-                <Link to={`/q/${partner}`} className="hub-card">
-                  <h3>{copy.cards.roleDefinition.title}</h3>
-                  <p>{copy.cards.roleDefinition.description}</p>
-                </Link>
+                {/* View Questionnaire link removed (Batch D D4 — Role Questionnaire
+                    Submissions hub-card below covers the same access). */}
 
                 {/* Weekly Scorecard (kept, D-08) */}
                 {kpiReady && (
