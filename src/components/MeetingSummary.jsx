@@ -15,6 +15,7 @@ import {
   GROWTH_STATUS_COPY,
   FRIDAY_STOPS,
   MONDAY_STOPS,
+  KPI_STOP_COUNT,
 } from '../data/content.js';
 
 export default function MeetingSummary() {
@@ -155,6 +156,36 @@ export default function MeetingSummary() {
 function StopBlock({ stopKey, stopIndex, notesByStop, scorecard, kpiSelections, growth, partnerName, meeting }) {
   const note = notesByStop[stopKey];
 
+  // UAT A4 (2026-04-25): handle Phase 17 gate stop explicitly so it doesn't fall
+  // into the kpi_* block. notes['kpi_review_optional'] holds 'review' | 'skip'.
+  if (stopKey === 'kpi_review_optional') {
+    const choice = note;
+    const summary =
+      choice === 'skip' ? 'Skipped — Yes/No KPIs not reviewed this meeting.'
+      : choice === 'review' ? 'Reviewed KPIs.'
+      : 'No choice recorded.';
+    return (
+      <div className="meeting-stop" style={{ marginBottom: 24 }}>
+        <div className="eyebrow meeting-stop-eyebrow">REVIEW KPIs?</div>
+        <h3 className="meeting-stop-heading">KPI Review Gate</h3>
+        <p className="muted" style={{ fontSize: 14 }}>{summary}</p>
+      </div>
+    );
+  }
+
+  // Phase 17 saturday_recap stop — Monday only. Render notes (if any).
+  if (stopKey === 'saturday_recap') {
+    return (
+      <div className="meeting-stop" style={{ marginBottom: 24 }}>
+        <div className="eyebrow meeting-stop-eyebrow">SATURDAY RECAP</div>
+        <h3 className="meeting-stop-heading">Last Friday&apos;s Pending Commitments</h3>
+        {note
+          ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{note}</p>
+          : <p className="muted">No notes for this stop.</p>}
+      </div>
+    );
+  }
+
   if (stopKey === 'intro') {
     return (
       <div className="meeting-stop" style={{ marginBottom: 24 }}>
@@ -167,10 +198,16 @@ function StopBlock({ stopKey, stopIndex, notesByStop, scorecard, kpiSelections, 
     );
   }
 
-  if (stopKey.startsWith('kpi_')) {
+  // UAT A4 (2026-04-25): regex narrowed from startsWith('kpi_') to /^kpi_\d+$/
+  // so the Phase 17 'kpi_review_optional' gate stop is NOT rendered as a KPI
+  // (was producing "KPI NaN of Undefined" because Number('review') === NaN).
+  // Same regex tightening Phase 17 Wave 1 applied to AdminMeetingSession StopRenderer.
+  if (/^kpi_\d+$/.test(stopKey)) {
     const kpiIndex = Number(stopKey.split('_')[1]) - 1;
+    // Lookup by template_id (kpi_results JSONB is keyed by kpi_template_id per the
+    // v2.0 Scorecard write contract — see Scorecard.jsx buildKpiResultsPayload).
     const kpi = kpiSelections[kpiIndex];
-    const entry = scorecard?.kpi_results?.[kpi?.id];
+    const entry = scorecard?.kpi_results?.[kpi?.template_id];
     const label = entry?.label ?? kpi?.label_snapshot ?? '(unknown KPI)';
     const rawResult = entry?.result ?? null;
     // Phase 17 D-02: coerce post-Saturday-close pending to 'no' for label/cell so
@@ -186,7 +223,7 @@ function StopBlock({ stopKey, stopIndex, notesByStop, scorecard, kpiSelections, 
 
     return (
       <div className="meeting-stop" style={{ marginBottom: 24 }}>
-        <div className="eyebrow meeting-stop-eyebrow">{MEETING_COPY.stops.kpiEyebrow(n)}</div>
+        <div className="eyebrow meeting-stop-eyebrow">{MEETING_COPY.stops.kpiEyebrow(n, KPI_STOP_COUNT)}</div>
         <h3 className="meeting-stop-heading">KPI {n}</h3>
 
         <div className="meeting-kpi-grid">
