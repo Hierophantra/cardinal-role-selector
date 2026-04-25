@@ -749,16 +749,22 @@ export const MONDAY_PREP_COPY = {
     weekPreviewSubtext: "Upcoming travel, deadlines, and anything unusual on the calendar.",
     prioritiesFocusEyebrow: 'PRIORITIES & FOCUS',
     prioritiesFocusHeading: 'Top 2-3 Priorities',
-    prioritiesFocusSubtext: "The 2-3 most important things each partner will accomplish this week.",
+    // UAT C2: per-partner notes — explain each textarea is for that partner only.
+    prioritiesFocusSubtext:
+      "The 2-3 most important things each partner will accomplish this week. Capture Theo's and Jerry's separately.",
     risksBlockersEyebrow: 'RISKS & BLOCKERS',
     risksBlockersHeading: 'Risks & Blockers',
-    risksBlockersSubtext: "What could get in the way and where do you need help?",
+    // UAT C3: per-partner notes — each partner's risks/blockers go in their own column.
+    risksBlockersSubtext:
+      "What could get in the way and where do you need help? Capture each partner's risks separately.",
     growthCheckinEyebrow: 'GROWTH CHECK-IN',
     growthCheckinHeading: 'Growth Priority Pulse',
     growthCheckinSubtext: "Quick status on each partner's growth priorities.",
     commitmentsEyebrow: 'COMMITMENTS',
     commitmentsHeading: 'Walk-Away Commitments',
-    commitmentsSubtext: "What each partner commits to by end of week.",
+    // UAT C4: per-partner notes — each partner's commitments live in their own column.
+    commitmentsSubtext:
+      "What each partner commits to by end of week. Capture Theo's and Jerry's commitments separately.",
     introEyebrow: 'MONDAY PREP',
     introHeading: (weekLabel) => `Week of ${weekLabel}`,
     kpiEyebrow: (n, total) => `KPI ${n} of ${total}`,
