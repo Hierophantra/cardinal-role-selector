@@ -1,8 +1,13 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createMeeting, fetchMeetings } from '../../lib/supabase.js';
+import { createMeeting, fetchMeetings, resetMeeting } from '../../lib/supabase.js';
 import { getMondayOf, formatWeekRange } from '../../lib/week.js';
 import { MEETING_COPY, MONDAY_PREP_COPY, SEASON_START_DATE, SEASON_END_DATE } from '../../data/content.js';
+
+// UAT post-Batch-D: two-click arm/confirm pattern matches AdminMeetingSession's
+// END_DISARM_MS for End Meeting. 3 seconds is long enough to read the warning,
+// short enough that an accidental first click doesn't linger as a footgun.
+const RESET_DISARM_MS = 3000;
 
 // Build week options from the current week through SEASON_END_DATE, newest first.
 // Each option value is a 'YYYY-MM-DD' Monday local-time string from getMondayOf.
@@ -29,6 +34,12 @@ export default function AdminMeeting() {
   const [error, setError] = useState('');
   const [weekOf, setWeekOf] = useState(() => getMondayOf());
   const [starting, setStarting] = useState(null);
+  // UAT post-Batch-D: per-meeting two-click reset arm. Map keyed by meeting.id;
+  // value is the meeting id currently armed (only one at a time). resetting holds
+  // the id whose write is in flight so the row's button shows "Resetting…".
+  const [armedResetId, setArmedResetId] = useState(null);
+  const [resetting, setResetting] = useState(null);
+  const resetDisarmRef = useRef(null);
 
   const weekOptions = useMemo(() => buildWeekOptions(), []);
 
@@ -73,6 +84,47 @@ export default function AdminMeeting() {
       setStarting(null);
     }
   }
+
+  // UAT post-Batch-D: two-click arm/confirm reset for a single meeting.
+  // First click arms the row's button (3s auto-disarm); second click within
+  // the window calls resetMeeting (wipes meeting_notes, clears ended_at) and
+  // refreshes the list. Mirrors AdminMeetingSession.handleEndClick semantics.
+  async function handleResetClick(meetingId) {
+    if (resetting) return;
+    if (armedResetId !== meetingId) {
+      // Arm this row; clear any prior arm timer.
+      if (resetDisarmRef.current) clearTimeout(resetDisarmRef.current);
+      setArmedResetId(meetingId);
+      resetDisarmRef.current = setTimeout(() => {
+        setArmedResetId(null);
+        resetDisarmRef.current = null;
+      }, RESET_DISARM_MS);
+      return;
+    }
+    // Second click within window — confirm.
+    if (resetDisarmRef.current) {
+      clearTimeout(resetDisarmRef.current);
+      resetDisarmRef.current = null;
+    }
+    setResetting(meetingId);
+    setError('');
+    try {
+      await resetMeeting(meetingId);
+      const fresh = await fetchMeetings();
+      setMeetings(fresh ?? []);
+    } catch (err) {
+      console.error(err);
+      setError('Reset failed. Check console.');
+    } finally {
+      setResetting(null);
+      setArmedResetId(null);
+    }
+  }
+
+  // Cleanup any pending arm timer on unmount.
+  useEffect(() => () => {
+    if (resetDisarmRef.current) clearTimeout(resetDisarmRef.current);
+  }, []);
 
   return (
     <div className="app-shell">
@@ -248,13 +300,45 @@ export default function AdminMeeting() {
                       }}>
                         {isMonday ? 'Monday Prep' : 'Friday Review'}
                       </span>
-                      <Link
-                        to={`/admin/meeting/${m.id}`}
-                        className="btn btn-ghost"
-                        style={{ textDecoration: 'none' }}
-                      >
-                        Open
-                      </Link>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <Link
+                          to={`/admin/meeting/${m.id}`}
+                          className="btn btn-ghost"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Open
+                        </Link>
+                        {/* UAT post-Batch-D: Reset wipes meeting_notes + clears
+                            ended_at so the meeting can be re-run. Two-click
+                            arm/confirm with 3s auto-disarm — armed state borrows
+                            AdminMeetingSession's End Meeting visual treatment. */}
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          onClick={() => handleResetClick(m.id)}
+                          disabled={resetting !== null && resetting !== m.id}
+                          style={
+                            armedResetId === m.id
+                              ? {
+                                  background: 'rgba(196,30,58,0.14)',
+                                  borderColor: 'var(--red)',
+                                  color: 'var(--text)',
+                                }
+                              : undefined
+                          }
+                          title={
+                            armedResetId === m.id
+                              ? 'Click again to confirm reset (clears notes and ended state)'
+                              : 'Reset this meeting (clears notes and ended state)'
+                          }
+                        >
+                          {resetting === m.id
+                            ? 'Resetting…'
+                            : armedResetId === m.id
+                              ? 'Confirm reset?'
+                              : 'Reset'}
+                        </button>
+                      </div>
                     </div>
                     <div
                       className="muted"

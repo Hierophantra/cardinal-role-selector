@@ -504,6 +504,43 @@ export async function endMeeting(meetingId) {
   return data;
 }
 
+/**
+ * Admin reset for a single meeting. Wipes all meeting_notes for the meeting
+ * and clears ended_at on the meetings row so the session can be re-run from
+ * stop 1. The meeting row itself is preserved (creation timestamp, week_of,
+ * meeting_type all retained) — this is a "rewind", not a delete.
+ *
+ * Per UAT post-Batch-D spec: whatever was there before reset should be
+ * removed; the next session that ends produces the new summary.
+ *
+ * @param {string} meetingId meetings.id UUID
+ * @returns {Promise<object>} the updated meetings row (with ended_at cleared)
+ */
+export async function resetMeeting(meetingId) {
+  if (!meetingId) {
+    throw new Error('resetMeeting: meetingId is required');
+  }
+  // 1) Wipe all per-stop notes for this meeting (both shared body + per-partner columns).
+  //    Cascade is by FK in migration 005 (meeting_notes.meeting_id REFERENCES meetings(id)),
+  //    but we delete explicitly so the operation is auditable + survives FK schema changes.
+  const { error: delErr } = await supabase
+    .from('meeting_notes')
+    .delete()
+    .eq('meeting_id', meetingId);
+  if (delErr) throw delErr;
+
+  // 2) Clear ended_at — the meeting goes back to "in progress" state. held_at
+  //    is preserved (the meeting was still held at that time historically).
+  const { data, error } = await supabase
+    .from('meetings')
+    .update({ ended_at: null })
+    .eq('id', meetingId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function fetchMeetings() {
   const { data, error } = await supabase
     .from('meetings')
