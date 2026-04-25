@@ -1780,8 +1780,10 @@ textarea { resize: vertical; min-height: 120px; }
 
 /* --- Season Overview & Progress (Phase 11) --- */
 .progress-hit-rate { font-size: 15px; font-weight: 700; }
-.progress-week-label { font-size: 12px; font-weight: 400; color: var(--muted); }
-.progress-streak-alert { font-size: 12px; font-weight: 400; color: var(--muted); }
+/* UAT D2: bump week label and streak alert from 12px muted to 13px text-colored
+   so the Season Overview hub-card stats are readable on the dark surface. */
+.progress-week-label { font-size: 13px; font-weight: 400; color: var(--text); }
+.progress-streak-alert { font-size: 13px; font-weight: 600; color: var(--gold); }
 .progress-sparklines { display: flex; flex-direction: row; gap: 4px; align-items: flex-end; }
 .progress-sparkline-bar { height: 8px; border-radius: 4px; }
 .progress-overview { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px; }

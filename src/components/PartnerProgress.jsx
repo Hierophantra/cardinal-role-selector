@@ -141,13 +141,17 @@ export default function PartnerProgress() {
                   type="category"
                   dataKey="label"
                   width={180}
-                  tick={{ fontSize: 12, fill: 'var(--muted)' }}
+                  /* UAT D2: bump axis label contrast so KPI names are legible
+                     against the dark surface (#1E1E1E). 12px muted (#AAA) was
+                     reported as hard to read; 13px text-color reads cleanly. */
+                  tick={{ fontSize: 13, fill: 'var(--text)' }}
                 />
                 <Tooltip
                   contentStyle={{
                     background: 'var(--surface)',
                     border: '1px solid var(--border)',
-                    fontSize: 12,
+                    fontSize: 13,
+                    color: 'var(--text)',
                   }}
                   formatter={(value) => [`${value}%`, 'Hit Rate']}
                   labelFormatter={(label) => {
@@ -163,17 +167,21 @@ export default function PartnerProgress() {
                     dataKey="hitRate"
                     position="right"
                     formatter={(v) => `${v}%`}
-                    style={{ fontSize: 12, fontWeight: 700, fill: 'var(--text)' }}
+                    /* UAT D2: 13px (was 12px) for hit-rate values next to bars. */
+                    style={{ fontSize: 13, fontWeight: 700, fill: 'var(--text)' }}
                   />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-            {/* Inline streak badges below chart (D-10) */}
+            {/* Inline streak badges below chart (D-10).
+                UAT D2: bump from 12px muted to 13px text-colored so streak
+                callouts read cleanly under the chart. Streak label stays
+                gold (kept inline elsewhere for emphasis). */}
             {chartData.some((d) => d.streak >= 2) && (
               <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {chartData.filter((d) => d.streak >= 2).map((d) => (
-                  <span key={d.fullLabel} style={{ fontSize: 12, color: 'var(--muted)' }}>
-                    {d.fullLabel}: {copy.streakBadge(d.streak)}
+                  <span key={d.fullLabel} style={{ fontSize: 13, color: 'var(--text)' }}>
+                    {d.fullLabel}: <span style={{ color: 'var(--gold)', fontWeight: 700 }}>{copy.streakBadge(d.streak)}</span>
                   </span>
                 ))}
               </div>
