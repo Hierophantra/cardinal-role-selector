@@ -2,9 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, LabelList, ResponsiveContainer } from 'recharts';
-import { fetchKpiSelections, fetchScorecards, fetchGrowthPriorities } from '../lib/supabase.js';
+import { fetchKpiSelections, fetchScorecards, fetchGrowthPriorities, fetchBusinessPriorities } from '../lib/supabase.js';
 import { computeSeasonStats, computeStreaks, computeWeekNumber, getPerformanceColor } from '../lib/seasonStats.js';
 import { VALID_PARTNERS, PARTNER_DISPLAY, PROGRESS_COPY, GROWTH_STATUS_COPY } from '../data/content.js';
+import BusinessPrioritiesSection from './BusinessPrioritiesSection.jsx';
 
 const motionProps = {
   initial: { opacity: 0, y: 8 },
@@ -19,6 +20,11 @@ export default function PartnerProgress() {
   const [kpiSelections, setKpiSelections] = useState([]);
   const [scorecards, setScorecards] = useState([]);
   const [growthPriorities, setGrowthPriorities] = useState([]);
+  // UAT (post-D2): mirror PartnerHub's business-priorities surface here so the
+  // Season Overview page shows the same shared focus areas alongside personal
+  // growth status. null = still loading; [] = loaded but empty (rare per
+  // migration 011 seeding).
+  const [businessPriorities, setBusinessPriorities] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
@@ -31,11 +37,13 @@ export default function PartnerProgress() {
       fetchKpiSelections(partner),
       fetchScorecards(partner),
       fetchGrowthPriorities(partner),
+      fetchBusinessPriorities(),
     ])
-      .then(([sels, cards, growth]) => {
+      .then(([sels, cards, growth, biz]) => {
         setKpiSelections(sels);
         setScorecards(cards);
         setGrowthPriorities(growth);
+        setBusinessPriorities(biz);
       })
       .catch((err) => {
         console.error(err);
@@ -242,6 +250,11 @@ export default function PartnerProgress() {
               </div>
             </div>
           )}
+
+          {/* Section 4: Business Priorities (UAT post-D2 — mirror PartnerHub).
+              Same shared component as PartnerHub + AdminProfile (Phase 18 BIZ-02);
+              renders nothing while still loading (priorities === null). */}
+          <BusinessPrioritiesSection priorities={businessPriorities} />
         </motion.div>
       </div>
     </div>
