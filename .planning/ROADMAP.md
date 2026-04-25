@@ -120,7 +120,7 @@
 - [ ] 17-01-PLAN.md — Wave 0: src/lib/week.js Saturday-close semantics + effectiveResult helper + Phase 3 RESEARCH.md doc update
 - [ ] 17-02-PLAN.md — Wave 1: Migration 010 CHECK extension + content.js stop arrays + copy families + KPI_START_INDEX P-M2 fix
 - [x] 17-03-PLAN.md — Wave 2: Scorecard.jsx tri-state row + Pending textarea + submit gate + post-submit re-open + Phase 17 CSS appendix
-- [ ] 17-04-PLAN.md — Wave 3: AdminMeetingSession KpiReviewOptionalStop + SaturdayRecapStop renderers + goNext skip override + effectiveResult consumer audit (7 files)
+- [x] 17-04-PLAN.md — Wave 3: AdminMeetingSession KpiReviewOptionalStop + SaturdayRecapStop renderers + goNext skip override + effectiveResult consumer audit (7 files)
 **UI hint**: yes
 
 ### Phase 18: Shared Business Priorities Display

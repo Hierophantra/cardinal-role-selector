@@ -77,11 +77,11 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 
 ### Friday-Checkpoint / Saturday-Close Cycle (Phase 17)
 
-- [ ] **WEEK-01**: `isWeekClosed(today)` and related week-edge logic close the week at Saturday 23:59 local (not Sunday 00:00); after close, any `kpi_results` entry with `result='pending'` is treated as `'no'` for stats aggregation and history rendering — derived at read time, no DB write or row mutation required for the conversion
-- [ ] **KPI-01**: Scorecard rows accept three result states — `'yes' | 'no' | 'pending'` — persisted in `kpi_results[entry].result`; pre-Phase-17 2-state rows render unchanged with no migration; Pending rows are visually distinguished from Yes/No (badge or accent) wherever scorecard data renders (scorecard entry view, hub history, Friday meeting `kpi_*` stops)
-- [ ] **KPI-02**: Selecting Pending requires a non-empty follow-through text field ("what + by when") on the same row; the row is not treated as rated and `handleSubmit` cannot proceed until the text is provided; the text persists on the `kpi_results` entry (e.g., `pending_text`) and surfaces inline anywhere the row is rendered after submit
-- [ ] **MEET-07**: `FRIDAY_STOPS` includes a `kpi_review_optional` gate stop placed after `clear_the_air` and before `intro` (so order becomes `clear_the_air, kpi_review_optional, intro, kpi_1..kpi_7, growth_*, wrap`); in `AdminMeetingSession.jsx`, choosing "No, skip KPI review" advances past every `kpi_*` stop to the next non-KPI stop while "Yes" continues to `intro`/`kpi_1`; the gate choice persists in `meeting_notes` (`agenda_stop_key='kpi_review_optional'`, value in `agenda_notes`) so resume replays the chosen path; `MONDAY_STOPS` is unaffected — Monday has no `kpi_*` stops to gate (rationale: D-09 in 17-CONTEXT.md, same user-override pattern as Phase 16 D-02); meeting copy reframes Friday as a "checkpoint" rather than a final tally via MEETING_COPY edits in `src/data/content.js`
-- [ ] **MEET-08**: `MONDAY_STOPS` includes a `saturday_recap` stop placed immediately after `clear_the_air`; the stop renders only when last week's scorecard contains ≥1 row with `result='pending'`; for each Pending row the UI renders the KPI label, the stored follow-through text, and the conversion state (Yes / still No after Saturday close); `meeting_notes` CHECK constraint expanded to accept `saturday_recap` for Monday meetings via the Phase 14 idempotent DROP+ADD migration pattern
+- [x] **WEEK-01**: `isWeekClosed(today)` and related week-edge logic close the week at Saturday 23:59 local (not Sunday 00:00); after close, any `kpi_results` entry with `result='pending'` is treated as `'no'` for stats aggregation and history rendering — derived at read time, no DB write or row mutation required for the conversion
+- [x] **KPI-01**: Scorecard rows accept three result states — `'yes' | 'no' | 'pending'` — persisted in `kpi_results[entry].result`; pre-Phase-17 2-state rows render unchanged with no migration; Pending rows are visually distinguished from Yes/No (badge or accent) wherever scorecard data renders (scorecard entry view, hub history, Friday meeting `kpi_*` stops)
+- [x] **KPI-02**: Selecting Pending requires a non-empty follow-through text field ("what + by when") on the same row; the row is not treated as rated and `handleSubmit` cannot proceed until the text is provided; the text persists on the `kpi_results` entry (e.g., `pending_text`) and surfaces inline anywhere the row is rendered after submit
+- [x] **MEET-07**: `FRIDAY_STOPS` includes a `kpi_review_optional` gate stop placed after `clear_the_air` and before `intro` (so order becomes `clear_the_air, kpi_review_optional, intro, kpi_1..kpi_7, growth_*, wrap`); in `AdminMeetingSession.jsx`, choosing "No, skip KPI review" advances past every `kpi_*` stop to the next non-KPI stop while "Yes" continues to `intro`/`kpi_1`; the gate choice persists in `meeting_notes` (`agenda_stop_key='kpi_review_optional'`, value in `agenda_notes`) so resume replays the chosen path; `MONDAY_STOPS` is unaffected — Monday has no `kpi_*` stops to gate (rationale: D-09 in 17-CONTEXT.md, same user-override pattern as Phase 16 D-02); meeting copy reframes Friday as a "checkpoint" rather than a final tally via MEETING_COPY edits in `src/data/content.js`
+- [x] **MEET-08**: `MONDAY_STOPS` includes a `saturday_recap` stop placed immediately after `clear_the_air`; the stop renders only when last week's scorecard contains ≥1 row with `result='pending'`; for each Pending row the UI renders the KPI label, the stored follow-through text, and the conversion state (Yes / still No after Saturday close); `meeting_notes` CHECK constraint expanded to accept `saturday_recap` for Monday meetings via the Phase 14 idempotent DROP+ADD migration pattern
 
 ### Shared Business Priorities Display (Phase 18)
 
@@ -171,11 +171,11 @@ ROADMAP.md commit 913cc9f replaced both Phase 17 ("Meeting Stops + Admin Control
 | COUNT-03 | Phase 16 | Pending |
 | COUNT-04 | Phase 16 | Pending |
 | COUNT-05 | Phase 16 | Pending |
-| WEEK-01 | Phase 17 | Pending |
-| KPI-01 | Phase 17 | Pending |
-| KPI-02 | Phase 17 | Pending |
-| MEET-07 | Phase 17 | Pending |
-| MEET-08 | Phase 17 | Pending |
+| WEEK-01 | Phase 17 | Implemented (17-04) |
+| KPI-01 | Phase 17 | Implemented (17-03 partner write + 17-04 read-side audit) |
+| KPI-02 | Phase 17 | Implemented (17-03) |
+| MEET-07 | Phase 17 | Implemented (17-04) |
+| MEET-08 | Phase 17 | Implemented (17-04) |
 | BIZ-01 | Phase 18 | Pending |
 | BIZ-02 | Phase 18 | Pending |
 | BIZ-03 | Phase 18 | Pending |

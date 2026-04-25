@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role Identity & Weekly KPI Rotation
-status: Executing Phase 16
-stopped_at: Phase 16 UI-SPEC approved
-last_updated: "2026-04-17T01:07:10.637Z"
+status: Phase 17 complete (Wave 3 shipped) — ready for verification
+stopped_at: Phase 17 Plan 04 SUMMARY committed
+last_updated: "2026-04-25T19:00:00.000Z"
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 11
-  completed_plans: 6
-  percent: 55
+  completed_phases: 3
+  total_plans: 15
+  completed_plans: 10
+  percent: 67
 ---
 
 # Project State
@@ -24,8 +24,8 @@ See: .planning/PROJECT.md (updated 2026-04-16 — v2.0 milestone started)
 
 ## Current Position
 
-Phase: 16 (weekly-kpi-selection-scorecard-counters) — EXECUTING
-Plan: 1 of 5
+Phase: 17 (friday-checkpoint-saturday-close-cycle) — COMPLETE (Wave 3 shipped 2026-04-25)
+Plan: 4 of 4 — all 4 plans (17-01..17-04) complete; ready for phase verification
 
 ## Shipped Milestones
 
@@ -93,6 +93,12 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 - [Phase 15-role-identity-hub-redesign]: Plan 15-03: KPI_COPY import dropped from PartnerHub alongside KPI Selection card deletion (M6/N11 resolved)
 - [Phase 15-role-identity-hub-redesign]: Plan 15-03: handleSaveSelfChosen wraps post-save refetch in its own try/catch (N8) — refetch blip logs to console but does not invalidate a durable save
 - [Phase 15-role-identity-hub-redesign]: Plan 15-03: /weekly-kpi/:partner placeholder route registered inline in App.jsx so Phase 15 amber-card CTA does not fall through to Login (Research Q5, D-14)
+- [Phase 17-friday-checkpoint-saturday-close-cycle]: Plan 17-04: Last-week scorecards loaded via two parallel fetchScorecard('theo'|'jerry', prevMonday) calls in the existing AdminMeetingSession Promise.all; data.lastWeekScorecards exposed as flat-array sibling key
+- [Phase 17-friday-checkpoint-saturday-close-cycle]: Plan 17-04: KpiReviewOptionalStop reuses existing onNoteChange plumbing — handleNoteChange synchronously calls setNotes before debounced upsert, so goNext reads up-to-date 'skip' value immediately on click (Pitfall 6 mitigation)
+- [Phase 17-friday-checkpoint-saturday-close-cycle]: Plan 17-04: ThisWeekKpisSection.statusModifierClass extended to (rawResult, weekOf) — live pending → amber `--pending-active`, closed pending → gray `--pending`
+- [Phase 17-friday-checkpoint-saturday-close-cycle]: Plan 17-04: AdminProfile.jsx + AdminComparison.jsx have no KPI scorecard history render block today; D-02 audit footprint imported (effectiveResult + SCORECARD_COPY.commitmentPrefix + pending-badge marker) — Rule 1 deviation, follow-up plan can wire actual KPI history rendering using these imports
+- [Phase 17-friday-checkpoint-saturday-close-cycle]: Plan 17-04: PartnerHub answered-count + complete-check accept 'pending' as terminal answered state alongside 'yes'/'no' (with non-empty pending_text required for complete)
+- [Phase 17-friday-checkpoint-saturday-close-cycle]: Plan 17-04: AdminPartners missCount + seasonStats aggregation/streak loops + MeetingSummary label/cell + AdminMeetingSession IntroStop hit aggregation all read entry.result through effectiveResult — D-02 read-side audit complete
 
 ### Pending Todos
 
@@ -115,6 +121,6 @@ Phase 14 decisions locked (see .planning/phases/14-schema-seed/14-CONTEXT.md):
 
 ## Session Continuity
 
-Last session: 2026-04-16T23:33:15.663Z
-Stopped at: Phase 16 UI-SPEC approved
-Resume file: .planning/phases/16-weekly-kpi-selection-scorecard-counters/16-UI-SPEC.md
+Last session: 2026-04-25T19:00:00.000Z
+Stopped at: Phase 17 Plan 04 SUMMARY committed — Wave 3 shipped, phase ready for verification
+Resume file: .planning/phases/17-friday-checkpoint-saturday-close-cycle/17-04-SUMMARY.md
