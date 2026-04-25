@@ -149,6 +149,12 @@ export default function AdminMeetingSession() {
   });
   const [endPending, setEndPending] = useState(false);
   const [ending, setEnding] = useState(false);
+  // UAT B5/B6: confirm dialog state for the last-stop "Complete Meeting" CTA.
+  // Distinct from endPending (header End Meeting two-click arm) so the two paths
+  // do not interfere; the bottom-right Complete Meeting button opens a modal-style
+  // confirm card and only fires endMeeting on the explicit Confirm click.
+  const [completePending, setCompletePending] = useState(false);
+  const [completing, setCompleting] = useState(false);
 
   // --- Refs ---
   const debounceRef = useRef(null); // note-save debounce timer
@@ -397,6 +403,38 @@ export default function AdminMeetingSession() {
     [meeting, data, refreshPartnerScorecard]
   );
 
+  // --- Complete Meeting (UAT B5/B6) ---
+  // Last-stop "Complete Meeting" flow: opens a confirm panel; the Confirm button
+  // calls endMeeting (stamps ended_at) then navigates to the partner-facing
+  // MeetingSummary. Notes are already auto-saved per stop, so the only side
+  // effect of confirm is the ended_at stamp + redirect.
+  const handleCompleteClick = useCallback(() => {
+    if (completing || ending) return;
+    setCompletePending(true);
+  }, [completing, ending]);
+
+  const handleCompleteCancel = useCallback(() => {
+    setCompletePending(false);
+  }, []);
+
+  const handleCompleteConfirm = useCallback(async () => {
+    if (completing) return;
+    setCompleting(true);
+    try {
+      await endMeeting(id);
+      // Navigate to MeetingSummary. The route is partner-scoped; admin views
+      // the same summary surface as the partner does. 'theo' is a stable
+      // anchor here -- both partners' KPI/growth blocks are rendered inside
+      // the same summary regardless of :partner once Batch B3/B4 land.
+      navigate(`/meeting-summary/theo/${id}`);
+    } catch (err) {
+      console.error(err);
+      setError((meeting?.meeting_type === 'monday_prep' ? MONDAY_PREP_COPY : MEETING_COPY).errors.loadFail);
+      setCompleting(false);
+      setCompletePending(false);
+    }
+  }, [completing, id, navigate, meeting]);
+
   // --- End Meeting (two-click arm/confirm) ---
   const handleEndClick = useCallback(async () => {
     if (ending) return;
@@ -536,15 +574,67 @@ export default function AdminMeetingSession() {
         >
           {currentStopKey.replace(/_/g, ' ')}
         </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={goNext}
-          disabled={stopIndex === stops.length - 1}
-        >
-          Next {'\u2192'}
-        </button>
+        {stopIndex === stops.length - 1 ? (
+          // UAT B5/B6: last-stop CTA flips to "Complete Meeting" (both meeting
+          // types). Confirm dialog renders below the nav bar; until confirmed,
+          // ended_at is not stamped and the meeting can still be edited.
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleCompleteClick}
+            disabled={isEnded || completing || ending}
+          >
+            {copy.completeMeetingCta}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={goNext}
+          >
+            Next {'\u2192'}
+          </button>
+        )}
       </div>
+
+      {completePending && (
+        <div
+          className="meeting-complete-confirm"
+          style={{
+            margin: '16px auto 0',
+            maxWidth: 560,
+            padding: 20,
+            border: '1px solid var(--border, #2a2a2a)',
+            borderRadius: 12,
+            background: 'rgba(0,0,0,0.35)',
+          }}
+        >
+          <div className="eyebrow" style={{ marginBottom: 8 }}>
+            {copy.completeConfirmEyebrow}
+          </div>
+          <p style={{ margin: 0, lineHeight: 1.55 }}>
+            {copy.completeConfirmBody}
+          </p>
+          <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={handleCompleteCancel}
+              disabled={completing}
+            >
+              {copy.completeConfirmCancelCta}
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleCompleteConfirm}
+              disabled={completing}
+            >
+              {completing ? copy.completeConfirmEndingCta : copy.completeConfirmCta}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

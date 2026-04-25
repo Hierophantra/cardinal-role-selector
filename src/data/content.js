@@ -655,6 +655,14 @@ export const MEETING_COPY = {
   endConfirmBtn: 'Confirm End',
   endedNav: 'Back to Meeting History',
   landingEmpty: 'No past meetings yet. Start your first Friday Review or Monday Prep.',
+  // UAT B5/B6 — last-stop "Complete Meeting" CTA + confirm dialog copy
+  completeMeetingCta: 'Complete Meeting',
+  completeConfirmEyebrow: 'COMPLETE MEETING',
+  completeConfirmBody:
+    'End this meeting? Notes are auto-saved per stop, but ending will mark the meeting closed.',
+  completeConfirmCta: 'Yes, complete meeting',
+  completeConfirmCancelCta: 'Cancel',
+  completeConfirmEndingCta: 'Ending…',
   stops: {
     clearTheAirEyebrow: 'CLEAR THE AIR',
     clearTheAirHeading: 'Clear the Air',
@@ -702,6 +710,14 @@ export const MONDAY_PREP_COPY = {
   endConfirmBtn: 'Confirm End',
   endedNav: 'Back to Meeting History',
   landingEmpty: 'No Monday Prep sessions yet. Start your first prep session.',
+  // UAT B5/B6 — last-stop "Complete Meeting" CTA + confirm dialog copy
+  completeMeetingCta: 'Complete Meeting',
+  completeConfirmEyebrow: 'COMPLETE MEETING',
+  completeConfirmBody:
+    'End this meeting? Notes are auto-saved per stop, but ending will mark the meeting closed.',
+  completeConfirmCta: 'Yes, complete meeting',
+  completeConfirmCancelCta: 'Cancel',
+  completeConfirmEndingCta: 'Ending…',
   stops: {
     clearTheAirEyebrow: 'CLEAR THE AIR',
     clearTheAirHeading: 'Clear the Air',
