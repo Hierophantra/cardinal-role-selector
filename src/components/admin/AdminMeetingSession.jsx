@@ -11,7 +11,7 @@ import {
   fetchGrowthPriorities,
   fetchScorecard,
 } from '../../lib/supabase.js';
-import { formatWeekRange } from '../../lib/week.js';
+import { formatWeekRange, effectiveResult } from '../../lib/week.js';
 import {
   MEETING_COPY,
   MONDAY_PREP_COPY,
@@ -20,6 +20,7 @@ import {
   KPI_STOP_COUNT,
   GROWTH_STATUS_COPY,
   PARTNER_DISPLAY,
+  SCORECARD_COPY,
 } from '../../data/content.js';
 
 // Stop arrays are now imported from content.js (FRIDAY_STOPS, MONDAY_STOPS).
@@ -41,6 +42,19 @@ function getLabelForEntry(kpiId, entry, lockedKpis) {
   if (entry && entry.label) return entry.label;
   const match = lockedKpis.find((k) => k.id === kpiId);
   return match?.label_snapshot ?? '(unknown KPI)';
+}
+
+// Phase 17 Wave 3: derive the previous week's Monday from a current Monday string,
+// using local-time arithmetic (no UTC ISO slicing) to honor the week-identity convention
+// established in src/lib/week.js. Used by the Monday-prep meeting load to fetch last
+// week's scorecards for SaturdayRecapStop.
+function previousMondayOf(currentMondayStr) {
+  const [y, m, d] = currentMondayStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d - 7);
+  const yy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
 }
 
 // Slide transition for stop swaps — directional based on Prev/Next.
@@ -69,6 +83,7 @@ export default function AdminMeetingSession() {
   const [data, setData] = useState({
     theo: { kpis: [], growth: [], scorecard: null },
     jerry: { kpis: [], growth: [], scorecard: null },
+    lastWeekScorecards: [],
   });
   const [endPending, setEndPending] = useState(false);
   const [ending, setEnding] = useState(false);
@@ -93,6 +108,7 @@ export default function AdminMeetingSession() {
         }
         setMeeting(m);
 
+        const prevMonday = previousMondayOf(m.week_of);
         const [
           theoKpis,
           jerryKpis,
@@ -100,6 +116,8 @@ export default function AdminMeetingSession() {
           jerryGrowth,
           theoScorecard,
           jerryScorecard,
+          theoPrevScorecard,
+          jerryPrevScorecard,
           noteRows,
         ] = await Promise.all([
           fetchKpiSelections('theo'),
@@ -108,9 +126,16 @@ export default function AdminMeetingSession() {
           fetchGrowthPriorities('jerry'),
           fetchScorecard('theo', m.week_of),
           fetchScorecard('jerry', m.week_of),
+          // Phase 17 Wave 3: load last-week scorecards so SaturdayRecapStop can render
+          // per-row conversion cards on Monday-prep meetings. Flat array on data; the
+          // SaturdayRecapStop renderer iterates and reads { partner, week_of, kpi_results }.
+          fetchScorecard('theo', prevMonday),
+          fetchScorecard('jerry', prevMonday),
           fetchMeetingNotes(id),
         ]);
         if (!alive) return;
+
+        const lastWeekScorecards = [theoPrevScorecard, jerryPrevScorecard].filter(Boolean);
 
         setData({
           theo: {
@@ -123,6 +148,7 @@ export default function AdminMeetingSession() {
             growth: jerryGrowth ?? [],
             scorecard: jerryScorecard ?? null,
           },
+          lastWeekScorecards,
         });
 
         // Seed note drafts from any existing meeting_notes rows
@@ -172,8 +198,19 @@ export default function AdminMeetingSession() {
   // --- Navigation ---
   const goNext = useCallback(() => {
     setDirection(1);
-    setStopIndex((i) => Math.min(i + 1, stops.length - 1));
-  }, [stops]);
+    setStopIndex((i) => {
+      const currentKey = stops[i];
+      // Phase 17 D-10: when leaving the kpi_review_optional gate stop with the 'skip'
+      // choice persisted, jump past every kpi_* stop to 'growth_personal'. handleNoteChange
+      // calls setNotes synchronously before the debounced upsert, so notes['kpi_review_optional']
+      // already reflects the user's choice by the time goNext fires.
+      if (currentKey === 'kpi_review_optional' && notes['kpi_review_optional'] === 'skip') {
+        const target = stops.indexOf('growth_personal');
+        if (target >= 0) return target;
+      }
+      return Math.min(i + 1, stops.length - 1);
+    });
+  }, [stops, notes]);
 
   const goPrev = useCallback(() => {
     setDirection(-1);
@@ -476,6 +513,33 @@ function StopRenderer({
     );
   }
 
+  if (stopKey === 'kpi_review_optional') {
+    return (
+      <KpiReviewOptionalStop
+        meeting={meeting}
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
+      />
+    );
+  }
+
+  if (stopKey === 'saturday_recap') {
+    return (
+      <SaturdayRecapStop
+        meeting={meeting}
+        lastWeekScorecards={data?.lastWeekScorecards ?? []}
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
+      />
+    );
+  }
+
   if (stopKey === 'week_preview') {
     return (
       <WeekPreviewStop
@@ -664,6 +728,140 @@ function ClearTheAirStop({ meeting, notes, savedFlash, onNoteChange, copy, isEnd
 }
 
 // --------------------------------------------------------------------------
+// KPI Review gate stop — Friday Review only (Phase 17 D-09, D-10, D-12, D-17)
+// Persists 'review' | 'skip' via meeting_notes (agenda_stop_key='kpi_review_optional');
+// goNext consumes the 'skip' choice to bypass kpi_* stops (see goNext above).
+// On resume, renders the read-only summary line below the buttons rather than
+// re-prompting (D-17). Trace can navigate back via Prev to flip the choice.
+// --------------------------------------------------------------------------
+
+function KpiReviewOptionalStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
+  const choice = notes['kpi_review_optional'] ?? null; // 'review' | 'skip' | null
+  const isFirstVisit = choice === null;
+
+  function chooseReview() {
+    onNoteChange('kpi_review_optional', 'review');
+  }
+  function chooseSkip() {
+    onNoteChange('kpi_review_optional', 'skip');
+  }
+
+  return (
+    <>
+      <div className="eyebrow meeting-stop-eyebrow">{copy.stops.kpiReviewOptionalEyebrow}</div>
+      <h3 className="meeting-stop-heading">{copy.stops.kpiReviewOptionalHeading}</h3>
+      <p className="meeting-stop-subtext">{copy.stops.kpiReviewOptionalSubtext}</p>
+
+      <div className="scorecard-yn-row">
+        <button
+          type="button"
+          className={`scorecard-yn-btn yes${choice === 'review' ? ' active' : ''}`}
+          onClick={chooseReview}
+          disabled={isEnded}
+        >
+          {copy.stops.kpiReviewOptionalYesCta}
+        </button>
+        <button
+          type="button"
+          className={`scorecard-yn-btn skip${choice === 'skip' ? ' active' : ''}`}
+          onClick={chooseSkip}
+          disabled={isEnded}
+        >
+          {copy.stops.kpiReviewOptionalSkipCta}
+        </button>
+      </div>
+
+      {!isFirstVisit && (
+        <p className="meeting-stop-summary muted" style={{ marginTop: 12 }}>
+          {choice === 'skip'
+            ? copy.stops.kpiReviewOptionalSkipSummary
+            : copy.stops.kpiReviewOptionalReviewSummary}
+        </p>
+      )}
+
+      <StopNotesArea
+        stopKey="kpi_review_optional"
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
+      />
+    </>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Saturday Recap stop — Monday Prep only (Phase 17 D-11, D-15, D-16)
+// Reads last week's scorecards (loaded into data.lastWeekScorecards) and surfaces
+// every row whose pending_text was preserved on Friday close. Conversion state
+// derives from effectiveResult — 'yes' = met by Saturday, anything else = did not
+// convert. When zero qualifying rows exist, renders the placeholder card per D-15.
+// --------------------------------------------------------------------------
+
+function SaturdayRecapStop({ lastWeekScorecards, notes, savedFlash, onNoteChange, copy, isEnded }) {
+  const recapRows = [];
+  for (const sc of lastWeekScorecards ?? []) {
+    const results = sc?.kpi_results ?? {};
+    for (const [tplId, entry] of Object.entries(results)) {
+      const pendingText = (entry?.pending_text ?? '').trim();
+      if (!pendingText) continue;
+      // entry has follow-through commitment text — was Pending at some point last week.
+      const eff = effectiveResult(entry?.result, sc.week_of);
+      const converted = eff === 'yes';
+      recapRows.push({
+        partner: sc.partner,
+        tplId,
+        label: entry?.label ?? '(KPI)',
+        pending_text: entry.pending_text,
+        converted,
+      });
+    }
+  }
+
+  const empty = recapRows.length === 0;
+
+  return (
+    <>
+      <div className="eyebrow meeting-stop-eyebrow">{copy.stops.saturdayRecapEyebrow}</div>
+      <h3 className="meeting-stop-heading">{copy.stops.saturdayRecapHeading}</h3>
+
+      {empty ? (
+        <div className="saturday-recap-empty">{copy.stops.saturdayRecapEmpty}</div>
+      ) : (
+        <div className="saturday-recap-list">
+          {recapRows.map((row, i) => (
+            <div key={`${row.partner}-${row.tplId}-${i}`} className="saturday-recap-row">
+              <div
+                className="saturday-recap-label"
+                style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}
+              >
+                {PARTNER_DISPLAY[row.partner] ?? row.partner}: {row.label}
+              </div>
+              <div className="saturday-recap-commitment">
+                {copy.stops.saturdayRecapCommitmentPrefix}{row.pending_text}
+              </div>
+              <div className={`saturday-recap-conversion ${row.converted ? 'met' : 'not-converted'}`}>
+                {row.converted ? copy.stops.saturdayRecapMet : copy.stops.saturdayRecapNotConverted}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <StopNotesArea
+        stopKey="saturday_recap"
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
+      />
+    </>
+  );
+}
+
+// --------------------------------------------------------------------------
 // Monday Prep stop components
 // --------------------------------------------------------------------------
 
@@ -826,7 +1024,13 @@ function IntroStop({ meeting, data, notes, savedFlash, onNoteChange, copy, isEnd
       >
         {PARTNERS.map((p) => {
           const results = data[p].scorecard?.kpi_results ?? {};
-          const hit = Object.values(results).filter((e) => e?.result === 'yes').length;
+          // Phase 17 D-02: aggregate via effectiveResult so post-Saturday-close pending
+          // entries are not double-counted as hits. Live pending stays out of hits;
+          // closed-week pending coerces to 'no' (still excluded from hit count).
+          const cardWeekOf = data[p].scorecard?.week_of;
+          const hit = Object.values(results).filter(
+            (e) => effectiveResult(e?.result, cardWeekOf) === 'yes'
+          ).length;
           const total = data[p].kpis.length;
           return (
             <div key={p} className="meeting-kpi-cell">
@@ -906,8 +1110,13 @@ function KpiStop({
           const label = getLabelForEntry(kpiId, entry, data[p].kpis);
           const result = entry.result ?? null;
           const reflection = entry.reflection ?? '';
+          const pendingText = (entry.pending_text ?? '').trim();
+          // Phase 17 D-08: extend cell state with 'pending' so the amber border CSS lights up.
           const cellStateClass =
-            result === 'yes' ? 'yes' : result === 'no' ? 'no' : 'null';
+            result === 'yes' ? 'yes' :
+            result === 'no' ? 'no' :
+            result === 'pending' ? 'pending' :
+            'null';
           const override = data[p].scorecard?.admin_override_at;
 
           return (
@@ -916,7 +1125,20 @@ function KpiStop({
               <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.4 }}>
                 {label}
                 {locked.kpi_templates?.mandatory && <span className="kpi-core-badge">Core</span>}
+                {result === 'pending' && (
+                  <span className="pending-badge" style={{ marginLeft: 8 }}>
+                    {SCORECARD_COPY.pendingBadge}
+                  </span>
+                )}
               </div>
+
+              {/* Phase 17 D-08: Friday-meeting per-row commitment block, surfaces the
+                  partner's "By Saturday: ..." text so Trace can read it during review. */}
+              {result === 'pending' && pendingText !== '' && (
+                <div className="kpi-mtg-pending-block">
+                  {SCORECARD_COPY.bySaturdayPrefix}{entry.pending_text}
+                </div>
+              )}
 
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
