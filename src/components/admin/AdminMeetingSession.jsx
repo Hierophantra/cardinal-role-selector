@@ -26,8 +26,9 @@ import {
 // The active stop array is derived from meeting.meeting_type inside the component.
 
 // KPI_START_INDEX: position of kpi_1 in FRIDAY_STOPS.
-// clear_the_air=0, intro=1, kpi_1=2. Used to derive kpiIndex from stopIndex.
-const KPI_START_INDEX = 2;
+// Derived from FRIDAY_STOPS so this stays correct even when the array is reordered
+// (Phase 17 inserts 'kpi_review_optional' at index 1, shifting kpi_1 to index 3).
+const KPI_START_INDEX = FRIDAY_STOPS.indexOf('kpi_1');
 
 const PARTNERS = ['theo', 'jerry'];
 const DEBOUNCE_MS = 400;
@@ -550,8 +551,9 @@ function StopRenderer({
     );
   }
 
-  if (stopKey.startsWith('kpi_')) {
-    // KPI_START_INDEX = 2 (clear_the_air=0, intro=1, kpi_1=2 in FRIDAY_STOPS)
+  if (/^kpi_\d+$/.test(stopKey)) {
+    // KPI_START_INDEX derives via FRIDAY_STOPS.indexOf('kpi_1') — currently 3 (clear_the_air=0, kpi_review_optional=1, intro=2, kpi_1=3)
+    // Note: regex restricts this branch to numbered kpi_* stops; 'kpi_review_optional' (Wave 3 renderer pending) does NOT match.
     const kpiIndex = stopIndex - KPI_START_INDEX;
     return (
       <KpiStop

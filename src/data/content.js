@@ -536,6 +536,19 @@ export const SCORECARD_COPY = {
   emptyGuardHeading: 'No weekly KPI selected yet.',
   emptyGuardBody: 'Head back to the hub and choose your KPI for this week first.',
   emptyGuardCta: 'Go to Hub',
+  // --- Phase 17 Pending state extensions (D-14, KPI-01, KPI-02, D-16) ---
+  pendingBtn: 'Pending',
+  pendingFollowThroughLabel: 'Follow-through commitment',
+  pendingFollowThroughPlaceholder:
+    "What will you do, and by when? (e.g., 'Email the client by Saturday EOD')",
+  pendingBadge: 'Pending',
+  pendingBadgeMuted: 'Pending → No',
+  bySaturdayPrefix: 'By Saturday: ',
+  commitmentPrefix: 'Commitment: ',
+  submitErrorPendingTextRequired:
+    "Add a 'what + by when' commitment to each Pending row before submitting.",
+  pendingUpdateNote: 'Update Pending row — locks at Saturday 23:59',
+  pendingUpdateCta: 'Update Pending Rows',
   hubCard: {
     title: 'Weekly Scorecard',
     description: 'Check in on your 7 KPIs each week and track your progress over time.',
@@ -633,7 +646,7 @@ export const MEETING_COPY = {
   startCta: 'Start Meeting',
   heroCardTitle: 'Meeting Mode',
   heroCardDescription:
-    "Run Friday's accountability review \u2014 step through each KPI and growth priority with both partners.",
+    "Friday checkpoint \u2014 are partners on track? Anything still Pending lands by Saturday.",
   progressPill: (n, total) => `Stop ${n} of ${total}`,
   weekPickerLabel: 'Week:',
   endBtn: 'End Meeting',
@@ -644,14 +657,23 @@ export const MEETING_COPY = {
     clearTheAirEyebrow: 'CLEAR THE AIR',
     clearTheAirHeading: 'Clear the Air',
     clearTheAirSubtext: 'Anything partners need to say before diving into the numbers.',
-    introEyebrow: 'FRIDAY REVIEW',
-    introHeading: (weekLabel) => `Week of ${weekLabel}`,
+    introEyebrow: 'FRIDAY CHECKPOINT',
+    introHeading: (weekLabel) => `Checkpoint \u2014 Week of ${weekLabel}`,
+    introSubtext: 'Are you on track? Anything still Pending lands by Saturday.',
     kpiEyebrow: (n, total) => `KPI ${n} of ${total}`,
+    kpiReviewOptionalEyebrow: 'REVIEW KPIs?',
+    kpiReviewOptionalHeading: 'Reviewing KPIs in this meeting?',
+    kpiReviewOptionalSubtext:
+      'Skipping is fine for shorter check-ins. Pending commitments still land by Saturday either way.',
+    kpiReviewOptionalYesCta: 'Yes \u2014 review KPIs',
+    kpiReviewOptionalSkipCta: 'No \u2014 skip to growth',
+    kpiReviewOptionalSkipSummary: 'Skipped \u2014 Yes/No KPIs not reviewed this meeting.',
+    kpiReviewOptionalReviewSummary: 'Reviewing KPIs.',
     growthPersonalEyebrow: 'PERSONAL GROWTH',
     growthBusinessEyebrow: (n) => `BUSINESS GROWTH ${n} of 2`,
-    wrapHeading: 'Closing Thoughts',
+    wrapHeading: "This Week's Checkpoint",
     wrapSubtext:
-      'Capture any action items or follow-ups before ending the session.',
+      'Capture follow-ups. Pending commitments lock in at Saturday 23:59. See you Monday for the recap.',
   },
   notesPlaceholder: 'Add notes for this stop...',
   savedFlash: 'Saved',
@@ -677,6 +699,12 @@ export const MONDAY_PREP_COPY = {
     clearTheAirEyebrow: 'CLEAR THE AIR',
     clearTheAirHeading: 'Clear the Air',
     clearTheAirSubtext: "Anything partners need to get off their chest before the week begins.",
+    saturdayRecapEyebrow: 'SATURDAY RECAP',
+    saturdayRecapHeading: "Last Friday's Pending Commitments",
+    saturdayRecapEmpty: 'No Pending rows from last Friday — nothing to recap.',
+    saturdayRecapCommitmentPrefix: 'Commitment: ',
+    saturdayRecapMet: '✓ Met by Saturday',
+    saturdayRecapNotConverted: '× Did not convert',
     weekPreviewEyebrow: 'WEEK PREVIEW',
     weekPreviewHeading: "What's Coming This Week",
     weekPreviewSubtext: "Upcoming travel, deadlines, and anything unusual on the calendar.",
@@ -715,6 +743,7 @@ export const MONDAY_PREP_COPY = {
 
 export const FRIDAY_STOPS = [
   'clear_the_air',
+  'kpi_review_optional',
   'intro',
   'kpi_1', 'kpi_2', 'kpi_3', 'kpi_4', 'kpi_5', 'kpi_6', 'kpi_7',
   'growth_personal', 'growth_business_1', 'growth_business_2',
@@ -723,13 +752,16 @@ export const FRIDAY_STOPS = [
 
 export const MONDAY_STOPS = [
   'clear_the_air',
+  'saturday_recap',
   'week_preview',
   'priorities_focus',
   'risks_blockers',
   'commitments',
 ];
 
-export const KPI_STOP_COUNT = FRIDAY_STOPS.filter(s => s.startsWith('kpi_')).length;
+// Phase 17: filter narrowed to numbered kpi stops only ('kpi_1'..'kpi_7') so the new
+// 'kpi_review_optional' gate (which also starts with 'kpi_') is not counted.
+export const KPI_STOP_COUNT = FRIDAY_STOPS.filter(s => /^kpi_\d+$/.test(s)).length;
 
 // --- Phase 11: Season Overview & Progress ---
 
