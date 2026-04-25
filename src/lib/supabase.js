@@ -698,3 +698,21 @@ export async function upsertAdminSetting(key, value) {
   if (error) throw error;
   return data;
 }
+
+// --- Business Priorities (Phase 18, BIZ-01) ---
+// Read-only fetch for the 2 shared business priorities seeded by migration 011.
+// Returns rows ordered by id ascending (deterministic: lead_abatement_activation < salesmen_onboarding).
+// No write functions in v2.0 (D-04) — content edited via SQL UPDATE on the migration-011 footer recipe.
+
+/**
+ * Fetch all business_priorities rows ordered by id ascending.
+ * @returns {Promise<Array<{id: string, title: string, description: string, deliverables: string[]}>>}
+ */
+export async function fetchBusinessPriorities() {
+  const { data, error } = await supabase
+    .from('business_priorities')
+    .select('id, title, description, deliverables')
+    .order('id', { ascending: true });
+  if (error) throw error;
+  return data;
+}
