@@ -117,11 +117,22 @@ export default function PartnerProgress() {
         <motion.div className="screen" {...motionProps}>
           {backNav}
 
-          {/* Section 1: Season Overview (D-14 order: Overview > Chart > Growth) */}
+          {/* Section 1: Season Overview (D-14 order: Overview > Chart > Growth)
+              UAT (post-D2): when seasonHitRate is null, getPerformanceColor returns
+              var(--border) (#2e2e2e) which is invisible against the dark surface.
+              Fall back to var(--text) so the em-dash placeholder reads cleanly. */}
           <div className="progress-overview">
             <span className="eyebrow" style={{ color: 'var(--gold)' }}>{copy.eyebrow}</span>
             <div className="progress-stat-display">
-              <span className="progress-stat-value" style={{ color: getPerformanceColor(seasonStats.seasonHitRate) }}>
+              <span
+                className="progress-stat-value"
+                style={{
+                  color:
+                    seasonStats.seasonHitRate !== null
+                      ? getPerformanceColor(seasonStats.seasonHitRate)
+                      : 'var(--text)',
+                }}
+              >
                 {seasonStats.seasonHitRate !== null ? `${seasonStats.seasonHitRate}%` : '\u2014'}
               </span>
               <span className="progress-stat-label">{copy.statLabel}</span>
@@ -141,10 +152,13 @@ export default function PartnerProgress() {
                   type="category"
                   dataKey="label"
                   width={180}
-                  /* UAT D2: bump axis label contrast so KPI names are legible
-                     against the dark surface (#1E1E1E). 12px muted (#AAA) was
-                     reported as hard to read; 13px text-color reads cleanly. */
-                  tick={{ fontSize: 13, fill: 'var(--text)' }}
+                  /* UAT D2 follow-up: recharts passes `fill` to SVG <text> as an
+                     attribute, not CSS — so `var(--text)` does NOT resolve and
+                     the browser falls back to default (black on dark grey).
+                     Use the literal hex value of --text (#FAFAFA) for both axis
+                     ticks and LabelList. Tooltip contentStyle is HTML CSS and
+                     can keep the variable. */
+                  tick={{ fontSize: 13, fill: '#FAFAFA' }}
                 />
                 <Tooltip
                   contentStyle={{
@@ -152,7 +166,14 @@ export default function PartnerProgress() {
                     border: '1px solid var(--border)',
                     fontSize: 13,
                     color: 'var(--text)',
+                    maxWidth: 320,
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    lineHeight: 1.4,
                   }}
+                  wrapperStyle={{ maxWidth: 320, whiteSpace: 'normal' }}
+                  labelStyle={{ color: 'var(--gold)', fontWeight: 700, marginBottom: 4 }}
+                  itemStyle={{ color: 'var(--text)', whiteSpace: 'normal' }}
                   formatter={(value) => [`${value}%`, 'Hit Rate']}
                   labelFormatter={(label) => {
                     const match = chartData.find((d) => d.label === label);
@@ -167,8 +188,10 @@ export default function PartnerProgress() {
                     dataKey="hitRate"
                     position="right"
                     formatter={(v) => `${v}%`}
-                    /* UAT D2: 13px (was 12px) for hit-rate values next to bars. */
-                    style={{ fontSize: 13, fontWeight: 700, fill: 'var(--text)' }}
+                    /* UAT D2: 13px (was 12px) for hit-rate values next to bars.
+                       Use literal hex (--text resolved) — SVG attribute fill does
+                       not understand CSS variables. */
+                    style={{ fontSize: 13, fontWeight: 700, fill: '#FAFAFA' }}
                   />
                 </Bar>
               </BarChart>
