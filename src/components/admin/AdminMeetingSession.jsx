@@ -10,6 +10,7 @@ import {
   fetchKpiSelections,
   fetchGrowthPriorities,
   fetchScorecard,
+  fetchBusinessPriorities,
 } from '../../lib/supabase.js';
 import { formatWeekRange, effectiveResult } from '../../lib/week.js';
 import {
@@ -21,6 +22,7 @@ import {
   GROWTH_STATUS_COPY,
   PARTNER_DISPLAY,
   SCORECARD_COPY,
+  BUSINESS_GROWTH_STOP_MAPPING,
 } from '../../data/content.js';
 
 // Stop arrays are now imported from content.js (FRIDAY_STOPS, MONDAY_STOPS).
@@ -84,6 +86,7 @@ export default function AdminMeetingSession() {
     theo: { kpis: [], growth: [], scorecard: null },
     jerry: { kpis: [], growth: [], scorecard: null },
     lastWeekScorecards: [],
+    businessPriorities: [],
   });
   const [endPending, setEndPending] = useState(false);
   const [ending, setEnding] = useState(false);
@@ -119,6 +122,7 @@ export default function AdminMeetingSession() {
           theoPrevScorecard,
           jerryPrevScorecard,
           noteRows,
+          bizPriorities,
         ] = await Promise.all([
           fetchKpiSelections('theo'),
           fetchKpiSelections('jerry'),
@@ -132,6 +136,7 @@ export default function AdminMeetingSession() {
           fetchScorecard('theo', prevMonday),
           fetchScorecard('jerry', prevMonday),
           fetchMeetingNotes(id),
+          fetchBusinessPriorities(),
         ]);
         if (!alive) return;
 
@@ -149,6 +154,7 @@ export default function AdminMeetingSession() {
             scorecard: jerryScorecard ?? null,
           },
           lastWeekScorecards,
+          businessPriorities: bizPriorities ?? [],
         });
 
         // Seed note drafts from any existing meeting_notes rows
@@ -1227,11 +1233,94 @@ function GrowthStop({
   copy,
   isEnded,
 }) {
+  // Hooks-before-early-return (P-U2): collapsible state for the business branch's per-card
+  // deliverables toggle. Keyed by priority.id so each card opens/closes independently.
+  // Personal branch ignores this state.
+  const [expanded, setExpanded] = useState({});
+
   const eyebrow =
     kind === 'personal'
       ? copy.stops.growthPersonalEyebrow
       : copy.stops.growthBusinessEyebrow(ordinal);
 
+  // -----------------------------------------------------------------------
+  // BUSINESS BRANCH (Phase 18 BIZ-03 / D-15):
+  //   - Render single shared-priority card (title + description + collapsible deliverables)
+  //   - Divider
+  //   - Single shared StopNotesArea (Option A \u2014 A2 deviation; meeting_notes is keyed by
+  //     (meeting_id, agenda_stop_key) only \u2014 no per-partner column. Trace types both
+  //     partners' commitments into one textarea per CONTEXT D-17 no-schema-changes rule.)
+  // -----------------------------------------------------------------------
+  if (kind === 'business') {
+    const priorityId = BUSINESS_GROWTH_STOP_MAPPING[stopKey];
+    const priority = (data.businessPriorities ?? []).find((p) => p.id === priorityId);
+    const isOpen = priority ? Boolean(expanded[priority.id]) : false;
+
+    return (
+      <>
+        <div className="eyebrow meeting-stop-eyebrow">{eyebrow}</div>
+        <h3 className="meeting-stop-heading">Growth Priority</h3>
+        <p className="meeting-stop-subtext">
+          {copy.stops.growthBusinessSubtext}
+        </p>
+
+        {priority ? (
+          <div className="business-priority-card business-priority-card--meeting">
+            <div className="eyebrow meeting-stop-eyebrow">
+              {copy.stops.businessPriorityCardEyebrow(ordinal)}
+            </div>
+            <h4>{priority.title}</h4>
+            <p className="business-priority-description">{priority.description}</p>
+
+            <button
+              type="button"
+              className="business-priority-toggle"
+              onClick={() => setExpanded((s) => ({ ...s, [priority.id]: !s[priority.id] }))}
+              aria-expanded={isOpen}
+            >
+              <span className="business-priority-toggle-chevron" aria-hidden="true">
+                {isOpen ? '\u25be' : '\u25b8'}
+              </span>
+              {isOpen
+                ? copy.stops.businessPriorityToggleHide
+                : copy.stops.businessPriorityToggleShow}
+            </button>
+
+            <div
+              className={`business-priority-deliverables ${isOpen ? 'expanded' : ''}`}
+            >
+              <ul className="business-priority-deliverables-list day-in-life-list">
+                {(priority.deliverables ?? []).map((d, i) => (
+                  <li key={i}>{d}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ) : (
+          <div className="muted" style={{ fontSize: 14, fontStyle: 'italic' }}>
+            {data.businessPriorities === undefined || data.businessPriorities.length === 0
+              ? 'Loading business priority\u2026'
+              : 'Business priority not found for this stop.'}
+          </div>
+        )}
+
+        <hr className="meeting-shared-priority-divider" />
+
+        <StopNotesArea
+          stopKey={stopKey}
+          notes={notes}
+          savedFlash={savedFlash}
+          onNoteChange={onNoteChange}
+          copy={copy}
+          isEnded={isEnded}
+        />
+      </>
+    );
+  }
+
+  // -----------------------------------------------------------------------
+  // PERSONAL BRANCH (UNCHANGED \u2014 preserves existing per-partner growth-cell render)
+  // -----------------------------------------------------------------------
   return (
     <>
       <div className="eyebrow meeting-stop-eyebrow">{eyebrow}</div>
