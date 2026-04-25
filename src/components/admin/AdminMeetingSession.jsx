@@ -1047,12 +1047,12 @@ function SaturdayRecapStop({ lastWeekScorecards, notes, savedFlash, onNoteChange
 function WeekPreviewStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
   return (
     <>
-      <div className="eyebrow meeting-stop-eyebrow">WEEK PREVIEW</div>
+      <div className="eyebrow meeting-stop-eyebrow">{copy.stops.weekPreviewEyebrow}</div>
       <h2 className="meeting-stop-heading" style={{ fontSize: 28, lineHeight: 1.2 }}>
-        What&apos;s Coming This Week
+        {copy.stops.weekPreviewHeading}
       </h2>
       <p className="meeting-stop-subtext">
-        Upcoming travel, deadlines, and anything unusual on the calendar.
+        {copy.stops.weekPreviewSubtext}
       </p>
       <StopNotesArea
         stopKey="week_preview"

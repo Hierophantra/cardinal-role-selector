@@ -746,7 +746,7 @@ export const MONDAY_PREP_COPY = {
     saturdayRecapNotConverted: '× Did not convert',
     weekPreviewEyebrow: 'WEEK PREVIEW',
     weekPreviewHeading: "What's Coming This Week",
-    weekPreviewSubtext: "Upcoming travel, deadlines, and anything unusual on the calendar.",
+    weekPreviewSubtext: "Jobs going up, deadlines, weekly objectives, and uncertainties to surface.",
     prioritiesFocusEyebrow: 'PRIORITIES & FOCUS',
     prioritiesFocusHeading: 'Top 2-3 Priorities',
     // UAT C2: per-partner notes — explain each textarea is for that partner only.
