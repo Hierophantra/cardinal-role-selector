@@ -33,7 +33,7 @@ export const ROLE_IDENTITY = {
   },
   jerry: {
     title: 'Director of Operations',
-    selfQuote: 'Maintaining our systems and operations flowing.',
+    selfQuote: 'Maintaining our systems and keeping our operations flowing.',
     narrativePreview: 'Your role is the engine that keeps Cardinal running.',
     narrative:
       'Your role is the engine that keeps Cardinal running. Every system, every financial record, every post-job follow-up, every piece of administrative infrastructure is your domain. You make sure that the revenue Theo generates is tracked, protected, and multiplied through operational excellence. You manage the people and tools that handle reviews, marketing, and client follow-through, and you are the one who can answer the question no one could answer before: did Cardinal make money or lose money this month? You are also the one looking ahead, finding awards, certifications, and opportunities that keep Cardinal growing and competitive.',
