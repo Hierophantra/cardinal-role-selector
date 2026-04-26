@@ -216,10 +216,13 @@ export default function PartnerHub() {
   // (Scorecard.jsx Pattern 5 composition). Count over the full set, not just mandatory,
   // so the hub-card "X of Y checked in" denominator matches Scorecard's "Y / 7" counter.
   // The weekly choice template_id lives in weeklySelection (weekly_kpi_selections row).
-  const scorecardTemplateIds = [
+  // WR-05 (UAT 2026-04-25): dedupe via Set so a weekly choice that overlaps with an
+  // entry in kpi_selections (rare but possible from past lock state) doesn't inflate
+  // the denominator. Mirrors Scorecard.jsx Pattern 5's distinct-row composition.
+  const scorecardTemplateIds = Array.from(new Set([
     ...kpiSelections.map((k) => k.template_id),
     ...(weeklySelection?.kpi_template_id ? [weeklySelection.kpi_template_id] : []),
-  ];
+  ]));
   // kpi_results is keyed by kpi_templates.id (v2.0 Scorecard write shape).
   // Phase 17 D-02: 'pending' is a fully-answered terminal state (partner picked it
   // and supplied pending_text) — count it as answered alongside 'yes' and 'no'.
