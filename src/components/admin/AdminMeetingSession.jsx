@@ -119,6 +119,12 @@ export default function AdminMeetingSession() {
   // Each partner+stop combo debounces independently so a fast typist on one cell
   // does not delay the save on the other cell.
   const perPartnerDebounceRef = useRef({});
+  // WR-01 (UAT 2026-04-25): mirror perPartnerNotes state into a ref so the debounced
+  // flush below can read the latest both-partner draft via ref instead of abusing
+  // setState((prev) => prev) as a state-getter. The setState-as-getter pattern
+  // works today but is fragile under React 18 strict-mode double-invocation;
+  // ref-based access matches currentMondayRef pattern used elsewhere.
+  const perPartnerNotesRef = useRef({});
   const endDisarmRef = useRef(null); // auto-disarm timer for two-click End Meeting
   const savedFlashTimerRef = useRef(null);
 
@@ -233,6 +239,13 @@ export default function AdminMeetingSession() {
     };
   }, []);
 
+  // WR-01: mirror perPartnerNotes state into a ref on every change so the
+  // debounced flush in handlePerPartnerNoteChange can read the latest draft
+  // via ref instead of abusing setState((prev) => prev) as a state-getter.
+  useEffect(() => {
+    perPartnerNotesRef.current = perPartnerNotes;
+  }, [perPartnerNotes]);
+
   // --- Derived meeting state ---
   // Select stop array and copy object based on meeting type.
   const stops = useMemo(
@@ -307,18 +320,15 @@ export default function AdminMeetingSession() {
       }
       perPartnerDebounceRef.current[timerKey] = setTimeout(async () => {
         try {
-          // Read latest both-partner draft via setState callback so a fast
-          // typist on one cell does not stomp the other cell mid-debounce.
-          let latest;
-          setPerPartnerNotes((m) => {
-            const cur = m[stopKey] ?? { theo: '', jerry: '' };
-            latest = cur;
-            return m;
-          });
+          // WR-01: Read latest both-partner draft via ref (synced on every
+          // perPartnerNotes change in the useEffect above). Replaces the
+          // earlier setState((prev) => prev) state-getter abuse, which works
+          // today but is fragile under React 18 strict-mode double-invocation.
+          const latest = perPartnerNotesRef.current[stopKey] ?? { theo: '', jerry: '' };
           await upsertMeetingNotePerPartner({
             meeting_id: id,
             agenda_stop_key: stopKey,
-            notes: latest ?? { theo: '', jerry: '' },
+            notes: latest,
           });
           setSavedFlash(stopKey);
           if (savedFlashTimerRef.current) clearTimeout(savedFlashTimerRef.current);
@@ -1278,7 +1288,7 @@ function KpiStop({
       <h3 className="meeting-stop-heading">KPI Review</h3>
       <p className="meeting-stop-subtext">
         Partner's submitted result is shown read-only. Use Override to correct the call —
-        admin_override_at stamps when used.
+        Trace edits are stamped automatically.
       </p>
 
       <div className="meeting-kpi-grid">
