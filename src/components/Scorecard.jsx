@@ -292,10 +292,19 @@ export default function Scorecard() {
     // Phase 17 D-16: in submitted+open mode, allow draft persistence ONLY when at least one
     // row is Pending (the partner is editing a pending commitment). Without this, post-submit
     // edits to pending_text via setPendingTextLocal → onBlur persistField() would no-op.
+    //
+    // CR-01 (UAT 2026-04-25): Yes-conversion fix. When a partner toggles a Pending row to
+    // Met/Not Met, the post-toggle draft no longer has any Pending row, so the prior guard
+    // bailed and silently skipped the DB write. Local state showed the toggle "worked" but
+    // on reload the row reverted to 'pending'. The yes-conversion path IS legitimate D-16
+    // work, so we also allow the persist when the closure (pre-toggle) state had any Pending
+    // row. Either signal — pending in the post-change draft OR pending in the closure state —
+    // indicates a valid post-submit edit.
     if (view === 'submitted') {
       const draftCheck = nextKpiResults ?? kpiResults;
-      const hasReopenable = rows.some((tpl) => draftCheck[tpl.id]?.result === 'pending');
-      if (!hasReopenable) return;
+      const hasReopenableInDraft = rows.some((tpl) => draftCheck[tpl.id]?.result === 'pending');
+      const priorHadPending = rows.some((tpl) => kpiResults[tpl.id]?.result === 'pending');
+      if (!hasReopenableInDraft && !priorHadPending) return;
     }
     const draft = nextKpiResults ?? kpiResults;
     setSaving(true);
