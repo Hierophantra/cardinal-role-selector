@@ -2315,6 +2315,11 @@ textarea { resize: vertical; min-height: 120px; }
 .saturday-recap-conversion.not-converted {
   color: var(--miss);
 }
+/* Post-Phase-17 UAT 2026-04-25: live (current-week) pending follow-throughs
+   awaiting Saturday close — neutral/amber, no conversion state yet. */
+.saturday-recap-conversion--live {
+  color: var(--gold);
+}
 
 /* =============================================================================
    Phase 18 — Shared Business Priorities Display (BIZ-02, BIZ-03)

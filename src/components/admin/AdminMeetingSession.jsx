@@ -716,10 +716,17 @@ function StopRenderer({
   }
 
   if (stopKey === 'saturday_recap') {
+    // Phase 17 D-15 + extension: surface BOTH last-week pending rows (with
+    // conversion state) AND current-week pending rows (live, awaiting Saturday
+    // close). Current-week scorecards are derived from data.theo.scorecard /
+    // data.jerry.scorecard — already loaded for Friday-style stops, so no extra
+    // fetches are needed.
+    const currentWeekScorecards = [data?.theo?.scorecard, data?.jerry?.scorecard].filter(Boolean);
     return (
       <SaturdayRecapStop
         meeting={meeting}
         lastWeekScorecards={data?.lastWeekScorecards ?? []}
+        currentWeekScorecards={currentWeekScorecards}
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
@@ -986,56 +993,107 @@ function KpiReviewOptionalStop({ notes, savedFlash, onNoteChange, copy, isEnded 
 // every row whose pending_text was preserved on Friday close. Conversion state
 // derives from effectiveResult — 'yes' = met by Saturday, anything else = did not
 // convert. When zero qualifying rows exist, renders the placeholder card per D-15.
+//
+// Extension (post-Phase-17 UAT 2026-04-25): also surfaces CURRENT-week pending
+// rows ("Live — awaiting Saturday close") so a freshly-submitted Friday scorecard
+// can be reviewed in the same week's Monday Prep meeting. Both sections share the
+// same pending_text qualifying filter; only the last-week section shows conversion
+// state, since current-week rows have not yet hit the Saturday cutoff.
 // --------------------------------------------------------------------------
 
-function SaturdayRecapStop({ lastWeekScorecards, notes, savedFlash, onNoteChange, copy, isEnded }) {
-  const recapRows = [];
-  for (const sc of lastWeekScorecards ?? []) {
+function collectRecapRows(scorecards) {
+  const rows = [];
+  for (const sc of scorecards ?? []) {
     const results = sc?.kpi_results ?? {};
     for (const [tplId, entry] of Object.entries(results)) {
       const pendingText = (entry?.pending_text ?? '').trim();
       if (!pendingText) continue;
-      // entry has follow-through commitment text — was Pending at some point last week.
       const eff = effectiveResult(entry?.result, sc.week_of);
-      const converted = eff === 'yes';
-      recapRows.push({
+      rows.push({
         partner: sc.partner,
+        weekOf: sc.week_of,
         tplId,
         label: entry?.label ?? '(KPI)',
         pending_text: entry.pending_text,
-        converted,
+        converted: eff === 'yes',
       });
     }
   }
+  return rows;
+}
 
-  const empty = recapRows.length === 0;
+function SaturdayRecapStop({ lastWeekScorecards, currentWeekScorecards, notes, savedFlash, onNoteChange, copy, isEnded }) {
+  const lastWeekRows = collectRecapRows(lastWeekScorecards);
+  const currentWeekRows = collectRecapRows(currentWeekScorecards);
+
+  const lastWeekEmpty = lastWeekRows.length === 0;
+  const currentWeekEmpty = currentWeekRows.length === 0;
+  const bothEmpty = lastWeekEmpty && currentWeekEmpty;
 
   return (
     <>
-      <div className="eyebrow meeting-stop-eyebrow">{copy.stops.saturdayRecapEyebrow}</div>
-      <h3 className="meeting-stop-heading">{copy.stops.saturdayRecapHeading}</h3>
-
-      {empty ? (
-        <div className="saturday-recap-empty">{copy.stops.saturdayRecapEmpty}</div>
+      {bothEmpty ? (
+        <>
+          <div className="eyebrow meeting-stop-eyebrow">{copy.stops.saturdayRecapEyebrow}</div>
+          <h3 className="meeting-stop-heading">{copy.stops.saturdayRecapHeading}</h3>
+          <div className="saturday-recap-empty">{copy.stops.saturdayRecapEmpty}</div>
+        </>
       ) : (
-        <div className="saturday-recap-list">
-          {recapRows.map((row, i) => (
-            <div key={`${row.partner}-${row.tplId}-${i}`} className="saturday-recap-row">
-              <div
-                className="saturday-recap-label"
-                style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}
-              >
-                {PARTNER_DISPLAY[row.partner] ?? row.partner}: {row.label}
+        <>
+          {!lastWeekEmpty && (
+            <>
+              <div className="eyebrow meeting-stop-eyebrow">{copy.stops.saturdayRecapEyebrow}</div>
+              <h3 className="meeting-stop-heading">{copy.stops.saturdayRecapHeading}</h3>
+              <div className="saturday-recap-list">
+                {lastWeekRows.map((row, i) => (
+                  <div key={`lw-${row.partner}-${row.tplId}-${i}`} className="saturday-recap-row">
+                    <div
+                      className="saturday-recap-label"
+                      style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}
+                    >
+                      {PARTNER_DISPLAY[row.partner] ?? row.partner}: {row.label}
+                    </div>
+                    <div className="saturday-recap-commitment">
+                      {copy.stops.saturdayRecapCommitmentPrefix}{row.pending_text}
+                    </div>
+                    <div className={`saturday-recap-conversion ${row.converted ? 'met' : 'not-converted'}`}>
+                      {row.converted ? copy.stops.saturdayRecapMet : copy.stops.saturdayRecapNotConverted}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="saturday-recap-commitment">
-                {copy.stops.saturdayRecapCommitmentPrefix}{row.pending_text}
+            </>
+          )}
+
+          {!lastWeekEmpty && !currentWeekEmpty && (
+            <hr className="meeting-shared-priority-divider" />
+          )}
+
+          {!currentWeekEmpty && (
+            <>
+              <div className="eyebrow meeting-stop-eyebrow">{copy.stops.saturdayRecapCurrentWeekEyebrow}</div>
+              <h3 className="meeting-stop-heading">{copy.stops.saturdayRecapCurrentWeekHeading}</h3>
+              <div className="saturday-recap-list">
+                {currentWeekRows.map((row, i) => (
+                  <div key={`cw-${row.partner}-${row.tplId}-${i}`} className="saturday-recap-row">
+                    <div
+                      className="saturday-recap-label"
+                      style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}
+                    >
+                      {PARTNER_DISPLAY[row.partner] ?? row.partner}: {row.label}
+                    </div>
+                    <div className="saturday-recap-commitment">
+                      {copy.stops.saturdayRecapCommitmentPrefix}{row.pending_text}
+                    </div>
+                    <div className="saturday-recap-conversion saturday-recap-conversion--live">
+                      {copy.stops.saturdayRecapLiveBadge}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className={`saturday-recap-conversion ${row.converted ? 'met' : 'not-converted'}`}>
-                {row.converted ? copy.stops.saturdayRecapMet : copy.stops.saturdayRecapNotConverted}
-              </div>
-            </div>
-          ))}
-        </div>
+            </>
+          )}
+        </>
       )}
 
       <StopNotesArea

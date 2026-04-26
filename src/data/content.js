@@ -744,6 +744,12 @@ export const MONDAY_PREP_COPY = {
     saturdayRecapCommitmentPrefix: 'Commitment: ',
     saturdayRecapMet: '✓ Met by Saturday',
     saturdayRecapNotConverted: '× Did not convert',
+    // Post-Phase-17 UAT 2026-04-25 — current-week pending follow-throughs that
+    // were submitted Friday but have not yet hit Saturday close. Surfaced
+    // alongside last-week recap rows in the saturday_recap stop.
+    saturdayRecapCurrentWeekEyebrow: 'LIVE THIS WEEK',
+    saturdayRecapCurrentWeekHeading: "This Week's Pending Commitments",
+    saturdayRecapLiveBadge: 'Live — awaiting Saturday close',
     weekPreviewEyebrow: 'WEEK PREVIEW',
     weekPreviewHeading: "What's Coming This Week",
     weekPreviewSubtext: "Jobs going up, deadlines, weekly objectives, and uncertainties to surface.",
