@@ -505,16 +505,13 @@ export async function endMeeting(meetingId) {
 }
 
 /**
- * Admin reset for a single meeting. Wipes all meeting_notes for the meeting
- * and clears ended_at on the meetings row so the session can be re-run from
- * stop 1. The meeting row itself is preserved (creation timestamp, week_of,
- * meeting_type all retained) — this is a "rewind", not a delete.
- *
- * Per UAT post-Batch-D spec: whatever was there before reset should be
- * removed; the next session that ends produces the new summary.
+ * Admin reset for a single meeting. Permanently deletes the meeting and all
+ * its notes — Reset is destructive (UAT R3). After reset, the meeting is
+ * gone from past meeting history; Trace re-creates a fresh meeting via the
+ * Start Meeting panel if they want to re-run that week's session.
  *
  * @param {string} meetingId meetings.id UUID
- * @returns {Promise<object>} the updated meetings row (with ended_at cleared)
+ * @returns {Promise<void>} no row to return after delete
  */
 export async function resetMeeting(meetingId) {
   if (!meetingId) {
@@ -529,16 +526,15 @@ export async function resetMeeting(meetingId) {
     .eq('meeting_id', meetingId);
   if (delErr) throw delErr;
 
-  // 2) Clear ended_at — the meeting goes back to "in progress" state. held_at
-  //    is preserved (the meeting was still held at that time historically).
-  const { data, error } = await supabase
+  // 2) Delete the meetings row itself (UAT R3 — Reset is now destructive,
+  //    not a rewind). The meeting disappears from past meeting history;
+  //    MeetingHistory.jsx filters by ended_at!=null so a soft-cleared meeting
+  //    would still surface as "in progress", which we explicitly do not want.
+  const { error: rowErr } = await supabase
     .from('meetings')
-    .update({ ended_at: null })
-    .eq('id', meetingId)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+    .delete()
+    .eq('id', meetingId);
+  if (rowErr) throw rowErr;
 }
 
 export async function fetchMeetings() {

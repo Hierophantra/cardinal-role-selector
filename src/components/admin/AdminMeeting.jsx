@@ -85,10 +85,11 @@ export default function AdminMeeting() {
     }
   }
 
-  // UAT post-Batch-D: two-click arm/confirm reset for a single meeting.
-  // First click arms the row's button (3s auto-disarm); second click within
-  // the window calls resetMeeting (wipes meeting_notes, clears ended_at) and
-  // refreshes the list. Mirrors AdminMeetingSession.handleEndClick semantics.
+  // UAT R3: two-click arm/confirm reset for a single meeting. Reset is now
+  // destructive — first click arms the row's button (3s auto-disarm); second
+  // click within the window calls resetMeeting (DELETEs meeting_notes + the
+  // meetings row itself) and refreshes the list so the meeting disappears
+  // from past meeting history. Mirrors AdminMeetingSession.handleEndClick.
   async function handleResetClick(meetingId) {
     if (resetting) return;
     if (armedResetId !== meetingId) {
@@ -308,8 +309,9 @@ export default function AdminMeeting() {
                         >
                           Open
                         </Link>
-                        {/* UAT post-Batch-D: Reset wipes meeting_notes + clears
-                            ended_at so the meeting can be re-run. Two-click
+                        {/* UAT R3: Reset is now destructive — permanently
+                            deletes the meeting + all notes. The meeting is
+                            removed from past meeting history. Two-click
                             arm/confirm with 3s auto-disarm — armed state borrows
                             AdminMeetingSession's End Meeting visual treatment. */}
                         <button
@@ -328,8 +330,8 @@ export default function AdminMeeting() {
                           }
                           title={
                             armedResetId === m.id
-                              ? 'Click again to confirm reset (clears notes and ended state)'
-                              : 'Reset this meeting (clears notes and ended state)'
+                              ? 'This will permanently delete this meeting and all notes. Continue?'
+                              : 'Permanently delete this meeting and all its notes'
                           }
                         >
                           {resetting === m.id
