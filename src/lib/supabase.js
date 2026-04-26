@@ -132,13 +132,23 @@ export async function upsertScorecard(record) {
   // proceed rather than fail the user's submit. This errs on the side of
   // availability for the common case while still catching the documented
   // corruption pattern.
-  if (
-    record &&
-    record.kpi_results !== undefined &&
-    typeof record.kpi_results === 'object' &&
-    record.kpi_results !== null &&
-    Object.keys(record.kpi_results).length === 0
-  ) {
+  // WR-04 (UAT 2026-04-25): widen the guard to also catch the all-null case.
+  // The original guard only refused literal {} payloads. A non-empty object
+  // where every entry has result===null carries the same blast radius (would
+  // wipe a partner's submitted yes/no values), and an all-null write is never
+  // a legitimate submit. Catching both shapes hardens the backstop without
+  // false positives.
+  const newKpis = record?.kpi_results;
+  const isObjectKpis =
+    newKpis !== undefined &&
+    newKpis !== null &&
+    typeof newKpis === 'object';
+  const isEmptyKpis = isObjectKpis && Object.keys(newKpis).length === 0;
+  const isAllNullKpis =
+    isObjectKpis &&
+    Object.keys(newKpis).length > 0 &&
+    Object.values(newKpis).every((entry) => entry?.result == null);
+  if (record && (isEmptyKpis || isAllNullKpis)) {
     try {
       const { data: existing } = await supabase
         .from('scorecards')
@@ -147,17 +157,24 @@ export async function upsertScorecard(record) {
         .eq('week_of', record.week_of)
         .maybeSingle();
       const existingKpis = existing?.kpi_results;
+      // For the all-null case, "existing has data" must mean existing has at
+      // least one non-null result — otherwise an all-null overwrite of an
+      // already-all-null row is a no-op and shouldn't be blocked.
       const existingHasData =
         existingKpis &&
         typeof existingKpis === 'object' &&
-        Object.keys(existingKpis).length > 0;
+        Object.keys(existingKpis).length > 0 &&
+        (isEmptyKpis
+          ? true
+          : Object.values(existingKpis).some((entry) => entry?.result != null));
       if (existingHasData) {
         // Refuse the destructive write. Throw a typed error so callers can
         // surface a useful message instead of silently corrupting data.
+        const shape = isEmptyKpis ? 'empty object' : 'all-null entries';
         const err = new Error(
-          'Refusing to overwrite non-empty kpi_results with empty object. ' +
-            'This is the BUG-2026-04-25 guard — caller passed kpi_results={} ' +
-            'against an existing submitted/in-progress scorecard row.'
+          `Refusing to overwrite non-empty kpi_results with ${shape}. ` +
+            'This is the BUG-2026-04-25 guard — caller passed a draft-shape ' +
+            'kpi_results against an existing submitted/in-progress scorecard row.'
         );
         err.code = 'SCORECARD_EMPTY_OVERWRITE_BLOCKED';
         err.partner = record.partner;
