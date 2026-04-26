@@ -30,6 +30,45 @@ const PER_PARTNER_NOTE_STOPS = new Set([
   'commitments',
 ]);
 
+// Post-Phase-17 UAT 2026-04-25: mirror of the helper in AdminMeetingSession.
+// Derives the previous week's Monday from a current Monday string using
+// local-time arithmetic — no UTC ISO slicing per src/lib/week.js convention.
+// Used by the Monday Prep summary load to fetch last-week scorecards so the
+// saturday_recap StopBlock can render the same two-section layout the meeting
+// itself shows.
+function previousMondayOf(currentMondayStr) {
+  const [y, m, d] = currentMondayStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d - 7);
+  const yy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
+// Post-Phase-17 UAT 2026-04-25: pure helper shared with AdminMeetingSession's
+// SaturdayRecapStop. Walks scorecards, picks rows where pending_text is set,
+// and returns a flat list with conversion state derived via effectiveResult.
+function collectRecapRows(scorecards) {
+  const rows = [];
+  for (const sc of scorecards ?? []) {
+    const results = sc?.kpi_results ?? {};
+    for (const [tplId, entry] of Object.entries(results)) {
+      const pendingText = (entry?.pending_text ?? '').trim();
+      if (!pendingText) continue;
+      const eff = effectiveResult(entry?.result, sc.week_of);
+      rows.push({
+        partner: sc.partner,
+        weekOf: sc.week_of,
+        tplId,
+        label: entry?.label ?? '(KPI)',
+        pending_text: entry.pending_text,
+        converted: eff === 'yes',
+      });
+    }
+  }
+  return rows;
+}
+
 export default function MeetingSummary() {
   const { partner, id } = useParams();
   const navigate = useNavigate();
@@ -46,9 +85,13 @@ export default function MeetingSummary() {
   // UAT B3+B4: render both partners side-by-side per KPI/growth stop. data shape:
   //   { theo: { kpis, scorecard, growth }, jerry: { ... } }
   // Mirrors AdminMeetingSession's data shape so KPI + growth blocks render symmetrically.
+  // Post-Phase-17 UAT 2026-04-25: lastWeekScorecards added to mirror the
+  // saturday_recap extension in AdminMeetingSession — summary now surfaces
+  // both last-week and current-week pending rows.
   const [data, setData] = useState({
     theo: { kpis: [], scorecard: null, growth: [] },
     jerry: { kpis: [], scorecard: null, growth: [] },
+    lastWeekScorecards: [],
   });
 
   useEffect(() => {
@@ -75,6 +118,12 @@ export default function MeetingSummary() {
         // Fetch both partners' KPI compositions, scorecards, and growth priorities
         // for the week-of of the ended meeting. Composition mirrors AdminMeetingSession
         // (template_id-keyed) so kpi_results lookups line up across surfaces.
+        // Post-Phase-17 UAT 2026-04-25: also fetch previous-week scorecards (Monday
+        // Prep only — Friday Review summaries don't render a saturday_recap stop, so
+        // the previous-week fetches are skipped to avoid two pointless network calls).
+        const isMondayPrep = ended.meeting_type === 'monday_prep';
+        const prevMonday = isMondayPrep ? previousMondayOf(ended.week_of) : null;
+
         const [
           noteRows,
           theoKpis,
@@ -83,6 +132,8 @@ export default function MeetingSummary() {
           jerryScorecard,
           theoGrowth,
           jerryGrowth,
+          theoPrevScorecard,
+          jerryPrevScorecard,
         ] = await Promise.all([
           fetchMeetingNotes(ended.id),
           composePartnerKpis('theo', ended.week_of),
@@ -91,6 +142,8 @@ export default function MeetingSummary() {
           fetchScorecard('jerry', ended.week_of),
           fetchGrowthPriorities('theo'),
           fetchGrowthPriorities('jerry'),
+          isMondayPrep ? fetchScorecard('theo', prevMonday) : Promise.resolve(null),
+          isMondayPrep ? fetchScorecard('jerry', prevMonday) : Promise.resolve(null),
         ]);
 
         if (!alive) return;
@@ -109,6 +162,8 @@ export default function MeetingSummary() {
           }
         }
 
+        const lastWeekScorecards = [theoPrevScorecard, jerryPrevScorecard].filter(Boolean);
+
         setNotesByStop(notesMap);
         setPerPartnerNotesByStop(perPartnerMap);
         setData({
@@ -122,6 +177,7 @@ export default function MeetingSummary() {
             scorecard: jerryScorecard ?? null,
             growth: jerryGrowth ?? [],
           },
+          lastWeekScorecards,
         });
         setLoading(false);
       } catch (err) {
@@ -230,15 +286,88 @@ function StopBlock({ stopKey, stopIndex, notesByStop, perPartnerNotesByStop, dat
     );
   }
 
-  // Phase 17 saturday_recap stop — Monday only. Render notes (if any).
+  // Phase 17 saturday_recap stop — Monday only. Mirrors AdminMeetingSession's
+  // SaturdayRecapStop: surfaces pending follow-throughs from BOTH last week (with
+  // conversion state) and the current week (live, awaiting Saturday close), plus
+  // the captured note body.
   if (stopKey === 'saturday_recap') {
+    const lastWeekRows = collectRecapRows(data?.lastWeekScorecards);
+    const currentWeekScorecards = [data?.theo?.scorecard, data?.jerry?.scorecard].filter(Boolean);
+    const currentWeekRows = collectRecapRows(currentWeekScorecards);
+    const lastWeekEmpty = lastWeekRows.length === 0;
+    const currentWeekEmpty = currentWeekRows.length === 0;
+    const bothEmpty = lastWeekEmpty && currentWeekEmpty;
+    const stopsCopy = copy.stops;
+
     return (
       <div className="meeting-stop" style={{ marginBottom: 24 }}>
-        <div className="eyebrow meeting-stop-eyebrow">SATURDAY RECAP</div>
-        <h3 className="meeting-stop-heading">Last Friday&apos;s Pending Commitments</h3>
+        {bothEmpty ? (
+          <>
+            <div className="eyebrow meeting-stop-eyebrow">{stopsCopy.saturdayRecapEyebrow}</div>
+            <h3 className="meeting-stop-heading">{stopsCopy.saturdayRecapHeading}</h3>
+            <div className="saturday-recap-empty">{stopsCopy.saturdayRecapEmpty}</div>
+          </>
+        ) : (
+          <>
+            {!lastWeekEmpty && (
+              <>
+                <div className="eyebrow meeting-stop-eyebrow">{stopsCopy.saturdayRecapEyebrow}</div>
+                <h3 className="meeting-stop-heading">{stopsCopy.saturdayRecapHeading}</h3>
+                <div className="saturday-recap-list">
+                  {lastWeekRows.map((row, i) => (
+                    <div key={`lw-${row.partner}-${row.tplId}-${i}`} className="saturday-recap-row">
+                      <div
+                        className="saturday-recap-label"
+                        style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}
+                      >
+                        {PARTNER_DISPLAY[row.partner] ?? row.partner}: {row.label}
+                      </div>
+                      <div className="saturday-recap-commitment">
+                        {stopsCopy.saturdayRecapCommitmentPrefix}{row.pending_text}
+                      </div>
+                      <div className={`saturday-recap-conversion ${row.converted ? 'met' : 'not-converted'}`}>
+                        {row.converted ? stopsCopy.saturdayRecapMet : stopsCopy.saturdayRecapNotConverted}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {!lastWeekEmpty && !currentWeekEmpty && (
+              <hr className="meeting-shared-priority-divider" />
+            )}
+
+            {!currentWeekEmpty && (
+              <>
+                <div className="eyebrow meeting-stop-eyebrow">{stopsCopy.saturdayRecapCurrentWeekEyebrow}</div>
+                <h3 className="meeting-stop-heading">{stopsCopy.saturdayRecapCurrentWeekHeading}</h3>
+                <div className="saturday-recap-list">
+                  {currentWeekRows.map((row, i) => (
+                    <div key={`cw-${row.partner}-${row.tplId}-${i}`} className="saturday-recap-row">
+                      <div
+                        className="saturday-recap-label"
+                        style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}
+                      >
+                        {PARTNER_DISPLAY[row.partner] ?? row.partner}: {row.label}
+                      </div>
+                      <div className="saturday-recap-commitment">
+                        {stopsCopy.saturdayRecapCommitmentPrefix}{row.pending_text}
+                      </div>
+                      <div className="saturday-recap-conversion saturday-recap-conversion--live">
+                        {stopsCopy.saturdayRecapLiveBadge}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
+
         {note
-          ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{note}</p>
-          : <p className="muted">No notes for this stop.</p>}
+          ? <p style={{ fontSize: 15, lineHeight: 1.6, marginTop: 16 }}>{note}</p>
+          : <p className="muted" style={{ marginTop: 16 }}>No notes for this stop.</p>}
       </div>
     );
   }
