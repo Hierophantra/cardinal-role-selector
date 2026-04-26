@@ -641,7 +641,7 @@ export const ADMIN_SCORECARD_COPY = {
   reopenWarning: (partnerName) =>
     `This allows ${partnerName} to edit their check-in for this week again.`,
   reopenedBadge: 'Reopened',
-  overrideMarker: 'Edited by admin',
+  overrideMarker: 'Edited by Trace',
   empty: 'No completed check-ins yet.',
   errors: {
     reopenFail: "Couldn't reopen this week. Try again.",
