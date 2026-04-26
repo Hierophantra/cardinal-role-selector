@@ -755,8 +755,10 @@ export default function Scorecard() {
                 // Picker editability: editable when the week is open AND either we're still in editing view
                 // OR we're in submitted view but this specific row is a Pending re-open.
                 const pickerDisabled = weekClosed || (isSubmitted && !isPendingReopen);
-                // Row body (count, reflection) stays read-only on submit even for re-open rows.
-                const bodyDisabled = weekClosed || isSubmitted;
+                // UAT R3: extend D-16 reopen — count + reflection on a Pending row also stay
+                // editable post-submit until Saturday close (partner can revise the live
+                // commitment freely). Non-Pending rows in submitted mode remain locked.
+                const bodyDisabled = weekClosed || (isSubmitted && !isPendingReopen);
                 // Render picker as buttons whenever editable (initial editing OR Pending re-open).
                 const showEditablePicker = !weekClosed && (!isSubmitted || isPendingReopen);
                 return (
