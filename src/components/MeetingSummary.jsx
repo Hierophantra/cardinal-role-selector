@@ -12,6 +12,7 @@ import {
   VALID_PARTNERS,
   PARTNER_DISPLAY,
   MEETING_COPY,
+  MONDAY_PREP_COPY,
   GROWTH_STATUS_COPY,
   FRIDAY_STOPS,
   MONDAY_STOPS,
@@ -205,6 +206,12 @@ function StopBlock({ stopKey, stopIndex, notesByStop, perPartnerNotesByStop, dat
   // UAT C2/C3/C4: per-partner notes lookup; null when stop is not in the
   // per-partner set or no row was written for this meeting.
   const perPartnerNotes = perPartnerNotesByStop?.[stopKey] ?? null;
+  // WR-02 (UAT 2026-04-25): Mirror AdminMeetingSession's pattern — derive copy
+  // from meeting_type so Monday Prep summaries render "Action Items & Commitments"
+  // for the wrap heading instead of the Friday "This Week's Checkpoint". Only
+  // wrap is practically reachable for Monday (intro / growth_* don't exist in
+  // MONDAY_STOPS), but downstream stops can use this too if their copy diverges.
+  const copy = meeting?.meeting_type === 'monday_prep' ? MONDAY_PREP_COPY : MEETING_COPY;
 
   // UAT A4 (2026-04-25): handle Phase 17 gate stop explicitly so it doesn't fall
   // into the kpi_* block. notes['kpi_review_optional'] holds 'review' | 'skip'.
@@ -364,7 +371,7 @@ function StopBlock({ stopKey, stopIndex, notesByStop, perPartnerNotesByStop, dat
     return (
       <div className="meeting-stop" style={{ marginBottom: 24 }}>
         <div className="eyebrow meeting-stop-eyebrow">CLOSING</div>
-        <h3 className="meeting-stop-heading">{MEETING_COPY.stops.wrapHeading}</h3>
+        <h3 className="meeting-stop-heading">{copy.stops.wrapHeading}</h3>
         {note
           ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{note}</p>
           : <p className="muted">No notes for this stop.</p>}
