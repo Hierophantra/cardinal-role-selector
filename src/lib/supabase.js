@@ -510,10 +510,59 @@ export async function createMeeting(weekOf, meetingType = 'friday_review') {
   return data;
 }
 
+/**
+ * Idempotent end-of-meeting stamp. The first call sets `ended_at`; subsequent
+ * calls are no-ops that return the existing row with the original stamp intact.
+ *
+ * Implementation: conditional UPDATE with `.is('ended_at', null)` so only the
+ * first call matches. If the conditional update returns no row (already ended),
+ * we fall back to a fetch and return the existing row. This makes the End
+ * Meeting / Complete Meeting buttons safe to double-click without rewriting
+ * the original timestamp.
+ *
+ * Post-Phase-17 UAT 2026-04-25: prior implementation overwrote ended_at on
+ * every call, which clobbered the first-completion stamp on a re-click.
+ *
+ * @param {string} meetingId meetings.id UUID
+ * @returns {Promise<object>} the meeting row (with ended_at set)
+ */
 export async function endMeeting(meetingId) {
   const { data, error } = await supabase
     .from('meetings')
     .update({ ended_at: new Date().toISOString() })
+    .eq('id', meetingId)
+    .is('ended_at', null) // critical: only matches rows where ended_at IS NULL
+    .select()
+    .maybeSingle();
+  if (error) throw error;
+  if (data) return data;
+  // Already ended — fetch and return the existing row so callers see a stable
+  // shape (and the original ended_at stamp).
+  const existing = await fetchMeeting(meetingId);
+  if (!existing) {
+    throw new Error(`endMeeting: meeting ${meetingId} not found`);
+  }
+  return existing;
+}
+
+/**
+ * Stamp `meetings.notes_updated_at = now()` to record a post-end note edit.
+ * Callers must guard with `meeting.ended_at != null` — this function does not
+ * itself enforce that, so an accidental pre-end call would falsely mark the
+ * meeting as having post-end edits. The "Updated:" line in MeetingSummary
+ * compares notes_updated_at to ended_at, so a pre-end stamp would surface as
+ * a stale-edit hint that doesn't really exist.
+ *
+ * Migration 014 adds the column. Idempotent — every call sets the timestamp
+ * to the current time; there is no conditional gate.
+ *
+ * @param {string} meetingId meetings.id UUID
+ * @returns {Promise<object>} the updated meetings row
+ */
+export async function touchMeetingUpdatedAt(meetingId) {
+  const { data, error } = await supabase
+    .from('meetings')
+    .update({ notes_updated_at: new Date().toISOString() })
     .eq('id', meetingId)
     .select()
     .single();

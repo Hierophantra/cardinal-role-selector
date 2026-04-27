@@ -7,12 +7,13 @@ import {
   upsertMeetingNote,
   upsertMeetingNotePerPartner,
   endMeeting,
+  touchMeetingUpdatedAt,
   adminOverrideScorecardEntry,
   fetchGrowthPriorities,
   fetchScorecard,
   fetchBusinessPriorities,
 } from '../../lib/supabase.js';
-import { formatWeekRange, effectiveResult } from '../../lib/week.js';
+import { formatWeekRange, effectiveResult, isWeekClosed } from '../../lib/week.js';
 import { composePartnerKpis } from '../../lib/partnerKpis.js';
 import {
   MEETING_COPY,
@@ -257,6 +258,16 @@ export default function AdminMeetingSession() {
     [meeting]
   );
 
+  // Migration 014 / post-Phase-17 UAT: hard cutoff. Once Saturday 23:59 of
+  // the meeting's week passes, ALL textareas + pickers go read-only and the
+  // bottom-right CTA reads "Back to Hub". This is the explicit Saturday-close
+  // freeze — distinct from the soft `isEnded` (just stamped ended_at) state,
+  // which still lets admin capture additional notes.
+  const meetingLocked = useMemo(() => {
+    if (!meeting?.week_of) return false;
+    return isWeekClosed(meeting.week_of);
+  }, [meeting]);
+
   // --- Navigation ---
   const goNext = useCallback(() => {
     setDirection(1);
@@ -291,6 +302,19 @@ export default function AdminMeetingSession() {
             agenda_stop_key: stopKey,
             body: text,
           });
+          // Migration 014 / post-Phase-17 UAT: post-end edits stamp
+          // notes_updated_at so MeetingSummary's "Updated:" line surfaces
+          // staleness vs. ended_at. Pre-end edits do NOT touch the column.
+          if (meeting?.ended_at) {
+            try {
+              await touchMeetingUpdatedAt(id);
+              setMeeting((prev) =>
+                prev ? { ...prev, notes_updated_at: new Date().toISOString() } : prev
+              );
+            } catch (touchErr) {
+              console.error(touchErr); // don't block the flash on a touch failure
+            }
+          }
           setSavedFlash(stopKey);
           if (savedFlashTimerRef.current) clearTimeout(savedFlashTimerRef.current);
           savedFlashTimerRef.current = setTimeout(() => setSavedFlash(null), 1500);
@@ -330,6 +354,18 @@ export default function AdminMeetingSession() {
             agenda_stop_key: stopKey,
             notes: latest,
           });
+          // Migration 014: post-end edits stamp notes_updated_at; pre-end edits
+          // are silent. Same guard as handleNoteChange above.
+          if (meeting?.ended_at) {
+            try {
+              await touchMeetingUpdatedAt(id);
+              setMeeting((prev) =>
+                prev ? { ...prev, notes_updated_at: new Date().toISOString() } : prev
+              );
+            } catch (touchErr) {
+              console.error(touchErr);
+            }
+          }
           setSavedFlash(stopKey);
           if (savedFlashTimerRef.current) clearTimeout(savedFlashTimerRef.current);
           savedFlashTimerRef.current = setTimeout(() => setSavedFlash(null), 1500);
@@ -446,23 +482,28 @@ export default function AdminMeetingSession() {
     setCompletePending(false);
   }, []);
 
+  // Post-Phase-17 UAT 2026-04-25: Complete Meeting now stamps ended_at and
+  // STAYS on the page so admin can keep capturing context in additional_notes
+  // (and any other stop) before leaving. End Prep is a separate nav-only CTA
+  // that takes the admin back to /admin/meeting without touching ended_at.
+  // endMeeting is idempotent; a re-click cannot rewrite the original stamp.
   const handleCompleteConfirm = useCallback(async () => {
     if (completing) return;
     setCompleting(true);
     try {
-      await endMeeting(id);
-      // Navigate to MeetingSummary. The route is partner-scoped; admin views
-      // the same summary surface as the partner does. 'theo' is a stable
-      // anchor here -- both partners' KPI/growth blocks are rendered inside
-      // the same summary regardless of :partner once Batch B3/B4 land.
-      navigate(`/meeting-summary/theo/${id}`);
+      const updated = await endMeeting(id);
+      // Reflect the new ended_at in local state so the UI flips into the
+      // "ended" CTA shape (End Prep / Back to Hub) without a remount.
+      setMeeting((prev) => (prev ? { ...prev, ...updated } : updated));
+      setCompletePending(false);
+      setCompleting(false);
     } catch (err) {
       console.error(err);
       setError((meeting?.meeting_type === 'monday_prep' ? MONDAY_PREP_COPY : MEETING_COPY).errors.loadFail);
       setCompleting(false);
       setCompletePending(false);
     }
-  }, [completing, id, navigate, meeting]);
+  }, [completing, id, meeting]);
 
   // --- End Meeting (two-click arm/confirm) ---
   const handleEndClick = useCallback(async () => {
@@ -519,6 +560,19 @@ export default function AdminMeetingSession() {
   }
 
   const isEnded = Boolean(meeting.ended_at);
+  // Post-Phase-17 UAT 2026-04-25 / Migration 014: readOnly is gated on the
+  // HARD Saturday-close cutoff, NOT on ended_at. Rationale:
+  //   - After Complete Meeting (ended_at set, week not yet closed), admin
+  //     should still be able to capture context — especially in the
+  //     additional_notes stop. Note edits stamp notes_updated_at so the
+  //     summary "Updated:" line surfaces the staleness.
+  //   - Once Saturday 23:59 of the meeting's week passes (meetingLocked),
+  //     ALL textareas + pickers freeze. This is the permanent cutoff.
+  // The KpiStop "Override" toggle is gated on isEnded (existing UAT B1
+  // contract) — keep that intact: post-end overrides are NOT allowed via
+  // this flow even pre-lock; admin uses the dedicated AdminScorecards
+  // surface for that. We pass `isEnded` through unchanged below.
+  const readOnly = meetingLocked;
   const currentStopKey = stops[stopIndex];
   const weekLabel = formatWeekRange(meeting.week_of);
 
@@ -560,7 +614,15 @@ export default function AdminMeetingSession() {
 
       {isEnded && (
         <div style={{ textAlign: 'center', padding: '8px 40px', fontSize: 12, color: 'var(--muted)', fontStyle: 'italic' }}>
-          Ended {new Date(meeting.ended_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          Meeting ended {new Date(meeting.ended_at).toLocaleString()}
+          {meeting.notes_updated_at &&
+            new Date(meeting.notes_updated_at).getTime() > new Date(meeting.ended_at).getTime() && (
+              <>
+                {' · Updated '}
+                {new Date(meeting.notes_updated_at).toLocaleString()}
+              </>
+            )}
+          {meetingLocked && ' · Week closed (read-only)'}
         </div>
       )}
 
@@ -584,7 +646,7 @@ export default function AdminMeetingSession() {
             onOverrideResult={handleOverrideResult}
             onReflectionChange={handleReflectionChange}
             copy={copy}
-            isEnded={isEnded}
+            isEnded={readOnly}
           />
         </motion.div>
       </AnimatePresence>
@@ -606,17 +668,31 @@ export default function AdminMeetingSession() {
           {currentStopKey.replace(/_/g, ' ')}
         </div>
         {stopIndex === stops.length - 1 ? (
-          // UAT B5/B6: last-stop CTA flips to "Complete Meeting" (both meeting
-          // types). Confirm dialog renders below the nav bar; until confirmed,
-          // ended_at is not stamped and the meeting can still be edited.
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleCompleteClick}
-            disabled={isEnded || completing || ending}
-          >
-            {copy.completeMeetingCta}
-          </button>
+          // Last-stop CTA, three-state machine (post-Phase-17 UAT 2026-04-25):
+          //   pre-end:                   "Complete Meeting" \u2014 opens confirm
+          //   ended, week not closed:    "End Prep" \u2014 nav back, no DB write
+          //   week closed (locked):      "Back to Hub" \u2014 nav back, read-only
+          //
+          // End Prep does NOT touch ended_at. endMeeting is idempotent now,
+          // but the spec is explicit: post-end button is a pure nav.
+          isEnded ? (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => navigate('/admin/meeting')}
+            >
+              {meetingLocked ? 'Back to Hub' : copy.endBtn}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleCompleteClick}
+              disabled={completing || ending || meetingLocked}
+            >
+              {copy.completeMeetingCta}
+            </button>
+          )
         ) : (
           <button
             type="button"
