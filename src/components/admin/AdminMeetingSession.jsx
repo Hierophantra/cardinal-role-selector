@@ -37,7 +37,11 @@ import {
 const KPI_START_INDEX = FRIDAY_STOPS.indexOf('kpi_1');
 
 const PARTNERS = ['theo', 'jerry'];
-const DEBOUNCE_MS = 400;
+// Autosave debounce — 25s feels right for live meeting cadence: long enough that
+// a thinking pause doesn't trigger a save, short enough that an interruption
+// (window switch, end of meeting) still persists recent edits within ~30s.
+// Earlier 400ms cadence felt too eager during the first live meeting.
+const DEBOUNCE_MS = 25000;
 const END_DISARM_MS = 3000;
 
 // UAT C2/C3/C4: Monday Prep stops that capture separate Theo + Jerry notes.
