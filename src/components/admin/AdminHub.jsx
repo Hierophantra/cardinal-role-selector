@@ -52,9 +52,17 @@ export default function AdminHub() {
       statusLines.push({ text: copy.status.noneSubmitted, style: 'muted' });
     }
 
-    // KPI lock status
-    const theoLocked = theoKpis.some((k) => k.locked_until && new Date(k.locked_until) > new Date());
-    const jerryLocked = jerryKpis.some((k) => k.locked_until && new Date(k.locked_until) > new Date());
+    // KPI lock status — post-Phase-17 UAT 2026-04-25:
+    // Phase 14 SCHEMA-11 dropped the locked_until semantic; the column is now
+    // always NULL. Phase 15 D-15 redefined "locked" as derived from the
+    // mandatory list + weekly-choice presence — a partner has KPIs locked the
+    // moment kpi_selections has any rows for them (mandatory rows are seeded
+    // on first selection and are always considered locked). The prior check
+    // (`some(k => locked_until && new Date(k.locked_until) > new Date())`)
+    // was a leftover from the old semantic and falsely reported "No KPIs
+    // locked yet" even when both partners had locked their picks.
+    const theoLocked = theoKpis.length > 0;
+    const jerryLocked = jerryKpis.length > 0;
 
     if (theoLocked && jerryLocked) {
       statusLines.push({ text: copy.status.bothKpisLocked, style: 'gold' });

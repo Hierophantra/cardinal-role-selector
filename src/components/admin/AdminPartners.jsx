@@ -183,7 +183,12 @@ function PartnerSection({ partner }) {
     }
   }
 
-  const kpiLocked = kpis.length > 0 && Boolean(kpis[0]?.locked_until);
+  // Post-Phase-17 UAT 2026-04-25: same fix as AdminHub. Phase 14 SCHEMA-11
+  // dropped the locked_until semantic; Phase 15 D-15 derives "locked" from
+  // the presence of any kpi_selections row (mandatory + weekly-choice). The
+  // prior `Boolean(kpis[0]?.locked_until)` check always returned false on
+  // current data and falsely showed "(unlocked)" in Partner Management.
+  const kpiLocked = kpis.length > 0;
   const committedScorecards = scorecards.filter((s) => s.committed_at).length;
   const latestWeek = scorecards.length > 0 ? scorecards[0].week_of : null;
   const name = PARTNER_DISPLAY[partner] ?? partner;
