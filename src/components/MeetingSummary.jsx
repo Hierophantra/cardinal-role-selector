@@ -600,6 +600,22 @@ function StopBlock({ stopKey, stopIndex, notesByStop, perPartnerNotesByStop, dat
     );
   }
 
+  // Migration 014 / post-Phase-17 UAT — additional_notes appears at the end of
+  // both Friday and Monday flows. Render the captured note like other shared
+  // stop bodies; copy keys come from the active meeting_type's copy block.
+  if (stopKey === 'additional_notes') {
+    const stopsCopy = copy.stops;
+    return (
+      <div className="meeting-stop" style={{ marginBottom: 24 }}>
+        <div className="eyebrow meeting-stop-eyebrow">{stopsCopy.additionalNotesEyebrow}</div>
+        <h3 className="meeting-stop-heading">{stopsCopy.additionalNotesHeading}</h3>
+        {note
+          ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{note}</p>
+          : <p className="muted">No notes for this stop.</p>}
+      </div>
+    );
+  }
+
   return null;
 }
 

@@ -705,6 +705,13 @@ export const MEETING_COPY = {
     wrapHeading: "This Week's Checkpoint",
     wrapSubtext:
       'Capture follow-ups. Pending commitments lock in at Saturday 23:59. See you Monday for the recap.',
+    // Migration 014 / post-Phase-17 UAT \u2014 true last stop, captures context
+    // surfaced outside the structured agenda (before/after/during).
+    additionalNotesEyebrow: 'ADDITIONAL NOTES',
+    additionalNotesHeading: 'Anything else?',
+    additionalNotesSubtext:
+      'Capture any extra context surfaced outside the structured agenda \u2014 things shared before, after, or alongside the meeting.',
+    additionalNotesPlaceholder: 'Side conversations, follow-ups, anything that came up off-script...',
   },
   notesPlaceholder: 'Add notes for this stop...',
   savedFlash: 'Saved',
@@ -783,6 +790,12 @@ export const MONDAY_PREP_COPY = {
     businessPriorityToggleHide: 'Hide deliverables',
     wrapHeading: 'Action Items & Commitments',
     wrapSubtext: 'Capture commitments and action items before starting the week.',
+    // Migration 014 / post-Phase-17 UAT \u2014 true last stop on Monday Prep too.
+    additionalNotesEyebrow: 'ADDITIONAL NOTES',
+    additionalNotesHeading: 'Anything else?',
+    additionalNotesSubtext:
+      'Capture any extra context surfaced outside the structured agenda \u2014 things shared before, after, or alongside the meeting.',
+    additionalNotesPlaceholder: 'Side conversations, follow-ups, anything that came up off-script...',
   },
   notesPlaceholder: 'Add notes for this stop...',
   savedFlash: 'Saved',
@@ -804,6 +817,7 @@ export const FRIDAY_STOPS = [
   'kpi_1', 'kpi_2', 'kpi_3', 'kpi_4', 'kpi_5', 'kpi_6', 'kpi_7',
   'growth_personal', 'growth_business_1', 'growth_business_2',
   'wrap',
+  'additional_notes',
 ];
 
 export const MONDAY_STOPS = [
@@ -813,6 +827,7 @@ export const MONDAY_STOPS = [
   'priorities_focus',
   'risks_blockers',
   'commitments',
+  'additional_notes',
 ];
 
 // Phase 17: filter narrowed to numbered kpi stops only ('kpi_1'..'kpi_7') so the new

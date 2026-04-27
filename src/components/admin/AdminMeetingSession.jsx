@@ -891,6 +891,18 @@ function StopRenderer({
     );
   }
 
+  if (stopKey === 'additional_notes') {
+    return (
+      <AdditionalNotesStop
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
+      />
+    );
+  }
+
   return null;
 }
 
@@ -1770,6 +1782,36 @@ function WrapStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
         copy={copy}
+        isEnded={isEnded}
+      />
+    </>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Additional Notes stop (Migration 014) — true last stop in both meeting types.
+// Captures context surfaced outside the structured agenda (before/after/during).
+// Mirrors ClearTheAirStop shape: eyebrow + heading + subtext + single shared
+// StopNotesArea. Persisted via meeting_notes (agenda_stop_key='additional_notes').
+// --------------------------------------------------------------------------
+
+function AdditionalNotesStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
+  // Use the stop-specific placeholder if present; fall back to the generic one
+  // so this stays compatible with any future copy that omits the override.
+  const placeholder = copy.stops.additionalNotesPlaceholder ?? copy.notesPlaceholder;
+  return (
+    <>
+      <div className="eyebrow meeting-stop-eyebrow">{copy.stops.additionalNotesEyebrow}</div>
+      <h2 className="meeting-stop-heading" style={{ fontSize: 28, lineHeight: 1.2 }}>
+        {copy.stops.additionalNotesHeading}
+      </h2>
+      <p className="meeting-stop-subtext">{copy.stops.additionalNotesSubtext}</p>
+      <StopNotesArea
+        stopKey="additional_notes"
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+        copy={{ ...copy, notesPlaceholder: placeholder }}
         isEnded={isEnded}
       />
     </>
