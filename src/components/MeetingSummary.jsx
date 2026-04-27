@@ -232,6 +232,20 @@ export default function MeetingSummary() {
                 <p className="muted" style={{ fontSize: 14 }}>
                   Recap of {new Date(meeting.ended_at).toLocaleDateString()} — read-only.
                 </p>
+                {/* Migration 014 / post-Phase-17 UAT: surface post-end note
+                    edits via the meetings.notes_updated_at column. Only render
+                    when notes_updated_at is strictly later than ended_at — a
+                    same-instant stamp would just clutter the header. Format
+                    matches the toLocaleString() convention used elsewhere. */}
+                {meeting.notes_updated_at &&
+                  new Date(meeting.notes_updated_at).getTime() > new Date(meeting.ended_at).getTime() && (
+                    <p
+                      className="muted meeting-summary-updated"
+                      style={{ fontSize: 13, fontStyle: 'italic', marginTop: 4 }}
+                    >
+                      Updated: {new Date(meeting.notes_updated_at).toLocaleString()}
+                    </p>
+                  )}
               </div>
 
               {stops.map((stopKey, i) => (
