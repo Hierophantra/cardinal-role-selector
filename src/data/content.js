@@ -551,6 +551,11 @@ export const SCORECARD_COPY = {
   pendingUpdateCta: 'Update Pending Rows',
   // UAT B2 — committed_at time line shown beside the submittedNotice in Scorecard.jsx
   committedAtPrefix: 'Committed ',
+  // UAT 2026-04-27 — extends the D-16 reopen window to all fields. Status line
+  // shown above the form when the partner has already submitted but the week
+  // is still open. Once weekClosed flips to true, weekClosedBanner takes over.
+  editableUntilSaturday: 'Editable until Saturday at 11:59 PM',
+  submittedOnPrefix: 'Submitted on ',
   // UAT C5 — submit confirmation modal copy
   submitConfirmEyebrow: 'CONFIRM SUBMISSION',
   submitConfirmHeading: 'Submit your scorecard for this week?',

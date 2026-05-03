@@ -231,9 +231,11 @@ export default function Scorecard() {
       weekRatingInitialized.current = true;
       return;
     }
-    if (weekClosed || view === 'submitted') return;
+    if (weekClosed) return;
     // WR-04: call without arg so persistDraft reads the current kpiResults state
     // rather than a potentially stale closure snapshot.
+    // UAT 2026-04-27: removed view==='submitted' gate — week rating stays
+    // editable until Saturday close per the extended D-16 reopen window.
     persistDraft();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekRating]);
@@ -289,23 +291,12 @@ export default function Scorecard() {
     // reason to persist a draft when the row composition has not loaded —
     // the partner cannot have edited anything yet — so bail.
     if (rows.length === 0) return;
-    // Phase 17 D-16: in submitted+open mode, allow draft persistence ONLY when at least one
-    // row is Pending (the partner is editing a pending commitment). Without this, post-submit
-    // edits to pending_text via setPendingTextLocal → onBlur persistField() would no-op.
-    //
-    // CR-01 (UAT 2026-04-25): Yes-conversion fix. When a partner toggles a Pending row to
-    // Met/Not Met, the post-toggle draft no longer has any Pending row, so the prior guard
-    // bailed and silently skipped the DB write. Local state showed the toggle "worked" but
-    // on reload the row reverted to 'pending'. The yes-conversion path IS legitimate D-16
-    // work, so we also allow the persist when the closure (pre-toggle) state had any Pending
-    // row. Either signal — pending in the post-change draft OR pending in the closure state —
-    // indicates a valid post-submit edit.
-    if (view === 'submitted') {
-      const draftCheck = nextKpiResults ?? kpiResults;
-      const hasReopenableInDraft = rows.some((tpl) => draftCheck[tpl.id]?.result === 'pending');
-      const priorHadPending = rows.some((tpl) => kpiResults[tpl.id]?.result === 'pending');
-      if (!hasReopenableInDraft && !priorHadPending) return;
-    }
+    // UAT 2026-04-27: extended D-16 — all scorecard fields stay editable until
+    // Saturday close, not just Pending re-open. The previous submitted-mode
+    // pending-only guard (and its CR-01 yes-conversion patch) are no longer
+    // needed: weekClosed is now the single policy gate. The hydratedRef +
+    // rows.length defenses above (BUG-2026-04-25) are correctness guards and
+    // remain in place.
     const draft = nextKpiResults ?? kpiResults;
     setSaving(true);
     setSaveError(null);
@@ -349,14 +340,12 @@ export default function Scorecard() {
   }
 
   function setResult(templateId, result) {
-    // D-16: allow editing a Pending row in submitted mode while week is open.
-    // The textarea is only mounted when result === 'pending' (silent UI collapse on toggle-away);
-    // pending_text is PRESERVED in state on toggle (Q1 strategy a) so SaturdayRecap can detect
+    // UAT 2026-04-27 (extended D-16): partners can edit ANY result until
+    // Saturday close, not just Pending re-open. Submit state is informational
+    // only; weekClosed is the single editability gate. pending_text is
+    // PRESERVED on toggle (Q1 strategy a) so SaturdayRecap can detect
     // yes-conversion on the resulting persisted row.
-    const isPendingReopen =
-      view === 'submitted' && !weekClosed && kpiResults[templateId]?.result === 'pending';
     if (weekClosed) return;
-    if (view === 'submitted' && !isPendingReopen) return;
     const current = kpiResults[templateId] ?? { result: null, reflection: '', count: 0, pending_text: '' };
     const next = {
       ...kpiResults,
@@ -409,14 +398,9 @@ export default function Scorecard() {
   }
 
   function persistField() {
-    // Phase 17 D-16: allow persisting pending_text edits in submitted+open mode.
-    // The submit gate downstream still validates pending_text non-empty before the
-    // partner triggers the "Update Pending Rows" submit; mid-edit blur persists drafts.
+    // UAT 2026-04-27: extended D-16 — all fields editable until Saturday close.
+    // weekClosed is the only persistence gate.
     if (weekClosed) return;
-    if (view === 'submitted') {
-      const hasReopenable = rows.some((tpl) => kpiResults[tpl.id]?.result === 'pending');
-      if (!hasReopenable) return;
-    }
     persistDraft(kpiResults);
   }
 
@@ -684,7 +668,7 @@ export default function Scorecard() {
   // ---- Render ----
   return (
     <div className="app-shell">
-      <div className="container" style={{ paddingBottom: isSubmitted ? undefined : 96 }}>
+      <div className="container" style={{ paddingBottom: !weekClosed && !isSubmitted ? 96 : undefined }}>
         <AnimatePresence mode="wait">
           <motion.div key={view} className="screen" {...motionProps}>
             <div className="nav-row" style={{ marginBottom: 12 }}>
@@ -697,8 +681,13 @@ export default function Scorecard() {
               <h2>{partnerName}</h2>
             </div>
 
+            {/* UAT 2026-04-27: post-submit banner. The completion message bubble
+                appears once-per-submission (state-pinned). Below it, a small
+                status line states the editability window — "Editable until
+                Saturday at 11:59 PM" while the week is open, swapping to the
+                weekClosed banner once Saturday close fires. */}
             {isSubmitted && (
-              <div className="scorecard-commit-gate" style={{ marginBottom: 20 }}>
+              <div className="scorecard-commit-gate" style={{ marginBottom: 16 }}>
                 <p className="muted" style={{ margin: 0 }}>
                   {/* UAT C6: rotated completion message picked once on submit;
                       falls back to the canonical submittedNotice on remount. */}
@@ -707,7 +696,7 @@ export default function Scorecard() {
                     <>
                       {' '}
                       <span style={{ opacity: 0.85 }}>
-                        {SCORECARD_COPY.committedAtPrefix}
+                        {SCORECARD_COPY.submittedOnPrefix}
                         {new Date(committedAt).toLocaleString(undefined, {
                           month: 'short',
                           day: 'numeric',
@@ -719,21 +708,24 @@ export default function Scorecard() {
                     </>
                   )}
                 </p>
+                <p className="muted" style={{ margin: '6px 0 0', fontSize: 12, fontStyle: 'italic' }}>
+                  {weekClosed
+                    ? SCORECARD_COPY.weekClosedBanner(formatWeekRange(currentWeekOf))
+                    : SCORECARD_COPY.editableUntilSaturday}
+                </p>
               </div>
             )}
 
-            {!isSubmitted && (
-              <div className="scorecard-meta-row">
-                <span className={`scorecard-counter${answeredCount === rows.length ? ' complete' : ''}`}>
-                  {answeredCount === rows.length
-                    ? SCORECARD_COPY.counterComplete(rows.length)
-                    : SCORECARD_COPY.counter(answeredCount, rows.length)}
-                </span>
-                <span className={`scorecard-saved${savedVisible ? ' visible' : ''}`}>
-                  {SCORECARD_COPY.savedIndicator}
-                </span>
-              </div>
-            )}
+            <div className="scorecard-meta-row">
+              <span className={`scorecard-counter${answeredCount === rows.length ? ' complete' : ''}`}>
+                {answeredCount === rows.length
+                  ? SCORECARD_COPY.counterComplete(rows.length)
+                  : SCORECARD_COPY.counter(answeredCount, rows.length)}
+              </span>
+              <span className={`scorecard-saved${savedVisible ? ' visible' : ''}`}>
+                {SCORECARD_COPY.savedIndicator}
+              </span>
+            </div>
 
             {weekClosed && !isSubmitted && (
               <p className="muted" style={{ marginBottom: 16 }}>
@@ -752,7 +744,10 @@ export default function Scorecard() {
                 const effective = effectiveResult(entry.result, currentWeekOf);
                 const isLivePending = entry.result === 'pending' && effective === 'pending';
                 const isClosedPending = entry.result === 'pending' && effective === 'no';
-                // D-16: in submitted mode, Pending rows specifically remain editable until Saturday close.
+                // UAT 2026-04-27: extended D-16 — every field stays editable until
+                // Saturday close. weekClosed is the single editability gate.
+                // isPendingReopen now flags only "this is a post-submit edit of a
+                // Pending row" for the inline hint copy, not for input gating.
                 const isPendingReopen = isSubmitted && !weekClosed && entry.result === 'pending';
                 const rowClass = [
                   'scorecard-kpi-row',
@@ -761,15 +756,9 @@ export default function Scorecard() {
                   entry.result === 'pending' ? 'pending' : '',
                   isClosedPending ? 'muted' : '',
                 ].filter(Boolean).join(' ');
-                // Picker editability: editable when the week is open AND either we're still in editing view
-                // OR we're in submitted view but this specific row is a Pending re-open.
-                const pickerDisabled = weekClosed || (isSubmitted && !isPendingReopen);
-                // UAT R3: extend D-16 reopen — count + reflection on a Pending row also stay
-                // editable post-submit until Saturday close (partner can revise the live
-                // commitment freely). Non-Pending rows in submitted mode remain locked.
-                const bodyDisabled = weekClosed || (isSubmitted && !isPendingReopen);
-                // Render picker as buttons whenever editable (initial editing OR Pending re-open).
-                const showEditablePicker = !weekClosed && (!isSubmitted || isPendingReopen);
+                const pickerDisabled = weekClosed;
+                const bodyDisabled = weekClosed;
+                const showEditablePicker = !weekClosed;
                 return (
                   <div key={tpl.id} className={rowClass}>
                     <div className="scorecard-baseline-label">
@@ -903,107 +892,87 @@ export default function Scorecard() {
               growthFollowup={growthFollowup}
               setGrowthFollowup={setGrowthFollowup}
               onPersist={persistField}
-              disabled={weekClosed || isSubmitted}
+              disabled={weekClosed}
             />
 
             {/* Weekly Reflection section */}
             <div className="scorecard-reflection-section">
               <div className="eyebrow">{SCORECARD_COPY.weeklyReflectionHeading}</div>
 
+              {/* UAT 2026-04-27: extended D-16 \u2014 Weekly Reflection block stays
+                  fully editable through Saturday close regardless of submit state. */}
               <div className="scorecard-tasks-row">
                 <div>
                   <label className="scorecard-reflection-label">{SCORECARD_COPY.tasksCompletedLabel}</label>
-                  {isSubmitted ? (
-                    <p className="muted" style={{ margin: 0 }}>{tasksCompleted || '\u2014'}</p>
-                  ) : (
-                    <textarea
-                      className="textarea"
-                      value={tasksCompleted}
-                      onChange={(e) => setTasksCompleted(e.target.value)}
-                      onBlur={persistField}
-                      placeholder={SCORECARD_COPY.tasksCompletedPlaceholder}
-                      disabled={weekClosed}
-                      rows={3}
-                    />
-                  )}
+                  <textarea
+                    className="textarea"
+                    value={tasksCompleted}
+                    onChange={(e) => setTasksCompleted(e.target.value)}
+                    onBlur={persistField}
+                    placeholder={SCORECARD_COPY.tasksCompletedPlaceholder}
+                    disabled={weekClosed}
+                    rows={3}
+                  />
                 </div>
                 <div>
                   <label className="scorecard-reflection-label">{SCORECARD_COPY.tasksCarriedOverLabel}</label>
-                  {isSubmitted ? (
-                    <p className="muted" style={{ margin: 0 }}>{tasksCarriedOver || '\u2014'}</p>
-                  ) : (
-                    <textarea
-                      className="textarea"
-                      value={tasksCarriedOver}
-                      onChange={(e) => setTasksCarriedOver(e.target.value)}
-                      onBlur={persistField}
-                      placeholder={SCORECARD_COPY.tasksCarriedOverPlaceholder}
-                      disabled={weekClosed}
-                      rows={3}
-                    />
-                  )}
+                  <textarea
+                    className="textarea"
+                    value={tasksCarriedOver}
+                    onChange={(e) => setTasksCarriedOver(e.target.value)}
+                    onBlur={persistField}
+                    placeholder={SCORECARD_COPY.tasksCarriedOverPlaceholder}
+                    disabled={weekClosed}
+                    rows={3}
+                  />
                 </div>
               </div>
 
               <div>
                 <label className="scorecard-reflection-label">{SCORECARD_COPY.biggestWinLabel}</label>
-                {isSubmitted ? (
-                  <p className="muted" style={{ margin: 0 }}>{weeklyWin || '\u2014'}</p>
-                ) : (
-                  <textarea
-                    className="textarea"
-                    value={weeklyWin}
-                    onChange={(e) => setWeeklyWin(e.target.value)}
-                    onBlur={persistField}
-                    placeholder={SCORECARD_COPY.biggestWinPlaceholder}
-                    disabled={weekClosed}
-                    rows={3}
-                  />
-                )}
+                <textarea
+                  className="textarea"
+                  value={weeklyWin}
+                  onChange={(e) => setWeeklyWin(e.target.value)}
+                  onBlur={persistField}
+                  placeholder={SCORECARD_COPY.biggestWinPlaceholder}
+                  disabled={weekClosed}
+                  rows={3}
+                />
               </div>
 
               <div>
                 <label className="scorecard-reflection-label">{SCORECARD_COPY.learningLabel}</label>
-                {isSubmitted ? (
-                  <p className="muted" style={{ margin: 0 }}>{weeklyLearning || '\u2014'}</p>
-                ) : (
-                  <textarea
-                    className="textarea"
-                    value={weeklyLearning}
-                    onChange={(e) => setWeeklyLearning(e.target.value)}
-                    onBlur={persistField}
-                    placeholder={SCORECARD_COPY.learningPlaceholder}
-                    disabled={weekClosed}
-                    rows={3}
-                  />
-                )}
+                <textarea
+                  className="textarea"
+                  value={weeklyLearning}
+                  onChange={(e) => setWeeklyLearning(e.target.value)}
+                  onBlur={persistField}
+                  placeholder={SCORECARD_COPY.learningPlaceholder}
+                  disabled={weekClosed}
+                  rows={3}
+                />
               </div>
 
               <div>
                 <label className="scorecard-reflection-label">{SCORECARD_COPY.weekRatingLabel}</label>
-                {isSubmitted ? (
-                  <p className="muted" style={{ margin: 0 }}>{weekRating ? `${weekRating} / 5` : '\u2014'}</p>
-                ) : (
-                  <>
-                    <div className="scorecard-rating-row">
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <button
-                          key={n}
-                          type="button"
-                          className={`scorecard-rating-btn${weekRating === n ? ' active' : ''}`}
-                          onClick={() => setWeekRating(n)}
-                          disabled={weekClosed}
-                        >
-                          {n}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="scorecard-rating-labels">
-                      <span>{SCORECARD_COPY.weekRatingLeft}</span>
-                      <span>{SCORECARD_COPY.weekRatingRight}</span>
-                    </div>
-                  </>
-                )}
+                <div className="scorecard-rating-row">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      className={`scorecard-rating-btn${weekRating === n ? ' active' : ''}`}
+                      onClick={() => setWeekRating(n)}
+                      disabled={weekClosed}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+                <div className="scorecard-rating-labels">
+                  <span>{SCORECARD_COPY.weekRatingLeft}</span>
+                  <span>{SCORECARD_COPY.weekRatingRight}</span>
+                </div>
               </div>
             </div>
 
@@ -1019,32 +988,26 @@ export default function Scorecard() {
         </AnimatePresence>
       </div>
 
-      {/* Phase 17 D-16: sticky submit bar shows in editing mode AND in submitted+open mode
-          when at least one row is still Pending (the partner can update commitments until
-          Saturday close). After Saturday close the bar disappears entirely. */}
-      {(() => {
-        if (weekClosed) return null;
-        const hasReopenablePending = isSubmitted && rows.some(
-          (tpl) => kpiResults[tpl.id]?.result === 'pending'
-        );
-        if (isSubmitted && !hasReopenablePending) return null;
-        const ctaLabel = hasReopenablePending ? SCORECARD_COPY.pendingUpdateCta : SCORECARD_COPY.submitCta;
-        return (
-          <div className="scorecard-sticky-bar">
-            <span className="muted" style={{ fontSize: 12, fontStyle: 'italic' }}>
-              {SCORECARD_COPY.stickyNote}
-            </span>
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={handleSubmit}
-              disabled={submitting}
-            >
-              {ctaLabel}
-            </button>
-          </div>
-        );
-      })()}
+      {/* UAT 2026-04-27 (extended D-16): sticky submit bar shows ONLY in pre-submit
+          editing mode while the week is open. Once submitted, all fields stay editable
+          but auto-save handles every change silently — no "Resubmit" CTA so the partner
+          isn't tempted into thinking the auto-saved edits aren't already persisted.
+          After Saturday close the bar disappears regardless of submit state. */}
+      {!weekClosed && !isSubmitted && (
+        <div className="scorecard-sticky-bar">
+          <span className="muted" style={{ fontSize: 12, fontStyle: 'italic' }}>
+            {SCORECARD_COPY.stickyNote}
+          </span>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
+            {SCORECARD_COPY.submitCta}
+          </button>
+        </div>
+      )}
 
       {/* UAT C5: submit confirmation overlay — rendered above the sticky bar. */}
       {confirmingSubmit && (
