@@ -1481,7 +1481,7 @@ function KpiStop({
       </div>
       <h3 className="meeting-stop-heading">KPI Review</h3>
       <p className="meeting-stop-subtext">
-        Partner's submitted result is shown read-only. Use Override to correct the call —
+        Partner's submitted result is shown read-only. Use Override to correct the call.
         Trace edits are stamped automatically.
       </p>
 

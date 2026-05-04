@@ -26,7 +26,7 @@ export default function WeekPlanCard({ weekPlan }) {
         <div className="eyebrow">MONDAY PREP</div>
         <h3 className="week-plan-card__heading">This Week&apos;s Plan</h3>
         <p className="week-plan-card__empty">
-          No plan captured yet — see you at Monday Prep.
+          No plan captured yet. See you at Monday Prep.
         </p>
       </section>
     );

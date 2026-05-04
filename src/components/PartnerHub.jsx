@@ -407,7 +407,7 @@ export default function PartnerHub() {
                 {kpiReady && (
                   <Link to={`/meeting-history/${partner}`} className="hub-card">
                     <h3>Meeting History</h3>
-                    <p>Browse all past Friday Reviews and Monday Preps — stop-by-stop notes from every ended session.</p>
+                    <p>Browse all past Friday Reviews and Monday Preps: stop-by-stop notes from every ended session.</p>
                     <span className="hub-card-cta">Browse meetings {'\u2192'}</span>
                   </Link>
                 )}

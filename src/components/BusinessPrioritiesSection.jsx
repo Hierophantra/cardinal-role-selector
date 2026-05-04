@@ -22,7 +22,7 @@ export default function BusinessPrioritiesSection({ priorities }) {
         <div className="eyebrow">SHARED FOCUS AREAS</div>
         <h3>Business Priorities</h3>
         <p className="business-priorities-subtext">
-          Same for both partners — discussion notes per meeting captured below.
+          Same for both partners. Discussion notes per meeting captured below.
         </p>
         <p className="business-priorities-empty">
           No business priorities are configured yet.

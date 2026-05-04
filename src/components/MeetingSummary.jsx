@@ -246,9 +246,9 @@ export default function MeetingSummary() {
             <>
               <div className="eyebrow">{meeting.meeting_type === 'monday_prep' ? 'MONDAY PREP' : 'FRIDAY REVIEW'}</div>
               <div className="screen-header">
-                <h2>Meeting Summary — Week of {formatWeekRange(meeting.week_of)}</h2>
+                <h2>Meeting Summary: Week of {formatWeekRange(meeting.week_of)}</h2>
                 <p className="muted" style={{ fontSize: 14 }}>
-                  Recap of {new Date(meeting.ended_at).toLocaleDateString()} — read-only.
+                  Recap of {new Date(meeting.ended_at).toLocaleDateString()}. Read-only.
                 </p>
                 {/* Migration 014 / post-Phase-17 UAT: surface post-end note
                     edits via the meetings.notes_updated_at column. Only render
@@ -306,7 +306,7 @@ function StopBlock({ stopKey, stopIndex, notesByStop, perPartnerNotesByStop, dat
   if (stopKey === 'kpi_review_optional') {
     const choice = note;
     const summary =
-      choice === 'skip' ? 'Skipped — Yes/No KPIs not reviewed this meeting.'
+      choice === 'skip' ? 'Skipped: Yes/No KPIs not reviewed this meeting.'
       : choice === 'review' ? 'Reviewed KPIs.'
       : 'No choice recorded.';
     return (
