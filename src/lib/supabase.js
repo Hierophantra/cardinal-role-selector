@@ -804,6 +804,26 @@ export async function fetchWeeklyKpiSelection(partner, weekStartDate) {
 }
 
 /**
+ * Fetch all weekly KPI selections for a partner, newest week first.
+ * Used by AdminPartners profile to display "selected on" timestamps per week
+ * (the row's created_at captures when the partner first locked in their pick
+ * for that week; no schema change required). The returned rows include
+ * counter-only seeds (kpi_template_id IS NULL) — UI consumers should filter
+ * those before display.
+ * @param {'theo'|'jerry'|'test'} partner
+ * @returns {Promise<object[]>}
+ */
+export async function fetchWeeklyKpiSelectionHistory(partner) {
+  const { data, error } = await supabase
+    .from('weekly_kpi_selections')
+    .select('*')
+    .eq('partner', partner)
+    .order('week_start_date', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+/**
  * Fetch the partner's prior-week weekly_kpi_selections row. Returns null if
  * none exists (first-week edge case per D-23 / WEEKLY-03). Computes previous
  * Monday in LOCAL time (y, m-1, d-7) to match getMondayOf conventions — never
