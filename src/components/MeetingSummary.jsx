@@ -5,6 +5,7 @@ import {
   fetchMeetingNotes,
   fetchScorecard,
   fetchGrowthPriorities,
+  fetchWeekPlanForWeek,
 } from '../lib/supabase.js';
 import { formatWeekRange, effectiveResult } from '../lib/week.js';
 import { composePartnerKpis } from '../lib/partnerKpis.js';
@@ -22,12 +23,15 @@ import {
 const PARTNERS = ['theo', 'jerry'];
 
 // UAT C2/C3/C4: same set as AdminMeetingSession — drives per-partner render
-// dispatch in StopBlock for the three Monday Prep stops that capture separate
+// dispatch in StopBlock for the Monday Prep stops that capture separate
 // Theo + Jerry notes (notes_theo / notes_jerry columns from migration 013).
+// UAT 2026-05-04 (Week Plan): 'week_plan_recap' added — Friday Review's
+// per-partner recap of Monday's plan.
 const PER_PARTNER_NOTE_STOPS = new Set([
   'priorities_focus',
   'risks_blockers',
   'commitments',
+  'week_plan_recap',
 ]);
 
 // Post-Phase-17 UAT 2026-04-25: mirror of the helper in AdminMeetingSession.
@@ -96,6 +100,10 @@ export default function MeetingSummary() {
     theo: { kpis: [], scorecard: null, growth: [] },
     jerry: { kpis: [], scorecard: null, growth: [] },
     lastWeekScorecards: [],
+    // UAT 2026-05-04 (Week Plan): Friday Review summaries fetch Monday's plan
+    // so the week_plan_recap stop renders self-contained. Null on Monday Prep
+    // summaries (Monday IS the source).
+    weekPlan: null,
   });
 
   useEffect(() => {
@@ -138,6 +146,7 @@ export default function MeetingSummary() {
           jerryGrowth,
           theoPrevScorecard,
           jerryPrevScorecard,
+          weekPlan,
         ] = await Promise.all([
           fetchMeetingNotes(ended.id),
           composePartnerKpis('theo', ended.week_of),
@@ -148,6 +157,10 @@ export default function MeetingSummary() {
           fetchGrowthPriorities('jerry'),
           isMondayPrep ? fetchScorecard('theo', prevMonday) : Promise.resolve(null),
           isMondayPrep ? fetchScorecard('jerry', prevMonday) : Promise.resolve(null),
+          // UAT 2026-05-04 (Week Plan): pull Monday's plan for Friday Review
+          // summaries so the week_plan_recap stop is self-contained. Skipped
+          // for Monday Prep summaries — they ARE the plan.
+          isMondayPrep ? Promise.resolve(null) : fetchWeekPlanForWeek(ended.week_of),
         ]);
 
         if (!alive) return;
@@ -182,6 +195,7 @@ export default function MeetingSummary() {
             growth: jerryGrowth ?? [],
           },
           lastWeekScorecards,
+          weekPlan,
         });
         setLoading(false);
       } catch (err) {
@@ -640,6 +654,77 @@ function StopBlock({ stopKey, stopIndex, notesByStop, perPartnerNotesByStop, dat
         {note
           ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{note}</p>
           : <p className="muted">No notes for this stop.</p>}
+      </div>
+    );
+  }
+
+  // UAT 2026-05-04 (Week Plan) — Friday Review stop. Renders Monday's plan
+  // read-only at the top + per-partner recap notes side-by-side. data.weekPlan
+  // is fetched in the load effect for Friday meetings; null on Monday Prep
+  // summaries (where this stop should not appear in MONDAY_STOPS anyway).
+  if (stopKey === 'week_plan_recap') {
+    const stopsCopy = copy.stops;
+    const weekPlan = data?.weekPlan ?? null;
+    const hasPlan = Boolean(weekPlan && weekPlan.meetingId);
+    const planNotes = weekPlan?.notes ?? null;
+    const sections = [
+      { key: 'priorities_focus', heading: stopsCopy.weekPlanRecapPriorityHeading },
+      { key: 'risks_blockers', heading: stopsCopy.weekPlanRecapRisksHeading },
+      { key: 'commitments', heading: stopsCopy.weekPlanRecapCommitmentsHeading },
+    ];
+    const cur = perPartnerNotes ?? { theo: '', jerry: '' };
+    return (
+      <div className="meeting-stop" style={{ marginBottom: 24 }}>
+        <div className="eyebrow meeting-stop-eyebrow">{stopsCopy.weekPlanRecapEyebrow}</div>
+        <h3 className="meeting-stop-heading">{stopsCopy.weekPlanRecapHeading}</h3>
+        {hasPlan ? (
+          <div className="week-plan-recap-stop__plan-block week-plan-card">
+            {sections.map(({ key, heading }) => {
+              const cell = planNotes?.[key] ?? { theo: '', jerry: '' };
+              return (
+                <div key={key} className="week-plan-card__section">
+                  <div className="week-plan-card__section-heading">{heading}</div>
+                  <div className="week-plan-card__partner-grid">
+                    {PARTNERS.map((p) => {
+                      const text = (cell[p] ?? '').trim();
+                      return (
+                        <div key={p} className="week-plan-card__partner-cell">
+                          <div className="week-plan-card__partner-name">
+                            {PARTNER_DISPLAY[p] ?? p}
+                          </div>
+                          {text ? (
+                            <p className="week-plan-card__partner-text">{text}</p>
+                          ) : (
+                            <p className="week-plan-card__partner-empty">No notes captured.</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="week-plan-recap-stop__plan-block">
+            <p className="week-plan-recap-stop__plan-empty">
+              {stopsCopy.weekPlanRecapEmptyState}
+            </p>
+          </div>
+        )}
+        <div className="meeting-growth-grid" style={{ marginTop: 16 }}>
+          {PARTNERS.map((p) => {
+            const text = (cur[p] ?? '').trim();
+            return (
+              <div key={p} className="meeting-growth-cell">
+                <div className="meeting-partner-name">{PARTNER_DISPLAY[p] ?? p}</div>
+                {text
+                  ? <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 6 }}>{text}</p>
+                  : <p className="muted" style={{ fontSize: 13, marginTop: 6 }}>No recap notes for {PARTNER_DISPLAY[p] ?? p}.</p>}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }

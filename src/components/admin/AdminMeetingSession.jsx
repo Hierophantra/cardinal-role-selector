@@ -12,6 +12,7 @@ import {
   fetchGrowthPriorities,
   fetchScorecard,
   fetchBusinessPriorities,
+  fetchWeekPlanForWeek,
 } from '../../lib/supabase.js';
 import { formatWeekRange, effectiveResult, isWeekClosed } from '../../lib/week.js';
 import { composePartnerKpis } from '../../lib/partnerKpis.js';
@@ -45,13 +46,16 @@ const DEBOUNCE_MS = 25000;
 const END_DISARM_MS = 3000;
 
 // UAT C2/C3/C4: Monday Prep stops that capture separate Theo + Jerry notes.
-// Renderer dispatches on stop key — these three use upsertMeetingNotePerPartner
+// Renderer dispatches on stop key — these stops use upsertMeetingNotePerPartner
 // (notes_theo + notes_jerry columns); every other stop continues to write the
 // shared body column via upsertMeetingNote.
+// UAT 2026-05-04 (Week Plan): 'week_plan_recap' added — Friday Review stop
+// captures per-partner recap of how Monday's plan landed.
 const PER_PARTNER_NOTE_STOPS = new Set([
   'priorities_focus',
   'risks_blockers',
   'commitments',
+  'week_plan_recap',
 ]);
 
 // Pattern 6: render-time label fallback for kpi_results (D-06).
@@ -107,6 +111,9 @@ export default function AdminMeetingSession() {
     jerry: { kpis: [], growth: [], scorecard: null },
     lastWeekScorecards: [],
     businessPriorities: [],
+    // UAT 2026-05-04 (Week Plan): Monday plan surfaced inside the Friday Review
+    // week_plan_recap stop. Null on Monday Prep meetings (Monday IS the plan).
+    weekPlan: null,
   });
   const [endPending, setEndPending] = useState(false);
   const [ending, setEnding] = useState(false);
@@ -148,6 +155,10 @@ export default function AdminMeetingSession() {
         setMeeting(m);
 
         const prevMonday = previousMondayOf(m.week_of);
+        // UAT 2026-05-04 (Week Plan): Friday Review meetings load Monday's plan
+        // for the week_plan_recap stop. Skipped for Monday Prep — Monday IS the
+        // source of the plan, so loading it here would be redundant.
+        const isFridayReview = m.meeting_type !== 'monday_prep';
         const [
           theoKpis,
           jerryKpis,
@@ -159,6 +170,7 @@ export default function AdminMeetingSession() {
           jerryPrevScorecard,
           noteRows,
           bizPriorities,
+          weekPlan,
         ] = await Promise.all([
           // UAT A3/A7/A8: compose template-id-keyed 7-row KPI list (Scorecard.jsx parity).
           composePartnerKpis('theo', m.week_of),
@@ -174,6 +186,9 @@ export default function AdminMeetingSession() {
           fetchScorecard('jerry', prevMonday),
           fetchMeetingNotes(id),
           fetchBusinessPriorities(),
+          isFridayReview
+            ? fetchWeekPlanForWeek(m.week_of)
+            : Promise.resolve(null),
         ]);
         if (!alive) return;
 
@@ -192,6 +207,7 @@ export default function AdminMeetingSession() {
           },
           lastWeekScorecards,
           businessPriorities: bizPriorities ?? [],
+          weekPlan: weekPlan ?? null,
         });
 
         // Seed note drafts from any existing meeting_notes rows.
@@ -977,6 +993,19 @@ function StopRenderer({
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
+      />
+    );
+  }
+
+  if (stopKey === 'week_plan_recap') {
+    return (
+      <WeekPlanRecapStop
+        weekPlan={data?.weekPlan ?? null}
+        perPartnerNotes={perPartnerNotes}
+        savedFlash={savedFlash}
+        onPerPartnerNoteChange={onPerPartnerNoteChange}
         copy={copy}
         isEnded={isEnded}
       />
@@ -1907,6 +1936,88 @@ function AdditionalNotesStop({ notes, savedFlash, onNoteChange, copy, isEnded })
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
         copy={{ ...copy, notesPlaceholder: placeholder }}
+        isEnded={isEnded}
+      />
+    </>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Week Plan Recap stop (UAT 2026-05-04, Week Plan feature) — Friday-only stop.
+// Surfaces Monday Prep's per-partner plan (priorities, risks, commitments)
+// read-only at the top, with per-partner recap textareas underneath. The
+// textarea pair is mounted even in the empty state so admin can capture
+// recap context even when no Monday plan was logged.
+// --------------------------------------------------------------------------
+
+function WeekPlanRecapStop({
+  weekPlan,
+  perPartnerNotes,
+  savedFlash,
+  onPerPartnerNoteChange,
+  copy,
+  isEnded,
+}) {
+  const stopsCopy = copy.stops;
+  const hasPlan = Boolean(weekPlan && weekPlan.meetingId);
+  const planNotes = weekPlan?.notes ?? null;
+
+  const sections = [
+    { key: 'priorities_focus', heading: stopsCopy.weekPlanRecapPriorityHeading },
+    { key: 'risks_blockers', heading: stopsCopy.weekPlanRecapRisksHeading },
+    { key: 'commitments', heading: stopsCopy.weekPlanRecapCommitmentsHeading },
+  ];
+
+  return (
+    <>
+      <div className="eyebrow meeting-stop-eyebrow">{stopsCopy.weekPlanRecapEyebrow}</div>
+      <h2 className="meeting-stop-heading" style={{ fontSize: 28, lineHeight: 1.2 }}>
+        {stopsCopy.weekPlanRecapHeading}
+      </h2>
+      <p className="meeting-stop-subtext">{stopsCopy.weekPlanRecapSubtext}</p>
+
+      {hasPlan ? (
+        <div className="week-plan-recap-stop__plan-block week-plan-card">
+          {sections.map(({ key, heading }) => {
+            const cell = planNotes?.[key] ?? { theo: '', jerry: '' };
+            return (
+              <div key={key} className="week-plan-card__section">
+                <div className="week-plan-card__section-heading">{heading}</div>
+                <div className="week-plan-card__partner-grid">
+                  {PARTNERS.map((p) => {
+                    const text = (cell[p] ?? '').trim();
+                    return (
+                      <div key={p} className="week-plan-card__partner-cell">
+                        <div className="week-plan-card__partner-name">
+                          {PARTNER_DISPLAY[p] ?? p}
+                        </div>
+                        {text ? (
+                          <p className="week-plan-card__partner-text">{text}</p>
+                        ) : (
+                          <p className="week-plan-card__partner-empty">No notes captured.</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="week-plan-recap-stop__plan-block">
+          <p className="week-plan-recap-stop__plan-empty">
+            {stopsCopy.weekPlanRecapEmptyState}
+          </p>
+        </div>
+      )}
+
+      <PerPartnerNotesArea
+        stopKey="week_plan_recap"
+        perPartnerNotes={perPartnerNotes}
+        savedFlash={savedFlash}
+        onPerPartnerNoteChange={onPerPartnerNoteChange}
+        copy={copy}
         isEnded={isEnded}
       />
     </>

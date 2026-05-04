@@ -723,6 +723,18 @@ export const MEETING_COPY = {
     additionalNotesSubtext:
       'Capture any extra context surfaced outside the structured agenda \u2014 things shared before, after, or alongside the meeting.',
     additionalNotesPlaceholder: 'Side conversations, follow-ups, anything that came up off-script...',
+    // UAT 2026-05-04 (Week Plan) \u2014 Friday Review stop that revisits Monday's
+    // per-partner plan. Read-only Monday plan rendered up top; per-partner
+    // recap textareas underneath. Empty state when no Monday meeting captured.
+    weekPlanRecapEyebrow: 'WEEK PLAN \u2014 RECAP',
+    weekPlanRecapHeading: "How did this week's plan land?",
+    weekPlanRecapSubtext:
+      "What got done from Monday's priorities, risks, and commitments? Capture per-partner \u2014 discussion drives the read-out.",
+    weekPlanRecapEmptyState:
+      'No Monday Prep meeting captured for this week. Skip ahead.',
+    weekPlanRecapPriorityHeading: 'Priorities',
+    weekPlanRecapRisksHeading: 'Risks & Blockers',
+    weekPlanRecapCommitmentsHeading: 'Walk-Away Commitments',
   },
   notesPlaceholder: 'Add notes for this stop...',
   savedFlash: 'Saved',
@@ -771,12 +783,16 @@ export const MONDAY_PREP_COPY = {
     weekPreviewEyebrow: 'WEEK PREVIEW',
     weekPreviewHeading: "What's Coming This Week",
     weekPreviewSubtext: "Jobs going up, deadlines, weekly objectives, and uncertainties to surface.",
-    prioritiesFocusEyebrow: 'PRIORITIES & FOCUS',
+    // UAT 2026-05-04 (Week Plan): three Monday Prep stops rebranded as one
+    // logical "WEEK PLAN" section so the eyebrow reads consistently with the
+    // hub WeekPlanCard and the Friday week_plan_recap stop. Headings + subtexts
+    // unchanged — pure eyebrow rebrand.
+    prioritiesFocusEyebrow: 'WEEK PLAN — PRIORITIES',
     prioritiesFocusHeading: 'Top 2-3 Priorities',
     // UAT C2: per-partner notes — explain each textarea is for that partner only.
     prioritiesFocusSubtext:
       "The 2-3 most important things each partner will accomplish this week. Capture Theo's and Jerry's separately.",
-    risksBlockersEyebrow: 'RISKS & BLOCKERS',
+    risksBlockersEyebrow: 'WEEK PLAN — RISKS',
     risksBlockersHeading: 'Risks & Blockers',
     // UAT C3: per-partner notes — each partner's risks/blockers go in their own column.
     risksBlockersSubtext:
@@ -784,7 +800,7 @@ export const MONDAY_PREP_COPY = {
     growthCheckinEyebrow: 'GROWTH CHECK-IN',
     growthCheckinHeading: 'Growth Priority Pulse',
     growthCheckinSubtext: "Quick status on each partner's growth priorities.",
-    commitmentsEyebrow: 'COMMITMENTS',
+    commitmentsEyebrow: 'WEEK PLAN — COMMITMENTS',
     commitmentsHeading: 'Walk-Away Commitments',
     // UAT C4: per-partner notes — each partner's commitments live in their own column.
     commitmentsSubtext:
@@ -821,8 +837,15 @@ export const MONDAY_PREP_COPY = {
 // Monday Prep: 6 intention-focused stops.
 // KPI_STOP_COUNT is derived from FRIDAY_STOPS so it stays in sync.
 
+// UAT 2026-05-04 (Week Plan): inserted 'week_plan_recap' between
+// 'clear_the_air' and 'kpi_review_optional'. KPI_START_INDEX in
+// AdminMeetingSession is derived via FRIDAY_STOPS.indexOf('kpi_1') so it
+// shifts automatically (kpi_1 was index 3, now index 4). The
+// kpi_review_optional skip-gate also uses indexOf('growth_personal') so it
+// stays correct under reorder.
 export const FRIDAY_STOPS = [
   'clear_the_air',
+  'week_plan_recap',
   'kpi_review_optional',
   'intro',
   'kpi_1', 'kpi_2', 'kpi_3', 'kpi_4', 'kpi_5', 'kpi_6', 'kpi_7',
