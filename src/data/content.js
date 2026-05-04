@@ -525,8 +525,8 @@ export const SCORECARD_COPY = {
   // --- Phase 16 extensions (new Scorecard v2.0 keys) ---
   growthPrefix: 'GROWTH:',
   countLabel: 'Count',
-  reflectionLabel: 'Reflection (optional)',
-  reflectionPlaceholder: 'What happened this week? What did you notice?',
+  reflectionLabel: 'Reflection',
+  reflectionPlaceholder: '',
   weeklyReflectionHeading: 'Weekly Reflection',
   biggestWinLabel: 'Biggest win (optional)',
   biggestWinPlaceholder: 'What are you proud of?',
