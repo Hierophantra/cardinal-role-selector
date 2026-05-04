@@ -287,9 +287,14 @@ export async function resetPartnerKpiSelections(partner) {
   if (error) throw error;
 }
 
-export async function resetPartnerWeeklyKpiSelections(partner) {
+export async function resetPartnerWeeklyKpiSelections(partner, weekOf) {
   assertResettable(partner);
-  const { error } = await supabase.from('weekly_kpi_selections').delete().eq('partner', partner);
+  let query = supabase.from('weekly_kpi_selections').delete().eq('partner', partner);
+  // UAT 2026-05-04: optional week scope — when caller passes weekOf, only this
+  // week's pick + counter row is deleted; prior week history is preserved.
+  // Without weekOf, behavior is unchanged (delete all weeks).
+  if (weekOf) query = query.eq('week_start_date', weekOf);
+  const { error } = await query;
   if (error) throw error;
 }
 
@@ -304,12 +309,18 @@ export async function resetPartnerKpis(partner) {
   await resetPartnerGrowthPriorities(partner);
 }
 
-export async function resetPartnerScorecards(partner) {
+export async function resetPartnerScorecards(partner, weekOf) {
   assertResettable(partner);
   // CR-01: this function only resets `scorecards`. The 'all' caller in
   // AdminPartners.performReset is responsible for also calling
   // resetPartnerWeeklyKpiSelections so each helper does what its name says.
-  const { error } = await supabase.from('scorecards').delete().eq('partner', partner);
+  // UAT 2026-05-04: optional week scope — when caller passes weekOf, only this
+  // week's scorecard is deleted; prior submissions preserved. Without weekOf,
+  // behavior is unchanged (delete all scorecards). The CR-01 note about 'all'
+  // caller responsibility for resetPartnerWeeklyKpiSelections still applies.
+  let query = supabase.from('scorecards').delete().eq('partner', partner);
+  if (weekOf) query = query.eq('week_of', weekOf);
+  const { error } = await query;
   if (error) throw error;
 }
 

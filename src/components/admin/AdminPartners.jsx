@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   fetchSubmission,
@@ -14,7 +14,7 @@ import {
   updateGrowthPriorityAdminNote,
 } from '../../lib/supabase.js';
 import { PARTNER_DISPLAY, GROWTH_STATUS_COPY, ADMIN_GROWTH_COPY, ADMIN_ACCOUNTABILITY_COPY } from '../../data/content.js';
-import { effectiveResult } from '../../lib/week.js';
+import { effectiveResult, getMondayOf } from '../../lib/week.js';
 
 const MANAGED = ['theo', 'jerry'];
 
@@ -76,6 +76,11 @@ function PartnerSection({ partner }) {
   const [growthSaving, setGrowthSaving] = useState({}); // { [id]: 'status'|'note'|null }
   const [growthError, setGrowthError] = useState('');
   const [noteDrafts, setNoteDrafts] = useState({}); // { [id]: string }
+
+  // UAT 2026-05-04: stable current-week anchor for week-scoped resets. Memoized
+  // once per mount so the "This Week" reset variants always target the same
+  // Monday even if the user holds the screen open across midnight.
+  const currentMonday = useMemo(() => getMondayOf(), []);
 
   const loadState = useCallback(async () => {
     setLoading(true);
@@ -148,13 +153,22 @@ function PartnerSection({ partner }) {
       // doesn't depend on a side effect inside any helper. resetPartnerScorecards
       // now only touches `scorecards` — 'all' must explicitly call
       // resetPartnerWeeklyKpiSelections to wipe the per-week pick row.
+      // UAT 2026-05-04 (Path B): scoped resets split into "This Week" and "All
+      // History" variants. The "This Week" variants pass currentMonday as the
+      // weekOf arg so only this week's row is deleted; prior submissions stay.
+      // The legacy 'weeklyKpi' / 'scorecards' kinds are preserved as aliases
+      // for the all-history nuke path (back-compat for any external callers).
       if (kind === 'submission') {
         await resetPartnerSubmission(partner);
-      } else if (kind === 'weeklyKpi') {
+      } else if (kind === 'weeklyKpiThisWeek') {
+        await resetPartnerWeeklyKpiSelections(partner, currentMonday);
+      } else if (kind === 'weeklyKpiAll' || kind === 'weeklyKpi') {
         await resetPartnerWeeklyKpiSelections(partner);
       } else if (kind === 'growthPriorities') {
         await resetPartnerGrowthPriorities(partner);
-      } else if (kind === 'scorecards') {
+      } else if (kind === 'scorecardsThisWeek') {
+        await resetPartnerScorecards(partner, currentMonday);
+      } else if (kind === 'scorecardsAll' || kind === 'scorecards') {
         await resetPartnerScorecards(partner);
       } else if (kind === 'all') {
         await resetPartnerSubmission(partner);
@@ -359,20 +373,31 @@ function PartnerSection({ partner }) {
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <ResetButton
-                label="Reset Role Definition"
-                armedLabel="Click again to delete role submission"
+                label="Reset Submission"
+                armedLabel="Click again to delete questionnaire submission"
                 kind="submission"
                 pending={pendingReset}
                 resetting={resetting}
                 onClick={handleResetClick}
               />
+              {/* UAT 2026-05-04: scoped weekly KPI resets — default to current
+                  week, separate destructive button for the all-history nuke. */}
               <ResetButton
-                label="Reset Weekly KPI"
-                armedLabel="Click again to delete this week's KPI pick"
-                kind="weeklyKpi"
+                label="Reset This Week's KPI Pick"
+                armedLabel="Click again to delete this week's KPI pick (history preserved)"
+                kind="weeklyKpiThisWeek"
                 pending={pendingReset}
                 resetting={resetting}
                 onClick={handleResetClick}
+              />
+              <ResetButton
+                label="Reset All Weekly KPI History"
+                armedLabel="Click again to delete ALL weekly KPI picks across every week"
+                kind="weeklyKpiAll"
+                pending={pendingReset}
+                resetting={resetting}
+                onClick={handleResetClick}
+                destructive
               />
               <ResetButton
                 label="Reset Growth Priorities"
@@ -382,13 +407,24 @@ function PartnerSection({ partner }) {
                 resetting={resetting}
                 onClick={handleResetClick}
               />
+              {/* UAT 2026-05-04: scoped scorecard resets — default to current
+                  week, separate destructive button for the all-history nuke. */}
               <ResetButton
-                label="Reset Scorecards"
-                armedLabel="Click again to delete all scorecards"
-                kind="scorecards"
+                label="Reset This Week's Scorecard"
+                armedLabel="Click again to delete this week's scorecard (prior submissions preserved)"
+                kind="scorecardsThisWeek"
                 pending={pendingReset}
                 resetting={resetting}
                 onClick={handleResetClick}
+              />
+              <ResetButton
+                label="Reset All Scorecards"
+                armedLabel="Click again to delete ALL scorecards across every week"
+                kind="scorecardsAll"
+                pending={pendingReset}
+                resetting={resetting}
+                onClick={handleResetClick}
+                destructive
               />
               <ResetButton
                 label="Reset Everything"
@@ -412,7 +448,7 @@ function PartnerSection({ partner }) {
   );
 }
 
-function ResetButton({ label, armedLabel, kind, pending, resetting, onClick, danger }) {
+function ResetButton({ label, armedLabel, kind, pending, resetting, onClick, danger, destructive }) {
   const isArmed = pending === kind;
   const display = isArmed ? armedLabel : label;
   const style = {
@@ -422,6 +458,12 @@ function ResetButton({ label, armedLabel, kind, pending, resetting, onClick, dan
   if (isArmed) {
     style.borderColor = 'var(--miss)';
     style.color = 'var(--miss)';
+  } else if (destructive) {
+    // UAT 2026-05-04: visual cue for all-history nuke variants so admins
+    // notice they're picking the wider blast radius. Amber left border
+    // distinguishes them from the safer "This Week" defaults without
+    // shouting like the fully-armed red state.
+    style.borderLeft = '3px solid var(--miss)';
   } else if (danger) {
     style.borderColor = 'var(--border)';
   }
@@ -429,6 +471,7 @@ function ResetButton({ label, armedLabel, kind, pending, resetting, onClick, dan
     <button
       type="button"
       className="btn btn-ghost"
+      data-destructive={destructive ? 'true' : undefined}
       style={style}
       onClick={() => onClick(kind)}
       disabled={resetting}
