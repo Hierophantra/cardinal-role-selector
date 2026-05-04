@@ -2598,3 +2598,119 @@ textarea { resize: vertical; min-height: 120px; }
   margin: 4px 0 8px;
 }
 
+/* =============================================================================
+   UAT 2026-05-04 — Week Plan feature (option β)
+   Hub: WeekPlanCard surfaces Monday Prep's per-partner plan above ThisWeekKpis.
+   Meeting: .week-plan-recap-stop mirrors the same shape inside the Friday
+   Review week_plan_recap stop (read-only top + per-partner textarea pair below).
+   Reuses .eyebrow / .hub-section. Color tokens only — no new hex values.
+   ========================================================================== */
+
+.week-plan-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.week-plan-card__heading {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text);
+  margin: 0 0 16px 0;
+}
+
+.week-plan-card__section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.week-plan-card__section:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.week-plan-card__section-heading {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+
+.week-plan-card__partner-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.week-plan-card__partner-cell {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.week-plan-card__partner-name {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.week-plan-card__partner-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.week-plan-card__partner-empty {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--muted-2);
+  margin: 0;
+}
+
+.week-plan-card__empty {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .week-plan-card__partner-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Meeting-mode mirror — shown above the per-partner recap textareas in the
+   Friday Review week_plan_recap stop. Reuses partner-cell + section styling
+   from .week-plan-card so the read-only block looks consistent across hub
+   and meeting surfaces. */
+.week-plan-recap-stop__plan-block {
+  margin-top: 20px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.week-plan-recap-stop__plan-empty {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+}
+

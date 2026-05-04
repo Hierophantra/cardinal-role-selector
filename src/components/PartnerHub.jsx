@@ -9,6 +9,7 @@ import {
   fetchPreviousWeeklyKpiSelection,
   fetchGrowthPriorities,
   fetchBusinessPriorities,
+  fetchWeekPlanForWeek,
   upsertGrowthPriority,
   incrementKpiCounter,
 } from '../lib/supabase.js';
@@ -26,6 +27,7 @@ import RoleIdentitySection from './RoleIdentitySection.jsx';
 import ThisWeekKpisSection from './ThisWeekKpisSection.jsx';
 import PersonalGrowthSection from './PersonalGrowthSection.jsx';
 import BusinessPrioritiesSection from './BusinessPrioritiesSection.jsx';
+import WeekPlanCard from './WeekPlanCard.jsx';
 
 export default function PartnerHub() {
   const { partner } = useParams();
@@ -42,6 +44,7 @@ export default function PartnerHub() {
   const [previousSelection, setPreviousSelection] = useState(null);
   const [growthPriorities, setGrowthPriorities] = useState([]);
   const [businessPriorities, setBusinessPriorities] = useState(null);
+  const [weekPlan, setWeekPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -72,8 +75,13 @@ export default function PartnerHub() {
       fetchPreviousWeeklyKpiSelection(partner, currentMonday),
       fetchGrowthPriorities(partner),
       fetchBusinessPriorities(),
+      // UAT 2026-05-04 (Week Plan): pull Monday Prep's per-partner notes for the
+      // current week so the WeekPlanCard can surface "This Week's Plan" above
+      // the KPIs. .catch swallows errors to a null shape so a transient fetch
+      // failure on this single card doesn't block the rest of the hub.
+      fetchWeekPlanForWeek(currentMonday).catch(() => ({ meetingId: null, heldAt: null, notes: null })),
     ])
-      .then(([sub, sels, cards, subs, thisWeek, prevWeek, growth, bizPriorities]) => {
+      .then(([sub, sels, cards, subs, thisWeek, prevWeek, growth, bizPriorities, plan]) => {
         setSubmission(sub);
         setKpiSelections(sels);
         setScorecards(cards);
@@ -82,6 +90,7 @@ export default function PartnerHub() {
         setPreviousSelection(prevWeek);
         setGrowthPriorities(growth);
         setBusinessPriorities(bizPriorities);
+        setWeekPlan(plan);
       })
       .catch((err) => {
         console.error(err);
@@ -303,6 +312,12 @@ export default function PartnerHub() {
           {/* Async content — only render after fetches resolve */}
           {loading ? null : (
             <>
+              {/* This Week's Plan (UAT 2026-05-04 Week Plan feature) — surfaces
+                  Monday Prep's per-partner plan above KPIs so partners see the
+                  context-setter for the week before checking in. Read-only;
+                  Trace edits via the meeting flow. */}
+              <WeekPlanCard weekPlan={weekPlan} />
+
               {/* This Week's KPIs (HUB-02..HUB-05) */}
               {kpiReady && (
                 <ThisWeekKpisSection
