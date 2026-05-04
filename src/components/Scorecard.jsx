@@ -461,6 +461,19 @@ export default function Scorecard() {
       setSubmitError(SCORECARD_COPY.submitErrorReflectionRequired);
       return;
     }
+    // UAT 2026-05-04 (later same day): growth consideration is REQUIRED.
+    // If the partner has no GROWTH_FOLLOWUP_FIELDS defined for them (e.g.,
+    // 'test'), skip this check. Otherwise every defined field needs non-empty
+    // trim text — partners with nothing yet write that explicitly.
+    // Auto-save / persistField paths remain unguarded (matches reflection).
+    const fields = GROWTH_FOLLOWUP_FIELDS[partner] ?? [];
+    if (fields.length > 0) {
+      const growthMissing = fields.some((f) => !(growthFollowup?.[f.key] ?? '').trim());
+      if (growthMissing) {
+        setSubmitError(SCORECARD_COPY.submitErrorGrowthRequired);
+        return;
+      }
+    }
     // Validation passed -- open the confirmation modal. The user must click
     // Confirm to actually persist (UAT C5).
     setConfirmingSubmit(true);
@@ -1172,7 +1185,10 @@ function MandatoryGrowthFollowupForm({
         <div className="scorecard-growth-callout__fields">
           {fields.map((f) => {
             const value = (growthFollowup ?? {})[f.key] ?? '';
-            const labelText = `${f.label}${GROWTH_FOLLOWUP_COPY.optionalLabelSuffix}`;
+            // UAT 2026-05-04 (later same day): growth consideration is now
+            // required. Field labels stand on their own — '(optional)' suffix
+            // removed; submit gate enforces non-empty trim per field below.
+            const labelText = f.label;
             return (
               <div key={f.key} className="scorecard-growth-callout__field">
                 <label

@@ -540,6 +540,12 @@ export const SCORECARD_COPY = {
   // UAT 2026-05-04: every row needs a reflection. Per-KPI prompts (migration 015) demand evidence.
   submitErrorReflectionRequired:
     'Add a reflection to every KPI before submitting. Every Yes, No, and Pending row needs your evidence.',
+  // UAT 2026-05-04 (later same day): growth consideration is REQUIRED. Every
+  // GROWTH_FOLLOWUP_FIELDS field for the partner must have non-empty trim text
+  // — partners with nothing yet should write that explicitly. Submit-time only;
+  // auto-save / persistField paths remain unguarded so partial drafts persist.
+  submitErrorGrowthRequired:
+    'Add a response to every growth consideration field — if you have nothing yet, write that.',
   submitErrorDb: "Couldn't save your scorecard. Try again.",
   submittedNotice: 'Submitted. Nice work.',
   emptyGuardHeading: 'No weekly KPI selected yet.',
@@ -913,12 +919,14 @@ export const GROWTH_FOLLOWUP_COPY = {
   heading: "This week's follow-through",
   subtext: 'Quick log so we can talk about what actually happened on Friday.',
   considerationEyebrow: 'GROWTH CONSIDERATION',
+  // UAT 2026-05-04 (later same day): growth consideration is now required.
+  // Field labels stand on their own (no '(optional)' suffix); the hint tells
+  // partners they may write that they have nothing if that's the case.
   considerationHint:
-    'Use this as a reflection lens for the week. No fields required, but capture thoughts here if they help.',
+    'Capture your thoughts on this. If you have nothing yet, write that.',
   selfChosenEyebrow: 'GROWTH REMINDER',
   selfChosenSubtext: 'Hold this in mind for the week. Not tracked here.',
   emptyMandatory: 'No mandatory growth priority yet. Trace will lock one in.',
-  optionalLabelSuffix: ' (optional)',
 };
 
 // --- Phase 11: Season Overview & Progress ---
