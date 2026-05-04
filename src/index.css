@@ -2387,6 +2387,15 @@ textarea { resize: vertical; min-height: 120px; }
   color: var(--muted);
   line-height: 1.55;
 }
+/* 2026-04-29: partner reflection rendered below the commitment when present.
+   Italic + slightly smaller than commitment so it reads as supporting context
+   for the "By Saturday: ..." line, not a separate field. */
+.saturday-recap-reflection {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--muted-2);
+  line-height: 1.55;
+}
 .saturday-recap-conversion {
   font-size: 14px;
   font-weight: 700;

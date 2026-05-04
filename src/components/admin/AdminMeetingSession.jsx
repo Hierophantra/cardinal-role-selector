@@ -1107,6 +1107,11 @@ function collectRecapRows(scorecards) {
         tplId,
         label: entry?.label ?? '(KPI)',
         pending_text: entry.pending_text,
+        // 2026-04-29: surface partner reflection on Saturday recap rows so
+        // the meeting view shows commitment + reflection together when both
+        // exist. Previously only label + pending_text + conversion badge
+        // rendered, hiding the partner's own context for the commitment.
+        reflection: entry?.reflection ?? '',
         converted: eff === 'yes',
       });
     }
@@ -1148,6 +1153,11 @@ function SaturdayRecapStop({ lastWeekScorecards, currentWeekScorecards, notes, s
                     <div className="saturday-recap-commitment">
                       {copy.stops.saturdayRecapCommitmentPrefix}{row.pending_text}
                     </div>
+                    {row.reflection && (
+                      <div className="saturday-recap-reflection">
+                        {row.reflection}
+                      </div>
+                    )}
                     <div className={`saturday-recap-conversion ${row.converted ? 'met' : 'not-converted'}`}>
                       {row.converted ? copy.stops.saturdayRecapMet : copy.stops.saturdayRecapNotConverted}
                     </div>
@@ -1177,6 +1187,11 @@ function SaturdayRecapStop({ lastWeekScorecards, currentWeekScorecards, notes, s
                     <div className="saturday-recap-commitment">
                       {copy.stops.saturdayRecapCommitmentPrefix}{row.pending_text}
                     </div>
+                    {row.reflection && (
+                      <div className="saturday-recap-reflection">
+                        {row.reflection}
+                      </div>
+                    )}
                     <div className="saturday-recap-conversion saturday-recap-conversion--live">
                       {copy.stops.saturdayRecapLiveBadge}
                     </div>
