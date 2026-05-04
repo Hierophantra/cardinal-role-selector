@@ -1105,27 +1105,12 @@ function SelfChosenGrowthReminder({ growthPriorities }) {
   const description = selfChosen.description || selfChosen.custom_text || '';
   if (!description) return null;
   return (
-    <div
-      className="scorecard-self-chosen-reminder"
-      style={{
-        padding: '12px 16px',
-        marginBottom: 20,
-        borderRadius: 10,
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid var(--border, rgba(255,255,255,0.08))',
-      }}
-    >
-      <div
-        className="eyebrow"
-        style={{ fontSize: 11, marginBottom: 4, color: 'var(--muted)' }}
-      >
+    <div className="scorecard-growth-callout scorecard-growth-callout--reminder">
+      <div className="scorecard-growth-callout__eyebrow">
         {GROWTH_FOLLOWUP_COPY.selfChosenEyebrow}
       </div>
-      <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.4 }}>{description}</div>
-      <div
-        className="muted"
-        style={{ fontSize: 12, marginTop: 4, fontStyle: 'italic' }}
-      >
+      <div className="scorecard-growth-callout__title">{description}</div>
+      <div className="scorecard-growth-callout__hint">
         {GROWTH_FOLLOWUP_COPY.selfChosenSubtext}
       </div>
     </div>
@@ -1133,11 +1118,15 @@ function SelfChosenGrowthReminder({ growthPriorities }) {
 }
 
 // --------------------------------------------------------------------------
-// UAT C1: MandatoryGrowthFollowupForm — partner-specific structured follow-up
-// for the mandatory personal growth priority. Field shape is content-driven
-// (GROWTH_FOLLOWUP_FIELDS keyed by partner). Persists into
-// scorecards.growth_followup JSONB on blur via the same persistField path
-// used by reflection / count fields.
+// MandatoryGrowthFollowupForm — partner-specific GROWTH CONSIDERATION callout.
+// 2026-04-29 reframe: this block is intentionally NOT styled as a required
+// form. The mandatory growth priority is a reflection lens for the week, not
+// a data-collection mechanism. The structured fields (Theo days/time, Jerry
+// who/why_difficult) remain as optional capture inputs — partners may fill
+// them in if helpful, but submit gating ignores growth_followup entirely
+// (handleSubmit checks kpi reflections only). Field schema is still content-
+// driven via GROWTH_FOLLOWUP_FIELDS and persists in scorecards.growth_followup
+// JSONB (migration 012, no schema change).
 // --------------------------------------------------------------------------
 
 function MandatoryGrowthFollowupForm({
@@ -1164,70 +1153,62 @@ function MandatoryGrowthFollowupForm({
   }
 
   return (
-    <div
-      className="scorecard-growth-followup"
-      style={{
-        marginTop: 24,
-        padding: '20px 20px 16px',
-        borderRadius: 12,
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid var(--border, rgba(255,255,255,0.08))',
-      }}
-    >
-      <div className="eyebrow" style={{ marginBottom: 8 }}>
-        {GROWTH_FOLLOWUP_COPY.eyebrow}
+    <div className="scorecard-growth-callout scorecard-growth-callout--consideration">
+      <div className="scorecard-growth-callout__eyebrow">
+        {GROWTH_FOLLOWUP_COPY.considerationEyebrow}
       </div>
-      <h3 style={{ margin: '0 0 4px', fontSize: 18 }}>
-        {GROWTH_FOLLOWUP_COPY.heading}
-      </h3>
       {mandatoryDescription ? (
-        <p
-          className="muted"
-          style={{ margin: '0 0 16px', fontSize: 14, lineHeight: 1.55 }}
-        >
-          {mandatoryDescription}
-        </p>
+        <div className="scorecard-growth-callout__title">{mandatoryDescription}</div>
       ) : (
-        <p className="muted" style={{ margin: '0 0 16px', fontSize: 14, fontStyle: 'italic' }}>
+        <div className="scorecard-growth-callout__title scorecard-growth-callout__title--empty">
           {GROWTH_FOLLOWUP_COPY.emptyMandatory}
-        </p>
+        </div>
       )}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {fields.map((f) => {
-          const value = (growthFollowup ?? {})[f.key] ?? '';
-          return (
-            <div key={f.key}>
-              <label className="scorecard-reflection-label" htmlFor={`growth-followup-${f.key}`}>
-                {f.label}
-              </label>
-              {disabled ? (
-                <p className="muted" style={{ margin: 0 }}>{value || '—'}</p>
-              ) : f.kind === 'textarea' ? (
-                <textarea
-                  id={`growth-followup-${f.key}`}
-                  className="textarea"
-                  rows={2}
-                  value={value}
-                  placeholder={f.placeholder}
-                  onChange={(e) => setField(f.key, e.target.value)}
-                  onBlur={onPersist}
-                />
-              ) : (
-                <input
-                  id={`growth-followup-${f.key}`}
-                  type="text"
-                  className="input"
-                  value={value}
-                  placeholder={f.placeholder}
-                  onChange={(e) => setField(f.key, e.target.value)}
-                  onBlur={onPersist}
-                />
-              )}
-            </div>
-          );
-        })}
+      <div className="scorecard-growth-callout__hint">
+        {GROWTH_FOLLOWUP_COPY.considerationHint}
       </div>
+
+      {mandatoryDescription && (
+        <div className="scorecard-growth-callout__fields">
+          {fields.map((f) => {
+            const value = (growthFollowup ?? {})[f.key] ?? '';
+            const labelText = `${f.label}${GROWTH_FOLLOWUP_COPY.optionalLabelSuffix}`;
+            return (
+              <div key={f.key} className="scorecard-growth-callout__field">
+                <label
+                  className="scorecard-growth-callout__field-label"
+                  htmlFor={`growth-followup-${f.key}`}
+                >
+                  {labelText}
+                </label>
+                {disabled ? (
+                  <p className="scorecard-growth-callout__readonly">{value || '—'}</p>
+                ) : f.kind === 'textarea' ? (
+                  <textarea
+                    id={`growth-followup-${f.key}`}
+                    className="scorecard-growth-callout__input"
+                    rows={2}
+                    value={value}
+                    placeholder={f.placeholder}
+                    onChange={(e) => setField(f.key, e.target.value)}
+                    onBlur={onPersist}
+                  />
+                ) : (
+                  <input
+                    id={`growth-followup-${f.key}`}
+                    type="text"
+                    className="scorecard-growth-callout__input"
+                    value={value}
+                    placeholder={f.placeholder}
+                    onChange={(e) => setField(f.key, e.target.value)}
+                    onBlur={onPersist}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

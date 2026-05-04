@@ -529,7 +529,10 @@ export const SCORECARD_COPY = {
   biggestWinPlaceholder: 'What are you proud of?',
   learningLabel: 'Learning this week (optional)',
   learningPlaceholder: 'What did you discover or improve?',
-  stickyNote: "This can't be undone.",
+  // UAT 2026-05-04: replaces "This can't be undone." — full edit window stays open
+  // until Saturday close, so the prior copy was misleading. Phase 17 D-04 sets the
+  // hard cutoff at Saturday 23:59 local.
+  stickyNote: 'All changes editable until Saturday at 11:59 PM.',
   submitErrorIncomplete: 'Rate each KPI as Met or Not Met before submitting.',
   // UAT 2026-05-04: every row needs a reflection. Per-KPI prompts (migration 015) demand evidence.
   submitErrorReflectionRequired:
@@ -874,13 +877,22 @@ export const GROWTH_FOLLOWUP_FIELDS = {
 };
 
 // UAT C1: weekly-mandatory-growth follow-up copy block on Scorecard.jsx.
+// 2026-04-29 reframe: the mandatory growth piece is a "consideration" — a
+// reflection lens for the week, not a required form. Eyebrow / hint copy
+// distinguishes it from KPI reflections, which ARE required.
 export const GROWTH_FOLLOWUP_COPY = {
+  // Legacy keys retained in case anything still imports them; current renderer
+  // uses considerationEyebrow / considerationHint below.
   eyebrow: 'MANDATORY GROWTH — WEEKLY FOLLOW-UP',
   heading: "This week's follow-through",
   subtext: 'Quick log so we can talk about what actually happened on Friday.',
-  selfChosenEyebrow: 'YOUR SELF-CHOSEN GROWTH',
-  selfChosenSubtext: 'Reminder for the week — not tracked here.',
+  considerationEyebrow: 'GROWTH CONSIDERATION',
+  considerationHint:
+    'Use this as a reflection lens for the week — no fields required, but capture thoughts here if they help.',
+  selfChosenEyebrow: 'GROWTH REMINDER',
+  selfChosenSubtext: 'Hold this in mind for the week — not tracked here.',
   emptyMandatory: 'No mandatory growth priority yet. Trace will lock one in.',
+  optionalLabelSuffix: ' (optional)',
 };
 
 // --- Phase 11: Season Overview & Progress ---

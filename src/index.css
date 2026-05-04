@@ -2250,6 +2250,90 @@ textarea { resize: vertical; min-height: 120px; }
   margin-bottom: 8px;
 }
 
+/* ------------------------------------------------------------------ */
+/* 2026-04-29 reframe: Growth callout (consideration + reminder)
+   Replaces the form-styled growth follow-up block. Visual treatment is
+   intentionally softer than the KPI rows so partners don't read it as
+   required input. Two BEM modifiers share the same base styling:
+     --consideration → mandatory growth, optional structured fields below
+     --reminder      → self-chosen growth, read-only summary card        */
+/* ------------------------------------------------------------------ */
+.scorecard-growth-callout {
+  margin-top: 16px;
+  padding: 16px 18px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px dashed var(--border);
+}
+.scorecard-growth-callout--reminder {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+.scorecard-growth-callout--consideration {
+  margin-top: 24px;
+}
+.scorecard-growth-callout__eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+.scorecard-growth-callout__title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text);
+}
+.scorecard-growth-callout__title--empty {
+  font-style: italic;
+  color: var(--muted-2);
+  font-weight: 500;
+}
+.scorecard-growth-callout__hint {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--muted-2);
+  line-height: 1.5;
+  margin-top: 6px;
+}
+.scorecard-growth-callout__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.scorecard-growth-callout__field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted-2);
+  margin-bottom: 3px;
+}
+.scorecard-growth-callout__input {
+  width: 100%;
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+}
+.scorecard-growth-callout__input:focus {
+  outline: none;
+  border-color: var(--gold);
+  background: rgba(255, 255, 255, 0.04);
+}
+.scorecard-growth-callout__readonly {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
 /* Friday-meeting kpi cell — Pending state (consumed by Wave 3 KpiStop renderer) */
 .meeting-kpi-cell.pending {
   border-left: 3px solid var(--gold);
