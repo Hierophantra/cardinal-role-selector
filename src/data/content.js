@@ -376,7 +376,7 @@ export const HUB_COPY = {
       meetingMode: {
         title: 'Meeting Mode',
         description:
-          'Run a Friday Review or Monday Prep \u2014 step through each KPI and growth priority with both partners.',
+          'Run a Friday Review or Monday Prep: step through each KPI and growth priority with both partners.',
       },
       scorecardOversight: {
         title: 'Scorecard Oversight',
@@ -460,7 +460,7 @@ export const WEEKLY_KPI_COPY = {
     heading: 'Choose Your KPI This Week',
     subtext: "You can change your mind until you confirm. After confirming, only Trace can update your selection.",
     disabledLabel: 'Used last week',
-    emptyPool: 'No optional KPIs available — contact Trace.',
+    emptyPool: 'No optional KPIs available. Contact Trace.',
   },
   confirmation: {
     headingTemplate: (kpiLabel) => `Lock in ${kpiLabel} for this week?`,
@@ -495,7 +495,7 @@ export const SCORECARD_COPY = {
     blocker: 'What got in the way?',
   },
   counter: (n, total) => `${n} of ${total} checked in`,
-  counterComplete: (total) => `${total} of ${total} \u2014 all done`,
+  counterComplete: (total) => `${total} of ${total}: all done`,
   savedIndicator: 'Saved',
   weekClosedBanner: (date) => `This week closed on ${date}.`,
   successHeading: 'Check-in submitted',
@@ -536,9 +536,9 @@ export const SCORECARD_COPY = {
   submitErrorIncomplete: 'Rate each KPI as Met or Not Met before submitting.',
   // UAT 2026-05-04: every row needs a reflection. Per-KPI prompts (migration 015) demand evidence.
   submitErrorReflectionRequired:
-    'Add a reflection to every KPI before submitting — every Yes, No, and Pending row needs your evidence.',
+    'Add a reflection to every KPI before submitting. Every Yes, No, and Pending row needs your evidence.',
   submitErrorDb: "Couldn't save your scorecard. Try again.",
-  submittedNotice: 'Submitted — nice work.',
+  submittedNotice: 'Submitted. Nice work.',
   emptyGuardHeading: 'No weekly KPI selected yet.',
   emptyGuardBody: 'Head back to the hub and choose your KPI for this week first.',
   emptyGuardCta: 'Go to Hub',
@@ -553,7 +553,7 @@ export const SCORECARD_COPY = {
   commitmentPrefix: 'Commitment: ',
   submitErrorPendingTextRequired:
     "Add a 'what + by when' commitment to each Pending row before submitting.",
-  pendingUpdateNote: 'Update Pending row — locks at Saturday 23:59',
+  pendingUpdateNote: 'Update Pending row: locks at Saturday 23:59',
   pendingUpdateCta: 'Update Pending Rows',
   // UAT B2 — committed_at time line shown beside the submittedNotice in Scorecard.jsx
   committedAtPrefix: 'Committed ',
@@ -574,7 +574,7 @@ export const SCORECARD_COPY = {
   completionMessages: [
     'Scorecard submitted. Nice work!',
     'Great job on another scorecard submission!',
-    'Another week locked in — well done.',
+    'Another week locked in. Well done.',
     'Submission complete. See you next week.',
     'Thanks for checking in. Have a great weekend.',
   ],
@@ -675,7 +675,7 @@ export const MEETING_COPY = {
   startCta: 'Start Meeting',
   heroCardTitle: 'Meeting Mode',
   heroCardDescription:
-    "Friday checkpoint \u2014 are partners on track? Anything still Pending lands by Saturday.",
+    "Friday checkpoint: are partners on track? Anything still Pending lands by Saturday.",
   progressPill: (n, total) => `Stop ${n} of ${total}`,
   weekPickerLabel: 'Week:',
   endBtn: 'End Meeting',
@@ -695,21 +695,21 @@ export const MEETING_COPY = {
     clearTheAirHeading: 'Clear the Air',
     clearTheAirSubtext: 'Anything partners need to say before diving into the numbers.',
     introEyebrow: 'FRIDAY CHECKPOINT',
-    introHeading: (weekLabel) => `Checkpoint \u2014 Week of ${weekLabel}`,
+    introHeading: (weekLabel) => `Checkpoint: Week of ${weekLabel}`,
     introSubtext: 'Are you on track? Anything still Pending lands by Saturday.',
     kpiEyebrow: (n, total) => `KPI ${n} of ${total}`,
     kpiReviewOptionalEyebrow: 'REVIEW KPIs?',
     kpiReviewOptionalHeading: 'Reviewing KPIs in this meeting?',
     kpiReviewOptionalSubtext:
       'Skipping is fine for shorter check-ins. Pending commitments still land by Saturday either way.',
-    kpiReviewOptionalYesCta: 'Yes \u2014 review KPIs',
-    kpiReviewOptionalSkipCta: 'No \u2014 skip to growth',
-    kpiReviewOptionalSkipSummary: 'Skipped \u2014 Yes/No KPIs not reviewed this meeting.',
+    kpiReviewOptionalYesCta: 'Yes, review KPIs',
+    kpiReviewOptionalSkipCta: 'No, skip to growth',
+    kpiReviewOptionalSkipSummary: 'Skipped: Yes/No KPIs not reviewed this meeting.',
     kpiReviewOptionalReviewSummary: 'Reviewing KPIs.',
     growthPersonalEyebrow: 'PERSONAL GROWTH',
     growthBusinessEyebrow: (n) => `BUSINESS GROWTH ${n} of 2`,
     growthBusinessSubtext:
-      'Shared focus area for the business — same for both partners. Capture per-partner discussion below.',
+      'Shared focus area for the business: same for both partners. Capture per-partner discussion below.',
     businessPriorityCardEyebrow: (n) => `BUSINESS PRIORITY ${n} of 2`,
     businessPriorityToggleShow: 'Show deliverables',
     businessPriorityToggleHide: 'Hide deliverables',
@@ -721,15 +721,15 @@ export const MEETING_COPY = {
     additionalNotesEyebrow: 'ADDITIONAL NOTES',
     additionalNotesHeading: 'Anything else?',
     additionalNotesSubtext:
-      'Capture any extra context surfaced outside the structured agenda \u2014 things shared before, after, or alongside the meeting.',
+      'Capture any extra context surfaced outside the structured agenda: things shared before, after, or alongside the meeting.',
     additionalNotesPlaceholder: 'Side conversations, follow-ups, anything that came up off-script...',
     // UAT 2026-05-04 (Week Plan) \u2014 Friday Review stop that revisits Monday's
     // per-partner plan. Read-only Monday plan rendered up top; per-partner
     // recap textareas underneath. Empty state when no Monday meeting captured.
-    weekPlanRecapEyebrow: 'WEEK PLAN \u2014 RECAP',
+    weekPlanRecapEyebrow: 'WEEK PLAN: RECAP',
     weekPlanRecapHeading: "How did this week's plan land?",
     weekPlanRecapSubtext:
-      "What got done from Monday's priorities, risks, and commitments? Capture per-partner \u2014 discussion drives the read-out.",
+      "What got done from Monday's priorities, risks, and commitments? Capture per-partner. Discussion drives the read-out.",
     weekPlanRecapEmptyState:
       'No Monday Prep meeting captured for this week. Skip ahead.',
     weekPlanRecapPriorityHeading: 'Priorities',
@@ -740,7 +740,7 @@ export const MEETING_COPY = {
   savedFlash: 'Saved',
   errors: {
     loadFail: "Couldn't load meeting data. Check your connection and refresh.",
-    noteSaveFail: "Note didn't save \u2014 check your connection.",
+    noteSaveFail: "Note didn't save. Check your connection.",
   },
 };
 
@@ -749,7 +749,7 @@ export const MONDAY_PREP_COPY = {
   startCta: 'Start Monday Prep',
   heroCardTitle: 'Monday Prep',
   heroCardDescription:
-    "Set intentions for the week \u2014 priorities, blockers, and commitments before the week begins.",
+    "Set intentions for the week: priorities, blockers, and commitments before the week begins.",
   progressPill: (n, total) => `Stop ${n} of ${total}`,
   weekPickerLabel: 'Week:',
   endBtn: 'End Prep',
@@ -770,7 +770,7 @@ export const MONDAY_PREP_COPY = {
     clearTheAirSubtext: "Anything partners need to get off their chest before the week begins.",
     saturdayRecapEyebrow: 'SATURDAY RECAP',
     saturdayRecapHeading: "Last Friday's Pending Commitments",
-    saturdayRecapEmpty: 'No Pending rows from last Friday — nothing to recap.',
+    saturdayRecapEmpty: 'No Pending rows from last Friday. Nothing to recap.',
     saturdayRecapCommitmentPrefix: 'Commitment: ',
     saturdayRecapMet: '✓ Met by Saturday',
     saturdayRecapNotConverted: '× Did not convert',
@@ -779,7 +779,7 @@ export const MONDAY_PREP_COPY = {
     // alongside last-week recap rows in the saturday_recap stop.
     saturdayRecapCurrentWeekEyebrow: 'LIVE THIS WEEK',
     saturdayRecapCurrentWeekHeading: "This Week's Pending Commitments",
-    saturdayRecapLiveBadge: 'Live — awaiting Saturday close',
+    saturdayRecapLiveBadge: 'Live: awaiting Saturday close',
     weekPreviewEyebrow: 'WEEK PREVIEW',
     weekPreviewHeading: "What's Coming This Week",
     weekPreviewSubtext: "Jobs going up, deadlines, weekly objectives, and uncertainties to surface.",
@@ -787,12 +787,12 @@ export const MONDAY_PREP_COPY = {
     // logical "WEEK PLAN" section so the eyebrow reads consistently with the
     // hub WeekPlanCard and the Friday week_plan_recap stop. Headings + subtexts
     // unchanged — pure eyebrow rebrand.
-    prioritiesFocusEyebrow: 'WEEK PLAN — PRIORITIES',
+    prioritiesFocusEyebrow: 'WEEK PLAN: PRIORITIES',
     prioritiesFocusHeading: 'Top 2-3 Priorities',
     // UAT C2: per-partner notes — explain each textarea is for that partner only.
     prioritiesFocusSubtext:
       "The 2-3 most important things each partner will accomplish this week. Capture Theo's and Jerry's separately.",
-    risksBlockersEyebrow: 'WEEK PLAN — RISKS',
+    risksBlockersEyebrow: 'WEEK PLAN: RISKS',
     risksBlockersHeading: 'Risks & Blockers',
     // UAT C3: per-partner notes — each partner's risks/blockers go in their own column.
     risksBlockersSubtext:
@@ -800,7 +800,7 @@ export const MONDAY_PREP_COPY = {
     growthCheckinEyebrow: 'GROWTH CHECK-IN',
     growthCheckinHeading: 'Growth Priority Pulse',
     growthCheckinSubtext: "Quick status on each partner's growth priorities.",
-    commitmentsEyebrow: 'WEEK PLAN — COMMITMENTS',
+    commitmentsEyebrow: 'WEEK PLAN: COMMITMENTS',
     commitmentsHeading: 'Walk-Away Commitments',
     // UAT C4: per-partner notes — each partner's commitments live in their own column.
     commitmentsSubtext:
@@ -811,7 +811,7 @@ export const MONDAY_PREP_COPY = {
     growthPersonalEyebrow: 'PERSONAL GROWTH',
     growthBusinessEyebrow: (n) => `BUSINESS GROWTH ${n} of 2`,
     growthBusinessSubtext:
-      'Shared focus area for the business — same for both partners. Capture per-partner discussion below.',
+      'Shared focus area for the business: same for both partners. Capture per-partner discussion below.',
     businessPriorityCardEyebrow: (n) => `BUSINESS PRIORITY ${n} of 2`,
     businessPriorityToggleShow: 'Show deliverables',
     businessPriorityToggleHide: 'Hide deliverables',
@@ -821,14 +821,14 @@ export const MONDAY_PREP_COPY = {
     additionalNotesEyebrow: 'ADDITIONAL NOTES',
     additionalNotesHeading: 'Anything else?',
     additionalNotesSubtext:
-      'Capture any extra context surfaced outside the structured agenda \u2014 things shared before, after, or alongside the meeting.',
+      'Capture any extra context surfaced outside the structured agenda: things shared before, after, or alongside the meeting.',
     additionalNotesPlaceholder: 'Side conversations, follow-ups, anything that came up off-script...',
   },
   notesPlaceholder: 'Add notes for this stop...',
   savedFlash: 'Saved',
   errors: {
     loadFail: "Couldn't load meeting data. Check your connection and refresh.",
-    noteSaveFail: "Note didn't save \u2014 check your connection.",
+    noteSaveFail: "Note didn't save. Check your connection.",
   },
 };
 
@@ -906,14 +906,14 @@ export const GROWTH_FOLLOWUP_FIELDS = {
 export const GROWTH_FOLLOWUP_COPY = {
   // Legacy keys retained in case anything still imports them; current renderer
   // uses considerationEyebrow / considerationHint below.
-  eyebrow: 'MANDATORY GROWTH — WEEKLY FOLLOW-UP',
+  eyebrow: 'MANDATORY GROWTH: WEEKLY FOLLOW-UP',
   heading: "This week's follow-through",
   subtext: 'Quick log so we can talk about what actually happened on Friday.',
   considerationEyebrow: 'GROWTH CONSIDERATION',
   considerationHint:
-    'Use this as a reflection lens for the week — no fields required, but capture thoughts here if they help.',
+    'Use this as a reflection lens for the week. No fields required, but capture thoughts here if they help.',
   selfChosenEyebrow: 'GROWTH REMINDER',
-  selfChosenSubtext: 'Hold this in mind for the week — not tracked here.',
+  selfChosenSubtext: 'Hold this in mind for the week. Not tracked here.',
   emptyMandatory: 'No mandatory growth priority yet. Trace will lock one in.',
   optionalLabelSuffix: ' (optional)',
 };
