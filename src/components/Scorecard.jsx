@@ -448,6 +448,19 @@ export default function Scorecard() {
       setSubmitError(SCORECARD_COPY.submitErrorPendingTextRequired);
       return;
     }
+    // Mandatory reflection on every row (UAT 2026-05-04). Per-KPI prompts demand
+    // evidence; submit blocks if any row's reflection is empty/whitespace-only.
+    // Fires only at handleSubmit time — persistDraft / persistField auto-save
+    // paths remain unguarded so partial drafts (and post-submit Saturday-close
+    // edits) continue to save without re-validation.
+    const reflectionMissing = rows.some((tpl) => {
+      const entry = kpiResults[tpl.id];
+      return !(entry?.reflection ?? '').trim();
+    });
+    if (reflectionMissing) {
+      setSubmitError(SCORECARD_COPY.submitErrorReflectionRequired);
+      return;
+    }
     // Validation passed -- open the confirmation modal. The user must click
     // Confirm to actually persist (UAT C5).
     setConfirmingSubmit(true);
@@ -867,6 +880,13 @@ export default function Scorecard() {
 
                     <div className="scorecard-reflection" style={{ marginTop: 12 }}>
                       <label className="scorecard-reflection-label">{SCORECARD_COPY.reflectionLabel}</label>
+                      {/* UAT 2026-05-04: per-KPI reflection prompt from migration 015.
+                          Renders as italic muted helper text between label and textarea.
+                          Falls back to no helper for templates without a prompt \u2014 submit
+                          gate still requires non-empty reflection regardless. */}
+                      {tpl.reflection_prompt && (
+                        <p className="scorecard-reflection-prompt">{tpl.reflection_prompt}</p>
+                      )}
                       {bodyDisabled ? (
                         <p className="muted" style={{ margin: 0 }}>{entry.reflection || '\u2014'}</p>
                       ) : (

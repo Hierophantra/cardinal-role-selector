@@ -531,6 +531,9 @@ export const SCORECARD_COPY = {
   learningPlaceholder: 'What did you discover or improve?',
   stickyNote: "This can't be undone.",
   submitErrorIncomplete: 'Rate each KPI as Met or Not Met before submitting.',
+  // UAT 2026-05-04: every row needs a reflection. Per-KPI prompts (migration 015) demand evidence.
+  submitErrorReflectionRequired:
+    'Add a reflection to every KPI before submitting — every Yes, No, and Pending row needs your evidence.',
   submitErrorDb: "Couldn't save your scorecard. Try again.",
   submittedNotice: 'Submitted — nice work.',
   emptyGuardHeading: 'No weekly KPI selected yet.',

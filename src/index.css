@@ -2491,3 +2491,17 @@ textarea { resize: vertical; min-height: 120px; }
   box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.45);
 }
 
+/* =============================================================================
+   UAT 2026-05-04 — mandatory reflections feature (migration 015 companion)
+   Per-KPI helper prompt renders between the reflection label and textarea.
+   Small italic muted line. Submit gate (Scorecard.handleSubmit) blocks empty
+   reflection on any row regardless of whether tpl.reflection_prompt is set.
+   ========================================================================== */
+.scorecard-reflection-prompt {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+  font-style: italic;
+  margin: 4px 0 8px;
+}
+
