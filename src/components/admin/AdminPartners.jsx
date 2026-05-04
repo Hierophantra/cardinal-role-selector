@@ -5,6 +5,7 @@ import {
   fetchKpiSelections,
   fetchGrowthPriorities,
   fetchScorecards,
+  fetchWeeklyKpiSelectionHistory,
   resetPartnerSubmission,
   resetPartnerKpiSelections,
   resetPartnerWeeklyKpiSelections,
@@ -14,7 +15,7 @@ import {
   updateGrowthPriorityAdminNote,
 } from '../../lib/supabase.js';
 import { PARTNER_DISPLAY, GROWTH_STATUS_COPY, ADMIN_GROWTH_COPY, ADMIN_ACCOUNTABILITY_COPY } from '../../data/content.js';
-import { effectiveResult, getMondayOf } from '../../lib/week.js';
+import { effectiveResult, getMondayOf, formatWeekRange } from '../../lib/week.js';
 
 const MANAGED = ['theo', 'jerry'];
 
@@ -68,6 +69,11 @@ function PartnerSection({ partner }) {
   const [kpis, setKpis] = useState([]);
   const [growth, setGrowth] = useState([]);
   const [scorecards, setScorecards] = useState([]);
+  // Weekly KPI selection history — surfaces "selected on" timestamps per week.
+  // Reset semantics are inherited from the (partner, week_start_date) composite
+  // PK: each week's row has its own created_at, so a fresh pick mid-week
+  // preserves the original lock-in time (UAT 2026-04-29).
+  const [weeklyHistory, setWeeklyHistory] = useState([]);
   const [pendingReset, setPendingReset] = useState(null);
   const [resetting, setResetting] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
@@ -86,16 +92,18 @@ function PartnerSection({ partner }) {
     setLoading(true);
     setError('');
     try {
-      const [sub, sels, gps, cards] = await Promise.all([
+      const [sub, sels, gps, cards, weekly] = await Promise.all([
         fetchSubmission(partner),
         fetchKpiSelections(partner),
         fetchGrowthPriorities(partner),
         fetchScorecards(partner),
+        fetchWeeklyKpiSelectionHistory(partner),
       ]);
       setSubmission(sub);
       setKpis(sels);
       setGrowth(gps);
       setScorecards(cards);
+      setWeeklyHistory(weekly);
     } catch (err) {
       console.error(err);
       setError('Failed to load state.');
@@ -364,6 +372,61 @@ function PartnerSection({ partner }) {
                 <p className="admin-pip-flag-body">{ADMIN_ACCOUNTABILITY_COPY.pipBody(missCount)}</p>
               </div>
             )}
+          </div>
+
+          {/* Weekly KPI selection history — UAT 2026-04-29.
+              Surfaces "selected on" timestamps per week so Trace can see exactly
+              when each partner picked their weekly KPI. Resets per week via the
+              composite PK on (partner, week_start_date); created_at captures the
+              first lock-in. Counter-only seed rows (kpi_template_id IS NULL) are
+              filtered out so the list shows only rows with an actual pick. */}
+          <div className="weekly-history-card" style={{ marginTop: 16 }}>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>Weekly KPI History</div>
+            {(() => {
+              const picks = weeklyHistory.filter((w) => w.kpi_template_id);
+              if (picks.length === 0) {
+                return (
+                  <p className="muted" style={{ fontSize: 13 }}>
+                    No weekly KPIs selected yet.
+                  </p>
+                );
+              }
+              const recent = picks.slice(0, 8);
+              return (
+                <ul className="weekly-history-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {recent.map((w) => (
+                    <li
+                      key={w.week_start_date}
+                      className="weekly-history-row"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                        padding: '8px 0',
+                        borderBottom: '1px solid var(--border)',
+                      }}
+                    >
+                      <div className="weekly-history-row__week" style={{ fontSize: 13, fontWeight: 500 }}>
+                        {formatWeekRange(w.week_start_date)}
+                      </div>
+                      <div className="weekly-history-row__kpi" style={{ fontSize: 13 }}>
+                        {w.label_snapshot || '(label missing)'}
+                      </div>
+                      <div className="weekly-history-row__selected-at muted" style={{ fontSize: 12 }}>
+                        Selected at:{' '}
+                        {new Date(w.created_at).toLocaleString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
           </div>
 
           <div style={{ marginTop: 16 }}>
