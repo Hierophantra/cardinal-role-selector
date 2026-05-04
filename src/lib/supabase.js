@@ -49,7 +49,10 @@ export async function fetchKpiTemplates() {
 export async function fetchKpiSelections(partner) {
   const { data, error } = await supabase
     .from('kpi_selections')
-    .select('*, kpi_templates(mandatory, countable)')
+    // UAT 2026-04-30: pull baseline_action so consumers (seasonStats per-KPI matching,
+    // hub display) can use the live label rather than the potentially-stale
+    // label_snapshot column. mandatory + countable kept for hub gating.
+    .select('*, kpi_templates(mandatory, countable, baseline_action)')
     .eq('partner', partner)
     .order('selected_at', { ascending: true });
   if (error) throw error;

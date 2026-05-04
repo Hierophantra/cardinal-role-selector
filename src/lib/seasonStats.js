@@ -19,29 +19,47 @@ export function computeSeasonStats(kpiSelections, scorecards) {
 
   let hits = 0;
   let possible = 0;
-  const perLabelMap = {};  // key = label (string); value = { hits, possible }
+  // UAT 2026-04-30: per-template-id map alongside the existing label aggregation.
+  // The label-keyed map preserves Phase 15 D-22 / P-B1 rotation aggregation for
+  // historical entries that may share labels; the template-id map provides the
+  // robust join key for perKpiStats since kpi_selections.label_snapshot can drift
+  // from the live kpi_templates.baseline_action (which scorecards write).
+  const perLabelMap = {};        // key = label (string); value = { hits, possible }
+  const perTemplateMap = {};     // key = template_id (JSONB entry key); value = { hits, possible }
 
   for (const card of committed) {
     const results = card.kpi_results ?? {};
-    for (const [, entry] of Object.entries(results)) {
+    for (const [tplId, entry] of Object.entries(results)) {
       const label = entry?.label;
-      if (!label) continue;  // skip orphan/malformed entries (pre-Phase-4 rows)
-      if (!perLabelMap[label]) {
+      // Always populate template-id map (does not require a label).
+      if (!perTemplateMap[tplId]) {
+        perTemplateMap[tplId] = { hits: 0, possible: 0 };
+      }
+      // Skip label-keyed map for orphan/malformed entries (pre-Phase-4 rows).
+      const labelOk = Boolean(label);
+      if (labelOk && !perLabelMap[label]) {
         perLabelMap[label] = { hits: 0, possible: 0 };
       }
       // Phase 17 D-02: read entry.result through effectiveResult so post-Saturday-close
       // pending entries are coerced to 'no' for season aggregation. Live pending (week
       // not yet closed) still flows through as 'pending' and is skipped — same treatment
       // as null. Closed-week pending counts toward possible (and toward miss totals).
-      const eff = effectiveResult(entry.result, card.week_of);
+      const eff = effectiveResult(entry?.result, card.week_of);
       if (eff === 'yes') {
         hits++;
         possible++;
-        perLabelMap[label].hits++;
-        perLabelMap[label].possible++;
+        perTemplateMap[tplId].hits++;
+        perTemplateMap[tplId].possible++;
+        if (labelOk) {
+          perLabelMap[label].hits++;
+          perLabelMap[label].possible++;
+        }
       } else if (eff === 'no') {
         possible++;
-        perLabelMap[label].possible++;
+        perTemplateMap[tplId].possible++;
+        if (labelOk) {
+          perLabelMap[label].possible++;
+        }
       }
       // null, undefined, or live 'pending': skip entirely
     }
@@ -50,16 +68,19 @@ export function computeSeasonStats(kpiSelections, scorecards) {
   const seasonHitRate = possible > 0 ? Math.round((hits / possible) * 100) : null;
 
   // perKpiStats keyed to CURRENT selections (for hub sparkline order).
-  // Looks up each selection's label in the label-keyed map.
+  // UAT 2026-04-30: match by template_id (stable across the kpi_selections /
+  // kpi_results tables) instead of label_snapshot (which drifts when seeds change).
+  // Display label prefers the live kpi_templates.baseline_action (joined via
+  // fetchKpiSelections) and falls back to the snapshot.
   const perKpiStats = kpiSelections.map((k) => {
-    const label = k.label_snapshot;
-    const s = perLabelMap[label] ?? { hits: 0, possible: 0 };
+    const stats = perTemplateMap[k.template_id] ?? { hits: 0, possible: 0 };
+    const liveLabel = k.kpi_templates?.baseline_action;
     return {
       id: k.id,
-      label,
-      hitRate: s.possible > 0 ? Math.round((s.hits / s.possible) * 100) : null,
-      hits: s.hits,
-      possible: s.possible,
+      label: liveLabel || k.label_snapshot,
+      hitRate: stats.possible > 0 ? Math.round((stats.hits / stats.possible) * 100) : null,
+      hits: stats.hits,
+      possible: stats.possible,
     };
   });
 
@@ -78,12 +99,15 @@ export function computeSeasonStats(kpiSelections, scorecards) {
 export function computeStreaks(kpiSelections, scorecards) {
   const committed = scorecards.filter((c) => c.committed_at);
   return kpiSelections.map((k) => {
-    const label = k.label_snapshot;
+    // UAT 2026-04-30: match by template_id (stable) rather than label_snapshot
+    // (which drifts after seed changes). The kpi_results JSONB is keyed by
+    // template_id directly, so the lookup is exact and free.
+    const liveLabel = k.kpi_templates?.baseline_action;
+    const label = liveLabel || k.label_snapshot;
     let streak = 0;
     for (const card of committed) {
       const results = card.kpi_results ?? {};
-      // find the entry that matches this label (historical IDs won't match k.id)
-      const entry = Object.values(results).find((e) => e?.label === label);
+      const entry = results?.[k.template_id];
       // Phase 17 D-02: post-close pending coerces to 'no' so closed-week pendings
       // extend the miss streak rather than silently breaking it.
       const eff = effectiveResult(entry?.result, card.week_of);
