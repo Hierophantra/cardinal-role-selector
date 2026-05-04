@@ -2714,3 +2714,28 @@ textarea { resize: vertical; min-height: 120px; }
   margin: 0;
 }
 
+/* --- Weekly Reflection Review stop (UAT 2026-05-04 BL-05) ---
+   Friday Review stop showing each partner's submitted Weekly Reflection
+   read-only. Reuses .meeting-growth-grid + .meeting-growth-cell sizing for
+   visual parity with adjacent stops; the .weekly-reflection-review-* classes
+   layer on per-field spacing without redefining card chrome. */
+
+.weekly-reflection-review-grid {
+  margin-top: 16px;
+}
+
+.weekly-reflection-review-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.weekly-reflection-review-field:first-child {
+  margin-top: 0;
+}
+
+.weekly-reflection-review-empty {
+  font-size: 14px;
+  margin-top: 8px;
+}
+

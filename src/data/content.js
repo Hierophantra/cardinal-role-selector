@@ -744,6 +744,20 @@ export const MEETING_COPY = {
     weekPlanRecapPriorityHeading: 'Priorities',
     weekPlanRecapRisksHeading: 'Risks & Blockers',
     weekPlanRecapCommitmentsHeading: 'Walk-Away Commitments',
+    // UAT 2026-05-04 (later same day, pre-launch fix BL-05) — Friday Review
+    // stop that surfaces each partner's Weekly Reflection from their
+    // submitted scorecard read-only, with a single shared team-level
+    // reflection note captured below.
+    weeklyReflectionReviewEyebrow: 'WEEKLY REFLECTION',
+    weeklyReflectionReviewHeading: 'How did the week land?',
+    weeklyReflectionReviewSubtext:
+      "Read out each partner's tasks completed, carry-overs, biggest win, and learning. Capture team-level reflection below.",
+    weeklyReflectionReviewEmptyState: 'No scorecard submitted yet for this week.',
+    weeklyReflectionReviewTasksCompletedLabel: 'Tasks Completed',
+    weeklyReflectionReviewTasksCarriedOverLabel: 'Tasks Carried Over',
+    weeklyReflectionReviewWinLabel: 'Biggest Win',
+    weeklyReflectionReviewLearningLabel: 'Learning',
+    weeklyReflectionReviewRatingLabel: 'Rating',
   },
   notesPlaceholder: 'Add notes for this stop...',
   savedFlash: 'Saved',
@@ -852,6 +866,12 @@ export const MONDAY_PREP_COPY = {
 // shifts automatically (kpi_1 was index 3, now index 4). The
 // kpi_review_optional skip-gate also uses indexOf('growth_personal') so it
 // stays correct under reorder.
+// UAT 2026-05-04 (later same day, pre-launch fix BL-05): inserted
+// 'weekly_reflection_review' between 'growth_business_2' and 'wrap'. Stop
+// surfaces each partner's Weekly Reflection (tasks completed, carry-overs,
+// biggest win, learning, rating) read-only with a single shared team-level
+// reflection note. KPI_START_INDEX still resolves correctly (insertion is
+// after the kpi_* range).
 export const FRIDAY_STOPS = [
   'clear_the_air',
   'week_plan_recap',
@@ -859,6 +879,7 @@ export const FRIDAY_STOPS = [
   'intro',
   'kpi_1', 'kpi_2', 'kpi_3', 'kpi_4', 'kpi_5', 'kpi_6', 'kpi_7',
   'growth_personal', 'growth_business_1', 'growth_business_2',
+  'weekly_reflection_review',
   'wrap',
   'additional_notes',
 ];

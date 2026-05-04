@@ -33,8 +33,13 @@ import {
 // The active stop array is derived from meeting.meeting_type inside the component.
 
 // KPI_START_INDEX: position of kpi_1 in FRIDAY_STOPS.
-// Derived from FRIDAY_STOPS so this stays correct even when the array is reordered
-// (Phase 17 inserts 'kpi_review_optional' at index 1, shifting kpi_1 to index 3).
+// Derived from FRIDAY_STOPS so this stays correct even when the array is
+// reordered. Current layout (post UAT 2026-05-04 BL-05):
+//   [clear_the_air, week_plan_recap, kpi_review_optional, intro,
+//    kpi_1..kpi_7, growth_personal, growth_business_1, growth_business_2,
+//    weekly_reflection_review, wrap, additional_notes]
+// kpi_1 lands at index 4. The weekly_reflection_review insertion sits after
+// the kpi_* range, so this index is unaffected.
 const KPI_START_INDEX = FRIDAY_STOPS.indexOf('kpi_1');
 
 const PARTNERS = ['theo', 'jerry'];
@@ -914,8 +919,9 @@ function StopRenderer({
   }
 
   if (/^kpi_\d+$/.test(stopKey)) {
-    // KPI_START_INDEX derives via FRIDAY_STOPS.indexOf('kpi_1') — currently 3 (clear_the_air=0, kpi_review_optional=1, intro=2, kpi_1=3)
-    // Note: regex restricts this branch to numbered kpi_* stops; 'kpi_review_optional' (Wave 3 renderer pending) does NOT match.
+    // KPI_START_INDEX derives via FRIDAY_STOPS.indexOf('kpi_1') — currently 4
+    // (clear_the_air=0, week_plan_recap=1, kpi_review_optional=2, intro=3, kpi_1=4).
+    // Note: regex restricts this branch to numbered kpi_* stops; 'kpi_review_optional' does NOT match.
     const kpiIndex = stopIndex - KPI_START_INDEX;
     return (
       <KpiStop
@@ -996,6 +1002,19 @@ function StopRenderer({
   if (stopKey === 'additional_notes') {
     return (
       <AdditionalNotesStop
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
+      />
+    );
+  }
+
+  if (stopKey === 'weekly_reflection_review') {
+    return (
+      <WeeklyReflectionReviewStop
+        data={data}
         notes={notes}
         savedFlash={savedFlash}
         onNoteChange={onNoteChange}
@@ -1945,6 +1964,102 @@ function AdditionalNotesStop({ notes, savedFlash, onNoteChange, copy, isEnded })
         isEnded={isEnded}
       />
     </>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Weekly Reflection Review stop (UAT 2026-05-04 later, pre-launch fix BL-05)
+// — Friday-only stop. Surfaces each partner's submitted Weekly Reflection
+// (tasks completed, carry-overs, biggest win, learning, rating) read-only,
+// with a single shared team-level reflection note captured below via
+// StopNotesArea (agenda_stop_key='weekly_reflection_review'). Both columns
+// render the empty-state copy when neither partner has submitted a scorecard.
+// --------------------------------------------------------------------------
+
+function WeeklyReflectionReviewStop({ data, notes, savedFlash, onNoteChange, copy, isEnded }) {
+  const stopsCopy = copy.stops;
+  const theoSc = data?.theo?.scorecard ?? null;
+  const jerrySc = data?.jerry?.scorecard ?? null;
+  const bothEmpty = !theoSc && !jerrySc;
+
+  return (
+    <>
+      <div className="eyebrow meeting-stop-eyebrow">{stopsCopy.weeklyReflectionReviewEyebrow}</div>
+      <h2 className="meeting-stop-heading" style={{ fontSize: 28, lineHeight: 1.2 }}>
+        {stopsCopy.weeklyReflectionReviewHeading}
+      </h2>
+      <p className="meeting-stop-subtext">{stopsCopy.weeklyReflectionReviewSubtext}</p>
+
+      {bothEmpty ? (
+        <div className="weekly-reflection-review-empty muted" style={{ fontStyle: 'italic', marginTop: 12 }}>
+          {stopsCopy.weeklyReflectionReviewEmptyState}
+        </div>
+      ) : (
+        <div className="weekly-reflection-review-grid meeting-growth-grid">
+          {PARTNERS.map((p) => {
+            const sc = data?.[p]?.scorecard ?? null;
+            return (
+              <div key={p} className="weekly-reflection-review-cell meeting-growth-cell">
+                <div className="meeting-partner-name">{PARTNER_DISPLAY[p] ?? p}</div>
+                {!sc ? (
+                  <div className="muted" style={{ fontStyle: 'italic', fontSize: 14 }}>
+                    {stopsCopy.weeklyReflectionReviewEmptyState}
+                  </div>
+                ) : (
+                  <ReflectionFieldList sc={sc} stopsCopy={stopsCopy} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <StopNotesArea
+        stopKey="weekly_reflection_review"
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
+      />
+    </>
+  );
+}
+
+// Small helper rendering the 5-field stack with consistent label/value treatment.
+// Empty fields show an em dash. Rating renders as `N / 5` when set.
+function ReflectionFieldList({ sc, stopsCopy }) {
+  const fields = [
+    { label: stopsCopy.weeklyReflectionReviewTasksCompletedLabel, value: sc.tasks_completed },
+    { label: stopsCopy.weeklyReflectionReviewTasksCarriedOverLabel, value: sc.tasks_carried_over },
+    { label: stopsCopy.weeklyReflectionReviewWinLabel, value: sc.weekly_win },
+    { label: stopsCopy.weeklyReflectionReviewLearningLabel, value: sc.weekly_learning },
+    {
+      label: stopsCopy.weeklyReflectionReviewRatingLabel,
+      value: sc.week_rating ? `${sc.week_rating} / 5` : '',
+    },
+  ];
+  return (
+    <div className="weekly-reflection-review-fields">
+      {fields.map((f, i) => {
+        const text = (f.value ?? '').toString().trim();
+        return (
+          <div key={i} className="weekly-reflection-review-field" style={{ marginTop: 8 }}>
+            <div
+              className="eyebrow"
+              style={{ fontSize: 10, marginBottom: 4, color: 'var(--muted)' }}
+            >
+              {f.label}
+            </div>
+            {text ? (
+              <div style={{ fontSize: 14, lineHeight: 1.55 }}>{text}</div>
+            ) : (
+              <div className="muted" style={{ fontStyle: 'italic', fontSize: 14 }}>{'—'}</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

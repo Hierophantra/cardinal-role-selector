@@ -658,6 +658,77 @@ function StopBlock({ stopKey, stopIndex, notesByStop, perPartnerNotesByStop, dat
     );
   }
 
+  // UAT 2026-05-04 (later same day, pre-launch fix BL-05) — Friday Review
+  // stop. Surfaces each partner's submitted Weekly Reflection read-only with
+  // the team-level reflection note captured below. Mirrors AdminMeetingSession
+  // WeeklyReflectionReviewStop. Empty state when neither partner submitted.
+  if (stopKey === 'weekly_reflection_review') {
+    const stopsCopy = copy.stops;
+    const theoSc = data?.theo?.scorecard ?? null;
+    const jerrySc = data?.jerry?.scorecard ?? null;
+    const bothEmpty = !theoSc && !jerrySc;
+    const renderFields = (sc) => {
+      if (!sc) {
+        return (
+          <div className="muted" style={{ fontStyle: 'italic', fontSize: 14 }}>
+            {stopsCopy.weeklyReflectionReviewEmptyState}
+          </div>
+        );
+      }
+      const items = [
+        { label: stopsCopy.weeklyReflectionReviewTasksCompletedLabel, value: sc.tasks_completed },
+        { label: stopsCopy.weeklyReflectionReviewTasksCarriedOverLabel, value: sc.tasks_carried_over },
+        { label: stopsCopy.weeklyReflectionReviewWinLabel, value: sc.weekly_win },
+        { label: stopsCopy.weeklyReflectionReviewLearningLabel, value: sc.weekly_learning },
+        {
+          label: stopsCopy.weeklyReflectionReviewRatingLabel,
+          value: sc.week_rating ? `${sc.week_rating} / 5` : '',
+        },
+      ];
+      return items.map((it, i) => {
+        const text = (it.value ?? '').toString().trim();
+        return (
+          <div key={i} className="weekly-reflection-review-field" style={{ marginTop: 8 }}>
+            <div
+              className="eyebrow"
+              style={{ fontSize: 10, marginBottom: 4, color: 'var(--muted)' }}
+            >
+              {it.label}
+            </div>
+            {text ? (
+              <div style={{ fontSize: 14, lineHeight: 1.55 }}>{text}</div>
+            ) : (
+              <div className="muted" style={{ fontStyle: 'italic', fontSize: 14 }}>{'—'}</div>
+            )}
+          </div>
+        );
+      });
+    };
+    return (
+      <div className="meeting-stop" style={{ marginBottom: 24 }}>
+        <div className="eyebrow meeting-stop-eyebrow">{stopsCopy.weeklyReflectionReviewEyebrow}</div>
+        <h3 className="meeting-stop-heading">{stopsCopy.weeklyReflectionReviewHeading}</h3>
+        {bothEmpty ? (
+          <div className="weekly-reflection-review-empty muted" style={{ fontStyle: 'italic', marginTop: 8 }}>
+            {stopsCopy.weeklyReflectionReviewEmptyState}
+          </div>
+        ) : (
+          <div className="weekly-reflection-review-grid meeting-growth-grid">
+            {PARTNERS.map((p) => (
+              <div key={p} className="weekly-reflection-review-cell meeting-growth-cell">
+                <div className="meeting-partner-name">{PARTNER_DISPLAY[p] ?? p}</div>
+                {renderFields(data?.[p]?.scorecard ?? null)}
+              </div>
+            ))}
+          </div>
+        )}
+        {note
+          ? <p style={{ fontSize: 15, lineHeight: 1.6, marginTop: 16 }}>{note}</p>
+          : <p className="muted" style={{ marginTop: 16 }}>No notes for this stop.</p>}
+      </div>
+    );
+  }
+
   // UAT 2026-05-04 (Week Plan) — Friday Review stop. Renders Monday's plan
   // read-only at the top + per-partner recap notes side-by-side. data.weekPlan
   // is fetched in the load effect for Friday meetings; null on Monday Prep
