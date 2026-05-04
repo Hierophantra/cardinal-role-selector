@@ -345,12 +345,15 @@ export const HUB_COPY = {
     greeting: 'Cardinal Accountability',
     statusHeading: 'System Status',
     status: {
-      bothSubmitted: 'Both partners have completed their role questionnaires',
-      oneSubmitted: (name, otherName) => `${name} has submitted \u00b7 ${otherName} has not yet submitted`,
-      noneSubmitted: 'Neither partner has submitted their role questionnaire',
-      noKpisLocked: 'No KPIs locked yet',
-      oneKpiLocked: (name) => `${name}'s KPIs are locked in`,
-      bothKpisLocked: 'Both partners have locked in their KPIs',
+      // Pre-launch fix (2026-04-29): role-questionnaire submission lines removed
+      // (legacy v1.0 copy). Status now reports only the weekly KPI lock state
+      // for the current week. "Locked" = the partner picked their optional
+      // weekly KPI for this Monday (weekly_kpi_selections row with non-null
+      // kpi_template_id) \u2014 mandatory seeds in kpi_selections do not count.
+      noWeeklyKpisLocked: 'Neither partner has locked in their weekly KPI for the week yet.',
+      oneWeeklyKpiLocked: (name, otherName) =>
+        `${name} has locked in their weekly KPI; ${otherName} has not yet.`,
+      bothWeeklyKpisLocked: 'Both partners have locked in their weekly KPI for the week.',
     },
     sections: {
       partners: 'PARTNERS',

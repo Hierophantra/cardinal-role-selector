@@ -1,26 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { fetchSubmissions, fetchKpiSelections } from '../../lib/supabase.js';
-import { PARTNER_DISPLAY, HUB_COPY } from '../../data/content.js';
+import { fetchWeeklyKpiSelection } from '../../lib/supabase.js';
+import { getMondayOf } from '../../lib/week.js';
+import { HUB_COPY } from '../../data/content.js';
 
 export default function AdminHub() {
   const navigate = useNavigate();
-  const [subs, setSubs] = useState([]);
-  const [theoKpis, setTheoKpis] = useState([]);
-  const [jerryKpis, setJerryKpis] = useState([]);
+  const [theoWeekly, setTheoWeekly] = useState(null);
+  const [jerryWeekly, setJerryWeekly] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    const currentMonday = getMondayOf();
     Promise.all([
-      fetchSubmissions().catch(() => []),
-      fetchKpiSelections('theo').catch(() => []),
-      fetchKpiSelections('jerry').catch(() => []),
+      fetchWeeklyKpiSelection('theo', currentMonday).catch(() => null),
+      fetchWeeklyKpiSelection('jerry', currentMonday).catch(() => null),
     ])
-      .then(([subsData, theoKpisData, jerryKpisData]) => {
-        setSubs(subsData);
-        setTheoKpis(theoKpisData);
-        setJerryKpis(jerryKpisData);
+      .then(([theoRow, jerryRow]) => {
+        setTheoWeekly(theoRow);
+        setJerryWeekly(jerryRow);
       })
       .catch((err) => {
         console.error(err);
@@ -38,40 +37,27 @@ export default function AdminHub() {
   if (error) {
     statusLines.push({ text: copy.errorLoad, style: 'muted' });
   } else {
-    const theoSub = subs.find((s) => s.partner === 'theo');
-    const jerrySub = subs.find((s) => s.partner === 'jerry');
-
-    // Submission status
-    if (theoSub && jerrySub) {
-      statusLines.push({ text: copy.status.bothSubmitted, style: 'success' });
-    } else if (theoSub) {
-      statusLines.push({ text: copy.status.oneSubmitted('Theo', 'Jerry'), style: 'muted' });
-    } else if (jerrySub) {
-      statusLines.push({ text: copy.status.oneSubmitted('Jerry', 'Theo'), style: 'muted' });
-    } else {
-      statusLines.push({ text: copy.status.noneSubmitted, style: 'muted' });
-    }
-
-    // KPI lock status — post-Phase-17 UAT 2026-04-25:
-    // Phase 14 SCHEMA-11 dropped the locked_until semantic; the column is now
-    // always NULL. Phase 15 D-15 redefined "locked" as derived from the
-    // mandatory list + weekly-choice presence — a partner has KPIs locked the
-    // moment kpi_selections has any rows for them (mandatory rows are seeded
-    // on first selection and are always considered locked). The prior check
-    // (`some(k => locked_until && new Date(k.locked_until) > new Date())`)
-    // was a leftover from the old semantic and falsely reported "No KPIs
-    // locked yet" even when both partners had locked their picks.
-    const theoLocked = theoKpis.length > 0;
-    const jerryLocked = jerryKpis.length > 0;
+    // Pre-launch fix (2026-04-29): "locked" now means the partner has picked
+    // their OPTIONAL WEEKLY KPI for the CURRENT week. The previous check
+    // (kpi_selections row count) fired immediately because mandatory KPIs are
+    // auto-seeded into kpi_selections, so the hub always said "locked" the
+    // moment a partner first opened the app.
+    //
+    // Correct semantics: a row exists in weekly_kpi_selections for
+    // (partner, currentMonday) AND kpi_template_id IS NOT NULL — the latter
+    // filters out counter-only seed rows that incrementKpiCounter creates
+    // before the partner picks (CR-02 / WR-09).
+    const theoLocked = Boolean(theoWeekly?.kpi_template_id);
+    const jerryLocked = Boolean(jerryWeekly?.kpi_template_id);
 
     if (theoLocked && jerryLocked) {
-      statusLines.push({ text: copy.status.bothKpisLocked, style: 'gold' });
+      statusLines.push({ text: copy.status.bothWeeklyKpisLocked, style: 'gold' });
     } else if (theoLocked) {
-      statusLines.push({ text: copy.status.oneKpiLocked('Theo'), style: 'gold' });
+      statusLines.push({ text: copy.status.oneWeeklyKpiLocked('Theo', 'Jerry'), style: 'muted' });
     } else if (jerryLocked) {
-      statusLines.push({ text: copy.status.oneKpiLocked('Jerry'), style: 'gold' });
+      statusLines.push({ text: copy.status.oneWeeklyKpiLocked('Jerry', 'Theo'), style: 'muted' });
     } else {
-      statusLines.push({ text: copy.status.noKpisLocked, style: 'muted' });
+      statusLines.push({ text: copy.status.noWeeklyKpisLocked, style: 'muted' });
     }
   }
 
