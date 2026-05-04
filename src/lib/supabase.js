@@ -703,6 +703,59 @@ export async function upsertMeetingNotePerPartner({ meeting_id, agenda_stop_key,
   return data;
 }
 
+/**
+ * Fetch the most recent Monday Prep meeting's per-partner plan notes for the
+ * given week. Used by:
+ *   - PartnerHub.jsx — surface "This Week's Plan" card on each partner's hub
+ *   - AdminMeetingSession.jsx (Friday Review) — drive the week_plan_recap stop
+ *   - MeetingSummary.jsx (Friday Review) — render Monday's plan in summary view
+ *
+ * UAT 2026-05-04 (Week Plan feature). The plan = the per-partner notes captured
+ * across the three Monday Prep stops that use upsertMeetingNotePerPartner:
+ *   - priorities_focus
+ *   - risks_blockers
+ *   - commitments
+ *
+ * @param {string} weekOf 'YYYY-MM-DD' Monday local string
+ * @returns {Promise<{meetingId: string|null, heldAt: string|null, notes: object|null}>}
+ *          notes is null only when meetingId is null. Otherwise notes always
+ *          has all three stop keys with theo+jerry strings (empty when no row).
+ */
+export async function fetchWeekPlanForWeek(weekOf) {
+  const { data: meetings, error: mErr } = await supabase
+    .from('meetings')
+    .select('id, held_at')
+    .eq('week_of', weekOf)
+    .eq('meeting_type', 'monday_prep')
+    .order('held_at', { ascending: false })
+    .limit(1);
+  if (mErr) throw mErr;
+  const meeting = meetings?.[0] ?? null;
+  if (!meeting) return { meetingId: null, heldAt: null, notes: null };
+
+  const { data: rows, error: nErr } = await supabase
+    .from('meeting_notes')
+    .select('agenda_stop_key, notes_theo, notes_jerry')
+    .eq('meeting_id', meeting.id)
+    .in('agenda_stop_key', ['priorities_focus', 'risks_blockers', 'commitments']);
+  if (nErr) throw nErr;
+
+  const notes = {
+    priorities_focus: { theo: '', jerry: '' },
+    risks_blockers: { theo: '', jerry: '' },
+    commitments: { theo: '', jerry: '' },
+  };
+  for (const r of rows ?? []) {
+    if (notes[r.agenda_stop_key]) {
+      notes[r.agenda_stop_key] = {
+        theo: r.notes_theo ?? '',
+        jerry: r.notes_jerry ?? '',
+      };
+    }
+  }
+  return { meetingId: meeting.id, heldAt: meeting.held_at, notes };
+}
+
 // --- Weekly KPI Selections + Counters (Phase 14, v2.0) ---
 // Binds to migration 009 (supabase/migrations/009_schema_v20.sql):
 //   - weekly_kpi_selections table with composite PK (partner, week_start_date)
