@@ -1141,7 +1141,7 @@ textarea { resize: vertical; min-height: 120px; }
 }
 
 .scorecard-history-row.expanded .scorecard-history-detail {
-  max-height: 400px;
+  max-height: 5000px;
 }
 
 .scorecard-history-kpi-detail {
