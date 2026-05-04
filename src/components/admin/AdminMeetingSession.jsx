@@ -38,11 +38,17 @@ import {
 const KPI_START_INDEX = FRIDAY_STOPS.indexOf('kpi_1');
 
 const PARTNERS = ['theo', 'jerry'];
-// Autosave debounce — 25s feels right for live meeting cadence: long enough that
-// a thinking pause doesn't trigger a save, short enough that an interruption
-// (window switch, end of meeting) still persists recent edits within ~30s.
-// Earlier 400ms cadence felt too eager during the first live meeting.
-const DEBOUNCE_MS = 25000;
+// Autosave debounce — 2000ms is the standard "save while you pause" cadence
+// across content-management apps. Pre-launch fix (BL-01, 2026-04-29):
+// previous 25s window paired with the unmount cleanup (which clearTimeout's
+// every pending timer without flushing) silently dropped the most recent
+// typing whenever Trace ended the meeting or navigated away within 25s of
+// the last keystroke. Worst hit was the per-partner Monday Prep stops that
+// feed WeekPlanCard + Friday's week_plan_recap. At 2s, the user's last
+// keystroke has already flushed before they reach End Meeting / Prev / Next,
+// so the existing clearTimeout-on-unmount path is correct without an
+// explicit flush.
+const DEBOUNCE_MS = 2000;
 const END_DISARM_MS = 3000;
 
 // UAT C2/C3/C4: Monday Prep stops that capture separate Theo + Jerry notes.
