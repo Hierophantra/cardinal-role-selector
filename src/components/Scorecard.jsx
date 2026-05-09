@@ -18,6 +18,7 @@ import {
   GROWTH_FOLLOWUP_COPY,
   effectivePartnerScope,
 } from '../data/content.js';
+import StructuredFieldsReadOnly from './StructuredFieldsReadOnly.jsx';
 
 // Motion props shared by all views — matches KpiSelection.jsx pattern
 const motionProps = {
@@ -641,6 +642,13 @@ export default function Scorecard() {
     const currentLabelMap = Object.fromEntries(
       rows.map((tpl) => [tpl.id, tpl.baseline_action])
     );
+    // Wave 2 (UAT 2026-05-09): per-KPI key_fields lookup so historic rows can
+    // surface their structured_data inline. Falls back to undefined when the
+    // template is no longer in this week's composition (rare — historic
+    // selections may include retired templates).
+    const currentKeyFieldsMap = Object.fromEntries(
+      rows.map((tpl) => [tpl.id, tpl.key_fields ?? null])
+    );
 
     return (
       <>
@@ -728,6 +736,17 @@ export default function Scorecard() {
                             )}
                             {r?.reflection && (
                               <div className="scorecard-history-kpi-reflection">{r.reflection}</div>
+                            )}
+                            {/* Wave 2: per-KPI structured_data summary inline.
+                                Only renders when the historic entry carried a
+                                non-empty structured_data block AND the current
+                                template still has a key_fields schema. */}
+                            {currentKeyFieldsMap[id] && r?.structured_data && (
+                              <StructuredFieldsReadOnly
+                                schema={currentKeyFieldsMap[id]}
+                                data={r.structured_data}
+                                weekOf={row.week_of}
+                              />
                             )}
                           </div>
                         );
@@ -1005,16 +1024,28 @@ export default function Scorecard() {
                     {/* Wave 1 (migration 020): per-KPI structured input block. Mounted
                         only when tpl.key_fields !== null. Sits ABOVE the reflection
                         textarea so structured evidence is captured first; the textarea
-                        below remains for variance / freeform commentary. */}
+                        below remains for variance / freeform commentary.
+                        Wave 2 (UAT 2026-05-09): when the row body is disabled
+                        (week closed), render the compact StructuredFieldsReadOnly
+                        summary instead of the disabled-input chrome — same data,
+                        denser layout that fits read-only history density. */}
                     {tpl.key_fields && (
-                      <StructuredFieldsBlock
-                        schema={tpl.key_fields}
-                        data={entry.structured_data ?? {}}
-                        weekOf={currentWeekOf}
-                        disabled={bodyDisabled}
-                        onChange={(next) => setStructuredDataLocal(tpl.id, next)}
-                        onBlur={persistField}
-                      />
+                      bodyDisabled ? (
+                        <StructuredFieldsReadOnly
+                          schema={tpl.key_fields}
+                          data={entry.structured_data ?? {}}
+                          weekOf={currentWeekOf}
+                        />
+                      ) : (
+                        <StructuredFieldsBlock
+                          schema={tpl.key_fields}
+                          data={entry.structured_data ?? {}}
+                          weekOf={currentWeekOf}
+                          disabled={bodyDisabled}
+                          onChange={(next) => setStructuredDataLocal(tpl.id, next)}
+                          onBlur={persistField}
+                        />
+                      )
                     )}
 
                     <div className="scorecard-reflection" style={{ marginTop: 12 }}>

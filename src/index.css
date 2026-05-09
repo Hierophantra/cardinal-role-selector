@@ -2919,4 +2919,116 @@ textarea { resize: vertical; min-height: 120px; }
   min-height: 0;
 }
 
+/* ------------------------------------------------------------------ */
+/* Wave 2 (UAT 2026-05-09): read-only structured-data display.
+   Used by Scorecard history rows, AdminMeetingSession KpiStop, and
+   MeetingSummary KPI stops to surface the partner's submitted
+   structured_data inline alongside result + reflection + pending_text.
+
+   Density matches .scorecard-pending-reveal — small font, tight
+   spacing, italic muted labels, bordered card group. Sits inside an
+   existing parent (history row, kpi cell, etc.) so no outer padding —
+   the parent owns its margin.
+*/
+/* ------------------------------------------------------------------ */
+
+.structured-fields-display {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.015);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.structured-fields-display__period {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.structured-fields-display__total {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.structured-fields-display__total-label {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.structured-fields-display__total-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.structured-fields-display__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.structured-fields-display__rows-label {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.structured-fields-display__row {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.structured-fields-display__named {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.structured-fields-display__cell {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+
+.structured-fields-display__cell-label {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.structured-fields-display__cell-value {
+  font-size: 12px;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.structured-fields-display__sublist {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.structured-fields-display__sublist-label {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--muted);
+}
+
 

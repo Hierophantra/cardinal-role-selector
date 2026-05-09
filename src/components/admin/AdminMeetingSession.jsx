@@ -28,6 +28,7 @@ import {
   BUSINESS_GROWTH_STOP_MAPPING,
   GROWTH_FOLLOWUP_FIELDS,
 } from '../../data/content.js';
+import StructuredFieldsReadOnly from '../StructuredFieldsReadOnly.jsx';
 
 // Stop arrays are now imported from content.js (FRIDAY_STOPS, MONDAY_STOPS).
 // The active stop array is derived from meeting.meeting_type inside the component.
@@ -1615,6 +1616,20 @@ function KpiStop({
                     >
                       {reflection}
                     </div>
+                  )}
+
+                  {/* Wave 2 (UAT 2026-05-09): inline structured_data summary
+                      so Trace can read the partner's structured evidence
+                      (count, named fields, row-per-item) alongside the
+                      result + reflection. locked.key_fields propagated via
+                      composePartnerKpis -> StructuredFieldsReadOnly skips
+                      automatically when data is empty or schema is null. */}
+                  {locked.key_fields && entry.structured_data && (
+                    <StructuredFieldsReadOnly
+                      schema={locked.key_fields}
+                      data={entry.structured_data}
+                      weekOf={data[p].scorecard?.week_of}
+                    />
                   )}
                 </>
               ) : (

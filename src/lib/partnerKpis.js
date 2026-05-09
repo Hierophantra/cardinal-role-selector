@@ -57,6 +57,11 @@ export async function composePartnerKpis(partner, weekOf) {
   return composed.map((t) => ({
     id: t.id,
     label_snapshot: t.label,
+    // Wave 2 (UAT 2026-05-09): pass key_fields through so meeting + summary
+    // surfaces can render the partner's submitted structured_data inline
+    // alongside result + reflection + pending_text. Templates without
+    // key_fields seeded keep the existing reflection-only render path.
+    key_fields: t.key_fields ?? null,
     kpi_templates: { mandatory: t.mandatory, countable: t.countable },
   }));
 }

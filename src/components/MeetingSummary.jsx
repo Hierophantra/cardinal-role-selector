@@ -19,6 +19,7 @@ import {
   MONDAY_STOPS,
   KPI_STOP_COUNT,
 } from '../data/content.js';
+import StructuredFieldsReadOnly from './StructuredFieldsReadOnly.jsx';
 
 const PARTNERS = ['theo', 'jerry'];
 
@@ -485,6 +486,18 @@ function StopBlock({ stopKey, stopIndex, notesByStop, perPartnerNotesByStop, dat
                   <div className="muted" style={{ fontSize: 14, fontStyle: 'italic' }}>
                     {reflection}
                   </div>
+                )}
+                {/* Wave 2 (UAT 2026-05-09): per-KPI structured_data summary so
+                    the post-meeting summary surfaces structured evidence
+                    inline. locked.key_fields propagated via composePartnerKpis;
+                    StructuredFieldsReadOnly skips when schema is null or data
+                    is empty (older scorecards without structured fields). */}
+                {locked?.key_fields && entry?.structured_data && (
+                  <StructuredFieldsReadOnly
+                    schema={locked.key_fields}
+                    data={entry.structured_data}
+                    weekOf={sc?.week_of}
+                  />
                 )}
               </div>
             );
