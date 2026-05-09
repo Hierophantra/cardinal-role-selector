@@ -241,11 +241,29 @@ export default function Scorecard() {
             : null;
         const weeklyTpl = templates.find((t) => t.id === sel.kpi_template_id);
 
-        const composed = [
-          ...mandatory,
-          ...(conditional ? [conditional] : []),
-          ...(weeklyTpl ? [weeklyTpl] : []),
-        ];
+        // UAT 2026-05-09: test partner shows EVERY non-conditional template
+        // (theo + jerry + shared) so Trace can review every KPI's structured
+        // form rendering in one place. Real partners see the normal mandatory
+        // + conditional + weekly-choice composition.
+        const composed = partner === 'test'
+          ? templates
+              .filter((t) => t.conditional === false)
+              .sort((a, b) => {
+                // Group: shared mandatory first, then theo mandatory, then jerry mandatory,
+                // then theo optional, then jerry optional. Stable order for review.
+                const score = (t) => {
+                  if (t.partner_scope === 'both' || t.partner_scope === 'shared') return t.mandatory ? 0 : 4;
+                  if (t.partner_scope === 'theo') return t.mandatory ? 1 : 3;
+                  if (t.partner_scope === 'jerry') return t.mandatory ? 2 : 5;
+                  return 9;
+                };
+                return score(a) - score(b);
+              })
+          : [
+              ...mandatory,
+              ...(conditional ? [conditional] : []),
+              ...(weeklyTpl ? [weeklyTpl] : []),
+            ];
 
         setRows(composed);
         setWeeklySel(sel);
