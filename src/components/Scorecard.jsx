@@ -19,6 +19,7 @@ import {
   effectivePartnerScope,
 } from '../data/content.js';
 import StructuredFieldsReadOnly from './StructuredFieldsReadOnly.jsx';
+import LastWeekCommitments from './LastWeekCommitments.jsx';
 
 // Motion props shared by all views — matches KpiSelection.jsx pattern
 const motionProps = {
@@ -174,6 +175,20 @@ export default function Scorecard() {
     () => allScorecards.filter((s) => s.week_of !== currentWeekOf),
     [allScorecards, currentWeekOf]
   );
+
+  // Wave 3 Tier 3: last week's submitted scorecard, used by LastWeekCommitments
+  // to surface Pending commitments carried forward. Computed in local time to
+  // match getMondayOf conventions (never UTC arithmetic — see week.js notes).
+  // Falls back to null when there's no submission for last week.
+  const priorScorecard = useMemo(() => {
+    const [y, m, d] = currentWeekOf.split('-').map(Number);
+    const prev = new Date(y, m - 1, d - 7);
+    const yy = prev.getFullYear();
+    const mm = String(prev.getMonth() + 1).padStart(2, '0');
+    const dd = String(prev.getDate()).padStart(2, '0');
+    const prevMonday = `${yy}-${mm}-${dd}`;
+    return allScorecards.find((s) => s.week_of === prevMonday && s.submitted_at) ?? null;
+  }, [allScorecards, currentWeekOf]);
 
   // ---- Mount guards + data fetch (Pattern 5 — composite fetch) ----
   useEffect(() => {
@@ -888,6 +903,12 @@ export default function Scorecard() {
                 {SCORECARD_COPY.weekClosedBanner(formatWeekRange(currentWeekOf))}
               </p>
             )}
+
+            {/* Wave 3 Tier 3: last-week commitment carry-forward.
+                Read-only context card surfacing last week's Pending rows
+                with their resolution state. Renders nothing when there's
+                no prior submission or no Pending commitments. */}
+            <LastWeekCommitments priorScorecard={priorScorecard} />
 
             {/* UAT C1: self-chosen growth reminder — read-only, top of scorecard */}
             <SelfChosenGrowthReminder growthPriorities={growthPriorities} />

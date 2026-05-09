@@ -605,6 +605,34 @@ export const SCORECARD_COPY = {
   },
 };
 
+// Wave 3 (UAT 2026-05-09) \u2014 Tier 3: last-week commitment carry-forward.
+// Read-only context card surfaced at the top of Scorecard.jsx so the
+// partner sees their open Pending commitments from last week before
+// filling out this one. No new write semantics \u2014 purely orienting copy.
+export const LAST_WEEK_COMMITMENTS_COPY = {
+  eyebrow: 'FROM LAST WEEK',
+  heading: 'Commitments still open',
+  subtext: 'These were Pending at submit. How did they land?',
+  statusMet: 'Met by Saturday',
+  statusNotConverted: 'Did not convert',
+  statusLive: 'Still live',
+};
+
+// Wave 3 (UAT 2026-05-09) \u2014 Tier 4: substance trend dashboard.
+// Per-partner card on AdminPartners.jsx surfacing reflection density
+// and structured completion across the last 4 submissions, with a
+// week-over-week trend arrow.
+export const ADMIN_SUBSTANCE_COPY = {
+  eyebrow: 'SUBMISSION SUBSTANCE',
+  subtext: 'Reflection density and structured field completion across recent submissions.',
+  empty: 'No submitted scorecards yet.',
+  wordsLabel: 'words',
+  completionLabel: 'fields',
+  trendUp: '\u2191',
+  trendDown: '\u2193',
+  trendFlat: '\u2192',
+};
+
 // --- Phase 4: Admin Tools & Meeting Mode ---
 
 export const GROWTH_STATUS_COPY = {

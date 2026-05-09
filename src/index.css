@@ -2414,6 +2414,85 @@ textarea { resize: vertical; min-height: 120px; }
   color: var(--gold);
 }
 
+/* Wave 3 (UAT 2026-05-09) — Tier 3: last-week commitment carry-forward.
+   Read-only context card at the top of Scorecard.jsx. Visual matches the
+   saturday-recap surface (same data, different surface) but lighter so it
+   reads as orienting context, not an action item. */
+.last-week-commitments {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.last-week-commitments__eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.last-week-commitments__heading {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+.last-week-commitments__subtext {
+  font-size: 13px;
+  color: var(--muted);
+  font-style: italic;
+  margin-bottom: 4px;
+}
+.last-week-commitments__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.last-week-commitments__row {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.last-week-commitments__row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+.last-week-commitments__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.last-week-commitments__commitment {
+  font-size: 14px;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.55;
+}
+.last-week-commitments__status {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 2px;
+}
+.last-week-commitments__status--met {
+  color: var(--success);
+}
+.last-week-commitments__status--not_converted {
+  color: var(--miss);
+}
+.last-week-commitments__status--live {
+  color: var(--gold);
+}
+
 /* =============================================================================
    Phase 18 — Shared Business Priorities Display (BIZ-02, BIZ-03)
    New section + card + collapsible toggle + meeting-mode divider.
