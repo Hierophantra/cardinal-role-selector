@@ -9,6 +9,8 @@ import {
   resetTestKpis,
   resetTestScorecards,
   reopenScorecardWeek,
+  seedTestWeeklyKpiSelection,
+  seedTestSubmittedScorecard,
 } from '../../lib/supabase.js';
 import { isWeekClosed, formatWeekRange } from '../../lib/week.js';
 
@@ -38,6 +40,7 @@ export default function AdminTest() {
   const [statusMsg, setStatusMsg] = useState('');
   const [pendingReopen, setPendingReopen] = useState({});
   const [reopeningKey, setReopeningKey] = useState(null);
+  const [seedingKind, setSeedingKind] = useState(null);
   const disarmTimerRef = useRef(null);
 
   const loadState = useCallback(async () => {
@@ -131,6 +134,26 @@ export default function AdminTest() {
       confirmReopen(weekOf);
     } else {
       armReopen(weekOf);
+    }
+  }
+
+  async function handleSeed(kind) {
+    setSeedingKind(kind);
+    setStatusMsg('');
+    try {
+      if (kind === 'weekly_kpi') {
+        await seedTestWeeklyKpiSelection();
+        setStatusMsg('Seeded sample weekly KPI for test partner.');
+      } else if (kind === 'scorecard') {
+        await seedTestSubmittedScorecard();
+        setStatusMsg('Seeded sample submitted scorecard for test partner.');
+      }
+      await loadState();
+    } catch (err) {
+      console.error(err);
+      setStatusMsg('Seed failed. Check console.');
+    } finally {
+      setSeedingKind(null);
     }
   }
 
@@ -350,6 +373,35 @@ export default function AdminTest() {
                     })}
                   </div>
                 )}
+              </div>
+
+              <div className="summary-section">
+                <h4>Quick Seed</h4>
+                <p className="muted" style={{ fontSize: 13, marginBottom: 12 }}>
+                  Populate the test partner with realistic sample data for walking
+                  through post-selection / post-submit flows. Both buttons are
+                  idempotent — re-clicking overwrites this week's row.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    style={{ textAlign: 'left', justifyContent: 'flex-start' }}
+                    onClick={() => handleSeed('weekly_kpi')}
+                    disabled={Boolean(seedingKind)}
+                  >
+                    {seedingKind === 'weekly_kpi' ? 'Seeding...' : 'Seed sample weekly KPI'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    style={{ textAlign: 'left', justifyContent: 'flex-start' }}
+                    onClick={() => handleSeed('scorecard')}
+                    disabled={Boolean(seedingKind)}
+                  >
+                    {seedingKind === 'scorecard' ? 'Seeding...' : 'Seed sample submitted scorecard'}
+                  </button>
+                </div>
               </div>
 
               <div className="summary-section">
