@@ -1024,6 +1024,50 @@ export async function fetchBusinessPriorities() {
 // assertResettable('test') and write only to partner='test' rows.
 
 /**
+ * Seed mandatory kpi_selections rows for the test partner so the hub's
+ * `kpiReady = kpiSelections.length > 0` gate fires and downstream flows
+ * (scorecard, season overview, history) can render.
+ *
+ * Mirrors theo's mandatory set (test shadows theo per Phase 14 SCHEMA-08
+ * comment): all mandatory non-conditional templates with partner_scope
+ * IN ('theo','both'). Idempotent via ON CONFLICT (partner, template_id)
+ * DO NOTHING — re-clicking is safe and only inserts missing rows.
+ *
+ * Used by AdminTest's seed buttons and by seedTestSubmittedScorecard
+ * (which auto-calls this if kpi_selections is empty for test).
+ *
+ * UAT 2026-05-09: added after the Wave 0 / 1 / 2 / 3 ship — original
+ * seedTestSubmittedScorecard didn't populate kpi_selections, leaving
+ * the test partner unable to access the scorecard surface because
+ * PartnerHub gates on kpiSelections.length > 0.
+ */
+export async function seedTestKpiSelections() {
+  const partner = 'test';
+  assertResettable(partner);
+  const { data: templates, error: tErr } = await supabase
+    .from('kpi_templates')
+    .select('id, baseline_action, category, partner_scope, mandatory, conditional')
+    .eq('mandatory', true)
+    .eq('conditional', false)
+    .in('partner_scope', ['theo', 'both']);
+  if (tErr) throw tErr;
+  if (!templates || templates.length === 0) {
+    throw new Error('No mandatory templates found for test partner seed');
+  }
+  const rows = templates.map((t) => ({
+    partner,
+    template_id: t.id,
+    label_snapshot: t.baseline_action,
+    category_snapshot: t.category,
+  }));
+  const { error } = await supabase
+    .from('kpi_selections')
+    .upsert(rows, { onConflict: 'partner,template_id', ignoreDuplicates: true });
+  if (error) throw error;
+  return rows.length;
+}
+
+/**
  * Seed a sample weekly KPI selection for the test partner. Idempotent —
  * upsert on (partner, week_start_date) so re-clicking overwrites.
  *
@@ -1035,6 +1079,10 @@ export async function fetchBusinessPriorities() {
 export async function seedTestWeeklyKpiSelection() {
   const partner = 'test';
   assertResettable(partner);
+  // UAT 2026-05-09: ensure mandatory selections exist for test before any
+  // weekly-pick / scorecard work — otherwise PartnerHub's kpiReady gate stays
+  // false and the test partner can't see the scorecard tile.
+  await seedTestKpiSelections();
   const weekOf = getMondayOf(); // current week's Monday
   // Find optional templates the test partner could pick.
   const { data: templates, error: tErr } = await supabase
@@ -1081,6 +1129,10 @@ export async function seedTestWeeklyKpiSelection() {
 export async function seedTestSubmittedScorecard() {
   const partner = 'test';
   assertResettable(partner);
+  // UAT 2026-05-09: ensure mandatory kpi_selections exist for test so
+  // PartnerHub's kpiReady gate fires when Trace logs in as test to verify
+  // the seeded scorecard. Idempotent — only inserts missing rows.
+  await seedTestKpiSelections();
   const weekOf = getMondayOf();
   const nowIso = new Date().toISOString();
 
