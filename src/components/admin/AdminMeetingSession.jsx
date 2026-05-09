@@ -1012,6 +1012,18 @@ function StopRenderer({
     );
   }
 
+  if (stopKey === 'acculynx_task_review') {
+    return (
+      <AcculynxTaskReviewStop
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
+      />
+    );
+  }
+
   if (stopKey === 'weekly_reflection_review') {
     return (
       <WeeklyReflectionReviewStop
@@ -1958,6 +1970,36 @@ function WrapStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
 // Mirrors ClearTheAirStop shape: eyebrow + heading + subtext + single shared
 // StopNotesArea. Persisted via meeting_notes (agenda_stop_key='additional_notes').
 // --------------------------------------------------------------------------
+
+// --------------------------------------------------------------------------
+// Acculynx Task Review stop (UAT 2026-05-09 / Wave 2) — appears on BOTH
+// meeting types. Friday flavour walks through tasks completed since last
+// meeting; Monday flavour reviews tasks still open from last week. Copy is
+// driven by the active meeting_type's stops block (acculynxTaskReview*).
+// Single shared StopNotesArea (team-level discussion, NOT in
+// PER_PARTNER_NOTE_STOPS — task review is collective context, not per
+// partner). Mirrors the pattern from AdditionalNotesStop / ClearTheAirStop.
+// --------------------------------------------------------------------------
+
+function AcculynxTaskReviewStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
+  return (
+    <>
+      <div className="eyebrow meeting-stop-eyebrow">{copy.stops.acculynxTaskReviewEyebrow}</div>
+      <h2 className="meeting-stop-heading" style={{ fontSize: 28, lineHeight: 1.2 }}>
+        {copy.stops.acculynxTaskReviewHeading}
+      </h2>
+      <p className="meeting-stop-subtext">{copy.stops.acculynxTaskReviewSubtext}</p>
+      <StopNotesArea
+        stopKey="acculynx_task_review"
+        notes={notes}
+        savedFlash={savedFlash}
+        onNoteChange={onNoteChange}
+        copy={copy}
+        isEnded={isEnded}
+      />
+    </>
+  );
+}
 
 function AdditionalNotesStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
   // Use the stop-specific placeholder if present; fall back to the generic one

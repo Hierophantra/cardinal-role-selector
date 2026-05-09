@@ -764,6 +764,14 @@ export const MEETING_COPY = {
     weeklyReflectionReviewWinLabel: 'Biggest Win',
     weeklyReflectionReviewLearningLabel: 'Learning',
     weeklyReflectionReviewRatingLabel: 'Rating',
+    // UAT 2026-05-09 (Wave 2): Acculynx task review stop on both meeting
+    // types. Friday flavour walks through tasks completed since last meeting
+    // + still-open follow-ups; Monday flavour reviews tasks still open from
+    // last week and carries forward what didn't finish.
+    acculynxTaskReviewEyebrow: 'ACCULYNX TASK REVIEW',
+    acculynxTaskReviewHeading: 'Walk through tasks completed since last meeting',
+    acculynxTaskReviewSubtext:
+      'Open Acculynx and walk through tasks assigned since last meeting. Capture completion notes + follow-ups for tasks still open.',
   },
   notesPlaceholder: 'Add notes for this stop...',
   savedFlash: 'Saved',
@@ -852,6 +860,12 @@ export const MONDAY_PREP_COPY = {
     additionalNotesSubtext:
       'Capture any extra context surfaced outside the structured agenda: things shared before, after, or alongside the meeting.',
     additionalNotesPlaceholder: 'Side conversations, follow-ups, anything that came up off-script...',
+    // UAT 2026-05-09 (Wave 2): Acculynx task review stop on Monday Prep —
+    // shorter, forward-looking framing (carry-forward of what didn't finish).
+    acculynxTaskReviewEyebrow: 'ACCULYNX TASK REVIEW',
+    acculynxTaskReviewHeading: 'Walk through tasks completed since last meeting',
+    acculynxTaskReviewSubtext:
+      "Open Acculynx and quickly review tasks still open from last week. Carry forward what didn't finish.",
   },
   notesPlaceholder: 'Add notes for this stop...',
   savedFlash: 'Saved',
@@ -878,6 +892,11 @@ export const MONDAY_PREP_COPY = {
 // biggest win, learning, rating) read-only with a single shared team-level
 // reflection note. KPI_START_INDEX still resolves correctly (insertion is
 // after the kpi_* range).
+// UAT 2026-05-09 (Wave 2): inserted 'acculynx_task_review' on both meeting
+// types. Friday: between 'weekly_reflection_review' and 'wrap'. Monday:
+// between 'saturday_recap' and 'week_preview'. KPI_START_INDEX still
+// derives via FRIDAY_STOPS.indexOf('kpi_1') so it stays correct (Friday
+// insertion is after the kpi_* range).
 export const FRIDAY_STOPS = [
   'clear_the_air',
   'week_plan_recap',
@@ -886,6 +905,7 @@ export const FRIDAY_STOPS = [
   'kpi_1', 'kpi_2', 'kpi_3', 'kpi_4', 'kpi_5', 'kpi_6', 'kpi_7',
   'growth_personal', 'growth_business_1', 'growth_business_2',
   'weekly_reflection_review',
+  'acculynx_task_review',
   'wrap',
   'additional_notes',
 ];
@@ -893,6 +913,7 @@ export const FRIDAY_STOPS = [
 export const MONDAY_STOPS = [
   'clear_the_air',
   'saturday_recap',
+  'acculynx_task_review',
   'week_preview',
   'priorities_focus',
   'risks_blockers',

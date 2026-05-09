@@ -671,6 +671,23 @@ function StopBlock({ stopKey, stopIndex, notesByStop, perPartnerNotesByStop, dat
     );
   }
 
+  // UAT 2026-05-09 (Wave 2): Acculynx task review stop on both Friday Review
+  // and Monday Prep summaries. Copy driven by the active meeting_type's
+  // copy block (Friday: walk through completed; Monday: carry-forward of
+  // open tasks). Shared StopNotesArea body, mirrored read-only.
+  if (stopKey === 'acculynx_task_review') {
+    const stopsCopy = copy.stops;
+    return (
+      <div className="meeting-stop" style={{ marginBottom: 24 }}>
+        <div className="eyebrow meeting-stop-eyebrow">{stopsCopy.acculynxTaskReviewEyebrow}</div>
+        <h3 className="meeting-stop-heading">{stopsCopy.acculynxTaskReviewHeading}</h3>
+        {note
+          ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{note}</p>
+          : <p className="muted">No notes for this stop.</p>}
+      </div>
+    );
+  }
+
   // UAT 2026-05-04 (later same day, pre-launch fix BL-05) — Friday Review
   // stop. Surfaces each partner's submitted Weekly Reflection read-only with
   // the team-level reflection note captured below. Mirrors AdminMeetingSession
