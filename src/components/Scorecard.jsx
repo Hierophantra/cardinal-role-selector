@@ -27,6 +27,70 @@ const motionProps = {
   transition: { duration: 0.28, ease: 'easeOut' },
 };
 
+// Wave 1 (migration 020): submit-gate validator for the per-KPI structured
+// fields schema. Returns `true` when the structured data fails validation
+// (i.e. the submit should be blocked).
+//
+// Rules:
+//   - count_noteworthy / row_per_item: count must be a non-negative integer.
+//     If count === 0, reflection text must be non-empty (variance note
+//     mandatory). If count > 0, every required rowField in noteworthy[] /
+//     rows[] must have a value; row_per_item requires exactly `count` rows.
+//   - named_fields: every required field must have a value. yes_no fields
+//     accept 'yes' or 'no'. row_list children must have all required sub-
+//     fields filled (count not enforced — row_list rows are partner-driven).
+function validateStructuredFields(schema, data, reflectionText) {
+  if (!schema || typeof schema !== 'object') return false;
+
+  const isMissingPrimitive = (field, value) => {
+    if (!field?.required) return false;
+    if (field.type === 'yes_no') return value !== 'yes' && value !== 'no';
+    if (field.type === 'number' || field.type === 'currency') {
+      return value === '' || value === null || value === undefined || !Number.isFinite(Number(value));
+    }
+    // text / textarea / fallback
+    return typeof value !== 'string' || value.trim().length === 0;
+  };
+
+  const reflectionMissing = !(typeof reflectionText === 'string' && reflectionText.trim().length > 0);
+
+  if (schema.pattern === 'count_noteworthy') {
+    const count = Number(data?.count);
+    if (!Number.isFinite(count) || count < 0 || !Number.isInteger(count)) return true;
+    if (count === 0) return reflectionMissing;
+    const noteworthy = Array.isArray(data?.noteworthy) ? data.noteworthy : [];
+    const rowFields = Array.isArray(schema.rowFields) ? schema.rowFields : [];
+    if (noteworthy.length === 0) return false; // count > 0 but no curated rows is allowed
+    return noteworthy.some((row) => rowFields.some((f) => isMissingPrimitive(f, row?.[f.key])));
+  }
+
+  if (schema.pattern === 'row_per_item') {
+    const count = Number(data?.count);
+    if (!Number.isFinite(count) || count < 0 || !Number.isInteger(count)) return true;
+    if (count === 0) return reflectionMissing;
+    const rows = Array.isArray(data?.rows) ? data.rows : [];
+    const rowFields = Array.isArray(schema.rowFields) ? schema.rowFields : [];
+    if (rows.length !== count) return true;
+    return rows.some((row) => rowFields.some((f) => isMissingPrimitive(f, row?.[f.key])));
+  }
+
+  if (schema.pattern === 'named_fields') {
+    const fields = Array.isArray(schema.fields) ? schema.fields : [];
+    return fields.some((f) => {
+      if (f.type === 'row_list') {
+        if (!f.required) return false;
+        const subRows = Array.isArray(data?.[f.key]) ? data[f.key] : [];
+        if (subRows.length === 0) return true;
+        const subFields = Array.isArray(f.rowFields) ? f.rowFields : [];
+        return subRows.some((row) => subFields.some((sf) => isMissingPrimitive(sf, row?.[sf.key])));
+      }
+      return isMissingPrimitive(f, data?.[f.key]);
+    });
+  }
+
+  return false;
+}
+
 export default function Scorecard() {
   const { partner } = useParams();
   const navigate = useNavigate();
@@ -504,6 +568,22 @@ export default function Scorecard() {
         setSubmitError(SCORECARD_COPY.submitErrorGrowthRequired);
         return;
       }
+    }
+    // Wave 1 (migration 020): structured fields submit gate. Each KPI with
+    // key_fields !== null must have its structured fields populated per the
+    // schema's required rules. If count is 0, the partner must still populate
+    // the existing reflection textarea (variance text mandatory when count=0
+    // even though normally optional). Templates with key_fields=NULL skip
+    // this entirely — they keep the existing reflection-only path.
+    const structuredFieldsMissing = rows.some((tpl) => {
+      if (!tpl.key_fields) return false;
+      const sd = kpiResults[tpl.id]?.structured_data ?? {};
+      const reflection = kpiResults[tpl.id]?.reflection ?? '';
+      return validateStructuredFields(tpl.key_fields, sd, reflection);
+    });
+    if (structuredFieldsMissing) {
+      setSubmitError(SCORECARD_COPY.submitErrorStructuredRequired);
+      return;
     }
     // Validation passed -- open the confirmation modal. The user must click
     // Confirm to actually persist (UAT C5).

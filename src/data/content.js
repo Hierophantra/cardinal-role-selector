@@ -546,6 +546,12 @@ export const SCORECARD_COPY = {
   // auto-save / persistField paths remain unguarded so partial drafts persist.
   submitErrorGrowthRequired:
     'Add a response to every growth consideration field — if you have nothing yet, write that.',
+  // Wave 1 (migration 020): structured fields submit gate. Each KPI with
+  // key_fields !== null must have its required fields populated per the
+  // schema. When count is 0, the partner must still write a variance note in
+  // the existing reflection textarea explaining why nothing happened.
+  submitErrorStructuredRequired:
+    'Some KPIs need their structured fields filled. Check each KPI for missing items, or write a variance note if count is zero.',
   submitErrorDb: "Couldn't save your scorecard. Try again.",
   submittedNotice: 'Submitted. Nice work.',
   emptyGuardHeading: 'No weekly KPI selected yet.',
