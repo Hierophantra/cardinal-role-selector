@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { SEASON_END_DATE } from '../data/content.js';
+import { getMondayOf } from './week.js';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -1014,4 +1015,198 @@ export async function fetchBusinessPriorities() {
     .order('id', { ascending: true });
   if (error) throw error;
   return data;
+}
+
+// --- Test partner seeding (Wave 0) ---
+// Lightweight seed helpers exposed to AdminTest so Trace can populate the
+// test partner with realistic data for walking through post-selection /
+// post-submit flows without manually filling forms. Both helpers go through
+// assertResettable('test') and write only to partner='test' rows.
+
+/**
+ * Seed a sample weekly KPI selection for the test partner. Idempotent —
+ * upsert on (partner, week_start_date) so re-clicking overwrites.
+ *
+ * Picks a random non-mandatory template with partner_scope='theo' or 'both'
+ * (test shadows theo per Phase 14 SCHEMA-08 comment).
+ *
+ * Used by AdminTest's "Seed sample weekly KPI" button.
+ */
+export async function seedTestWeeklyKpiSelection() {
+  const partner = 'test';
+  assertResettable(partner);
+  const weekOf = getMondayOf(); // current week's Monday
+  // Find optional templates the test partner could pick.
+  const { data: templates, error: tErr } = await supabase
+    .from('kpi_templates')
+    .select('id, baseline_action, partner_scope, mandatory, conditional')
+    .eq('mandatory', false)
+    .eq('conditional', false)
+    .in('partner_scope', ['theo', 'both']);
+  if (tErr) throw tErr;
+  if (!templates || templates.length === 0) {
+    throw new Error('No optional templates available for test partner');
+  }
+  const pick = templates[Math.floor(Math.random() * templates.length)];
+  const { data, error } = await supabase
+    .from('weekly_kpi_selections')
+    .upsert(
+      {
+        partner,
+        week_start_date: weekOf,
+        kpi_template_id: pick.id,
+        label_snapshot: pick.baseline_action,
+        counter_value: {},
+      },
+      { onConflict: 'partner,week_start_date' }
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Seed a sample submitted scorecard for the test partner so Trace can
+ * walk through post-submit flows (read-only render, meeting view,
+ * summary view) without manually filling out a full form.
+ *
+ * Idempotent — upsert on (partner, week_of). Re-clicking overwrites.
+ * Builds a realistic kpi_results JSONB matching the test partner's
+ * mandatory + weekly KPI shape, plus structured_data for the KPIs
+ * that have key_fields seeded (per migration 020).
+ *
+ * Used by AdminTest's "Seed sample submitted scorecard" button.
+ */
+export async function seedTestSubmittedScorecard() {
+  const partner = 'test';
+  assertResettable(partner);
+  const weekOf = getMondayOf();
+  const nowIso = new Date().toISOString();
+
+  // Read templates including key_fields so we can populate structured_data.
+  const { data: templates, error: tErr } = await supabase
+    .from('kpi_templates')
+    .select('id, baseline_action, mandatory, conditional, partner_scope, countable, key_fields, reflection_prompt')
+    .in('partner_scope', ['theo', 'both']);
+  if (tErr) throw tErr;
+
+  const mandatoryTemplates = (templates ?? []).filter((t) => t.mandatory && !t.conditional);
+
+  // Find or create a weekly_kpi_selection for this week so we have a weekly choice.
+  let { data: weeklySel } = await supabase
+    .from('weekly_kpi_selections')
+    .select('*')
+    .eq('partner', partner)
+    .eq('week_start_date', weekOf)
+    .maybeSingle();
+  if (!weeklySel) {
+    weeklySel = await seedTestWeeklyKpiSelection();
+  }
+  const weeklyTpl = (templates ?? []).find((t) => t.id === weeklySel.kpi_template_id);
+
+  const composed = [...mandatoryTemplates, ...(weeklyTpl ? [weeklyTpl] : [])];
+
+  // Build a realistic kpi_results JSONB.
+  const kpi_results = {};
+  composed.forEach((tpl, i) => {
+    // Mix of yes/no/pending: 60% yes, 30% no, 10% pending.
+    let result = 'yes';
+    if (i % 7 === 5) result = 'pending';
+    else if (i % 5 === 4) result = 'no';
+
+    const entry = {
+      result,
+      reflection: `Sample reflection for ${tpl.baseline_action.slice(0, 60)}... — test data, walking through the flow.`,
+      label: tpl.baseline_action,
+    };
+
+    if (tpl.countable) {
+      entry.count = 5 + i;
+    }
+
+    if (result === 'pending') {
+      entry.pending_text = 'Sample follow-through commitment by Saturday — test data.';
+    }
+
+    // If template has key_fields, populate structured_data with realistic shape.
+    if (tpl.key_fields) {
+      entry.structured_data = sampleStructuredData(tpl.key_fields);
+    }
+
+    kpi_results[tpl.id] = entry;
+  });
+
+  const record = {
+    partner,
+    week_of: weekOf,
+    kpi_results,
+    committed_at: nowIso,
+    submitted_at: nowIso,
+    tasks_completed: 'Sample tasks completed this week. Test data.',
+    tasks_carried_over: 'Sample carry-over for next week. Test data.',
+    weekly_win: 'Sample weekly win. Test data.',
+    weekly_learning: 'Sample weekly learning. Test data.',
+    week_rating: 4,
+    growth_followup: {}, // test partner has no GROWTH_FOLLOWUP_FIELDS — empty is fine
+  };
+
+  const { data, error } = await supabase
+    .from('scorecards')
+    .upsert(record, { onConflict: 'partner,week_of' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// Helper: build realistic structured_data given a key_fields schema.
+function sampleStructuredData(schema) {
+  if (!schema || !schema.pattern) return {};
+  if (schema.pattern === 'count_noteworthy') {
+    return {
+      count: 8,
+      noteworthy: [
+        sampleRow(schema.rowFields ?? []),
+        sampleRow(schema.rowFields ?? []),
+      ],
+    };
+  }
+  if (schema.pattern === 'row_per_item') {
+    return {
+      count: 2,
+      rows: [
+        sampleRow(schema.rowFields ?? []),
+        sampleRow(schema.rowFields ?? []),
+      ],
+    };
+  }
+  if (schema.pattern === 'named_fields') {
+    const data = {};
+    (schema.fields ?? []).forEach((f) => {
+      data[f.key] = sampleField(f);
+    });
+    return data;
+  }
+  return {};
+}
+
+function sampleRow(fields) {
+  const row = {};
+  fields.forEach((f) => {
+    row[f.key] = sampleField(f);
+  });
+  return row;
+}
+
+function sampleField(f) {
+  if (f.type === 'number') return 5;
+  if (f.type === 'currency') return 2500;
+  if (f.type === 'yes_no') return 'yes';
+  if (f.type === 'row_list') {
+    return [sampleRow(f.rowFields ?? [])];
+  }
+  // text or textarea
+  const lbl = typeof f.label === 'string' ? f.label.slice(0, 40) : 'value';
+  return `Sample ${lbl} — test data`;
 }
