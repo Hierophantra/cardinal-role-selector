@@ -181,6 +181,10 @@ export default function Scorecard() {
             reflection: existing?.reflection ?? '',
             count: existing?.count ?? sel.counter_value?.[tpl.id] ?? 0,
             pending_text: existing?.pending_text ?? '',
+            // Wave 1 (migration 020): hydrate per-KPI structured_data alongside
+            // existing fields. Defaults to {} so the renderer always receives a
+            // controlled object. Templates with key_fields=NULL ignore this.
+            structured_data: existing?.structured_data ?? {},
           };
         });
         setKpiResults(seededResults);
@@ -247,7 +251,7 @@ export default function Scorecard() {
   function buildKpiResultsPayload(draft) {
     return Object.fromEntries(
       rows.map((tpl) => {
-        const entry = draft[tpl.id] ?? { result: null, reflection: '', count: 0, pending_text: '' };
+        const entry = draft[tpl.id] ?? { result: null, reflection: '', count: 0, pending_text: '', structured_data: {} };
         const payload = {
           result: entry.result ?? null,
           reflection: entry.reflection ?? '',
@@ -264,6 +268,12 @@ export default function Scorecard() {
           payload.pending_text = entry.pending_text ?? '';
         } else if ((entry.pending_text ?? '') !== '') {
           payload.pending_text = entry.pending_text;
+        }
+        // Wave 1 (migration 020): persist structured_data sub-key when the entry
+        // carries any value. Empty-object case omits the key so older scorecards
+        // without structured fields keep their existing payload shape.
+        if (entry.structured_data && typeof entry.structured_data === 'object' && Object.keys(entry.structured_data).length > 0) {
+          payload.structured_data = entry.structured_data;
         }
         return [tpl.id, payload];
       })
@@ -346,7 +356,7 @@ export default function Scorecard() {
     // PRESERVED on toggle (Q1 strategy a) so SaturdayRecap can detect
     // yes-conversion on the resulting persisted row.
     if (weekClosed) return;
-    const current = kpiResults[templateId] ?? { result: null, reflection: '', count: 0, pending_text: '' };
+    const current = kpiResults[templateId] ?? { result: null, reflection: '', count: 0, pending_text: '', structured_data: {} };
     const next = {
       ...kpiResults,
       [templateId]: {
@@ -354,6 +364,7 @@ export default function Scorecard() {
         reflection: current.reflection ?? '',
         count: current.count ?? 0,
         pending_text: current.pending_text ?? '',
+        structured_data: current.structured_data ?? {},
       },
     };
     setKpiResults(next);
@@ -368,6 +379,7 @@ export default function Scorecard() {
         reflection: text,
         count: prev[templateId]?.count ?? 0,
         pending_text: prev[templateId]?.pending_text ?? '',
+        structured_data: prev[templateId]?.structured_data ?? {},
       },
     }));
   }
@@ -380,6 +392,7 @@ export default function Scorecard() {
         reflection: prev[templateId]?.reflection ?? '',
         count: prev[templateId]?.count ?? 0,
         pending_text: text,
+        structured_data: prev[templateId]?.structured_data ?? {},
       },
     }));
   }
@@ -393,6 +406,24 @@ export default function Scorecard() {
         reflection: prev[templateId]?.reflection ?? '',
         count: Number.isFinite(numeric) ? numeric : 0,
         pending_text: prev[templateId]?.pending_text ?? '',
+        structured_data: prev[templateId]?.structured_data ?? {},
+      },
+    }));
+  }
+
+  // Wave 1 (migration 020): mutator for the per-KPI structured_data block.
+  // The renderer (StructuredFieldsBlock) calls this with the full next-shape
+  // structured_data object — same pattern as setReflectionLocal. Persistence
+  // is via persistField onBlur (no debounce; matches reflection / count).
+  function setStructuredDataLocal(templateId, structuredData) {
+    setKpiResults((prev) => ({
+      ...prev,
+      [templateId]: {
+        result: prev[templateId]?.result ?? null,
+        reflection: prev[templateId]?.reflection ?? '',
+        count: prev[templateId]?.count ?? 0,
+        pending_text: prev[templateId]?.pending_text ?? '',
+        structured_data: structuredData ?? {},
       },
     }));
   }
@@ -891,6 +922,21 @@ export default function Scorecard() {
                       </div>
                     )}
 
+                    {/* Wave 1 (migration 020): per-KPI structured input block. Mounted
+                        only when tpl.key_fields !== null. Sits ABOVE the reflection
+                        textarea so structured evidence is captured first; the textarea
+                        below remains for variance / freeform commentary. */}
+                    {tpl.key_fields && (
+                      <StructuredFieldsBlock
+                        schema={tpl.key_fields}
+                        data={entry.structured_data ?? {}}
+                        weekOf={currentWeekOf}
+                        disabled={bodyDisabled}
+                        onChange={(next) => setStructuredDataLocal(tpl.id, next)}
+                        onBlur={persistField}
+                      />
+                    )}
+
                     <div className="scorecard-reflection" style={{ marginTop: 12 }}>
                       <label className="scorecard-reflection-label">{SCORECARD_COPY.reflectionLabel}</label>
                       {/* UAT 2026-05-04: per-KPI reflection prompt from migration 015.
@@ -1225,6 +1271,460 @@ function MandatoryGrowthFollowupForm({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Wave 1 (migration 020): StructuredFieldsBlock — per-KPI structured inputs.
+//
+// Schema-driven renderer that dispatches on schema.pattern:
+//   - 'count_noteworthy' → integer count + optional curated noteworthy[] rows
+//   - 'row_per_item'     → integer count + exactly N row entries (one per item)
+//   - 'named_fields'     → flat form of named fields (with optional autoPeriod)
+//
+// Field types: number | currency | text | textarea | yes_no | row_list.
+// row_list is only used INSIDE named_fields (e.g. major_expenses on the
+// Friday financial report). Nested row_list inside row_per_item / count_noteworthy
+// is not supported in v1.
+//
+// All structured data flows up via the onChange(next) callback with the full
+// next-shape object; onBlur fires the parent persistField. Empty data is
+// the default; the parent omits structured_data from the kpi_results payload
+// when no fields have been touched.
+// --------------------------------------------------------------------------
+
+function StructuredFieldsBlock({ schema, data, weekOf, disabled, onChange, onBlur }) {
+  if (!schema || typeof schema !== 'object') return null;
+  const pattern = schema.pattern;
+  if (pattern === 'count_noteworthy') {
+    return (
+      <CountNoteworthyBlock
+        schema={schema}
+        data={data}
+        disabled={disabled}
+        onChange={onChange}
+        onBlur={onBlur}
+      />
+    );
+  }
+  if (pattern === 'row_per_item') {
+    return (
+      <RowPerItemBlock
+        schema={schema}
+        data={data}
+        disabled={disabled}
+        onChange={onChange}
+        onBlur={onBlur}
+      />
+    );
+  }
+  if (pattern === 'named_fields') {
+    return (
+      <NamedFieldsBlock
+        schema={schema}
+        data={data}
+        weekOf={weekOf}
+        disabled={disabled}
+        onChange={onChange}
+        onBlur={onBlur}
+      />
+    );
+  }
+  return null;
+}
+
+// Format the auto-period range for named_fields with autoPeriod=true.
+// Returns "Apr 27 – May 4" — prior Mon to current week_of Mon.
+function formatAutoPeriod(weekOf) {
+  if (!weekOf) return '';
+  const [y, m, d] = weekOf.split('-').map(Number);
+  const end = new Date(y, m - 1, d);
+  const start = new Date(y, m - 1, d - 7);
+  const fmt = (dt) => dt.toLocaleString(undefined, { month: 'short', day: 'numeric' });
+  return `${fmt(start)} – ${fmt(end)}`;
+}
+
+function CountNoteworthyBlock({ schema, data, disabled, onChange, onBlur }) {
+  const count = Number.isFinite(Number(data?.count)) ? Number(data.count) : 0;
+  const noteworthy = Array.isArray(data?.noteworthy) ? data.noteworthy : [];
+  const rowFields = Array.isArray(schema.rowFields) ? schema.rowFields : [];
+
+  function setCount(value) {
+    const numeric = value === '' ? 0 : Math.max(0, Math.floor(Number(value)));
+    onChange({ ...(data ?? {}), count: Number.isFinite(numeric) ? numeric : 0, noteworthy });
+  }
+
+  function setRow(idx, key, value) {
+    const next = noteworthy.map((r, i) => (i === idx ? { ...r, [key]: value } : r));
+    onChange({ ...(data ?? {}), count, noteworthy: next });
+  }
+
+  function addRow() {
+    const blank = Object.fromEntries(rowFields.map((f) => [f.key, '']));
+    onChange({ ...(data ?? {}), count, noteworthy: [...noteworthy, blank] });
+  }
+
+  function removeRow(idx) {
+    const next = noteworthy.filter((_, i) => i !== idx);
+    onChange({ ...(data ?? {}), count, noteworthy: next });
+  }
+
+  return (
+    <div className="scorecard-structured-fields">
+      <div className="scorecard-structured-field">
+        <label className="scorecard-reflection-label">{schema.countLabel}</label>
+        {disabled ? (
+          <span>{count}</span>
+        ) : (
+          <input
+            type="number"
+            min="0"
+            className="scorecard-count-input"
+            value={count}
+            onChange={(e) => setCount(e.target.value)}
+            onBlur={onBlur}
+          />
+        )}
+      </div>
+      <div className="scorecard-structured-noteworthy">
+        <div className="scorecard-structured-noteworthy__label">{schema.noteworthyLabel}</div>
+        {noteworthy.map((row, idx) => (
+          <div key={idx} className="scorecard-structured-row">
+            <div className="scorecard-structured-row__fields">
+              {rowFields.map((f) => (
+                <StructuredFieldInput
+                  key={f.key}
+                  field={f}
+                  value={row[f.key] ?? ''}
+                  disabled={disabled}
+                  onChange={(v) => setRow(idx, f.key, v)}
+                  onBlur={onBlur}
+                />
+              ))}
+            </div>
+            {!disabled && (
+              <button
+                type="button"
+                className="btn-ghost scorecard-structured-row__remove"
+                onClick={() => removeRow(idx)}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        ))}
+        {!disabled && (
+          <button
+            type="button"
+            className="btn-ghost scorecard-structured-add"
+            onClick={addRow}
+          >
+            + Add noteworthy
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RowPerItemBlock({ schema, data, disabled, onChange, onBlur }) {
+  const count = Number.isFinite(Number(data?.count)) ? Number(data.count) : 0;
+  const rows = Array.isArray(data?.rows) ? data.rows : [];
+  const rowFields = Array.isArray(schema.rowFields) ? schema.rowFields : [];
+
+  function setCount(rawValue) {
+    const numeric = rawValue === '' ? 0 : Math.max(0, Math.floor(Number(rawValue)));
+    const next = Number.isFinite(numeric) ? numeric : 0;
+    if (next === rows.length) {
+      onChange({ ...(data ?? {}), count: next, rows });
+      return;
+    }
+    if (next > rows.length) {
+      // Grow rows[] with blank entries.
+      const blank = Object.fromEntries(rowFields.map((f) => [f.key, '']));
+      const grown = [...rows, ...Array.from({ length: next - rows.length }, () => ({ ...blank }))];
+      onChange({ ...(data ?? {}), count: next, rows: grown });
+      return;
+    }
+    // Shrinking: drop from the end. Confirm if any of the dropped rows have data;
+    // otherwise drop silently.
+    const dropping = rows.slice(next);
+    const droppingHasData = dropping.some((r) =>
+      Object.values(r ?? {}).some((v) => (typeof v === 'string' ? v.trim() : v) !== '' && v !== null && v !== undefined)
+    );
+    if (droppingHasData && typeof window !== 'undefined') {
+      const ok = window.confirm(
+        `Dropping ${dropping.length} row(s) with data. Continue?`
+      );
+      if (!ok) return;
+    }
+    onChange({ ...(data ?? {}), count: next, rows: rows.slice(0, next) });
+  }
+
+  function setRow(idx, key, value) {
+    const next = rows.map((r, i) => (i === idx ? { ...r, [key]: value } : r));
+    onChange({ ...(data ?? {}), count, rows: next });
+  }
+
+  return (
+    <div className="scorecard-structured-fields">
+      <div className="scorecard-structured-field">
+        <label className="scorecard-reflection-label">{schema.countLabel}</label>
+        {disabled ? (
+          <span>{count}</span>
+        ) : (
+          <input
+            type="number"
+            min="0"
+            className="scorecard-count-input"
+            value={count}
+            onChange={(e) => setCount(e.target.value)}
+            onBlur={onBlur}
+          />
+        )}
+      </div>
+      {rows.length > 0 && (
+        <div className="scorecard-structured-noteworthy">
+          {schema.rowLabel && (
+            <div className="scorecard-structured-noteworthy__label">{schema.rowLabel}</div>
+          )}
+          {rows.map((row, idx) => (
+            <div key={idx} className="scorecard-structured-row">
+              <div className="scorecard-structured-row__fields">
+                {rowFields.map((f) => (
+                  <StructuredFieldInput
+                    key={f.key}
+                    field={f}
+                    value={row[f.key] ?? ''}
+                    disabled={disabled}
+                    onChange={(v) => setRow(idx, f.key, v)}
+                    onBlur={onBlur}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NamedFieldsBlock({ schema, data, weekOf, disabled, onChange, onBlur }) {
+  const fields = Array.isArray(schema.fields) ? schema.fields : [];
+
+  function setField(key, value) {
+    onChange({ ...(data ?? {}), [key]: value });
+  }
+
+  return (
+    <div className="scorecard-structured-fields">
+      {schema.autoPeriod && (
+        <div className="scorecard-structured-period">
+          {schema.periodLabel ? `${schema.periodLabel}: ` : 'Reporting period: '}
+          {formatAutoPeriod(weekOf)}
+        </div>
+      )}
+      {fields.map((f) => (
+        <NamedFieldInput
+          key={f.key}
+          field={f}
+          value={data?.[f.key]}
+          disabled={disabled}
+          onChange={(v) => setField(f.key, v)}
+          onBlur={onBlur}
+        />
+      ))}
+    </div>
+  );
+}
+
+function NamedFieldInput({ field, value, disabled, onChange, onBlur }) {
+  // row_list is the nested-rows variant — used inside named_fields (e.g.
+  // major_expenses on the Friday financial report). Each child has its own
+  // rowFields; the renderer mirrors the count_noteworthy add/remove pattern
+  // but without a count input (just an Add button + per-row Remove).
+  if (field.type === 'row_list') {
+    const rows = Array.isArray(value) ? value : [];
+    const rowFields = Array.isArray(field.rowFields) ? field.rowFields : [];
+
+    function setRow(idx, key, v) {
+      const next = rows.map((r, i) => (i === idx ? { ...r, [key]: v } : r));
+      onChange(next);
+    }
+    function addRow() {
+      const blank = Object.fromEntries(rowFields.map((f) => [f.key, '']));
+      onChange([...rows, blank]);
+    }
+    function removeRow(idx) {
+      onChange(rows.filter((_, i) => i !== idx));
+    }
+
+    return (
+      <div className="scorecard-structured-field scorecard-structured-field--row-list">
+        <label className="scorecard-reflection-label">{field.label}</label>
+        {rows.map((row, idx) => (
+          <div key={idx} className="scorecard-structured-row">
+            <div className="scorecard-structured-row__fields">
+              {rowFields.map((rf) => (
+                <StructuredFieldInput
+                  key={rf.key}
+                  field={rf}
+                  value={row[rf.key] ?? ''}
+                  disabled={disabled}
+                  onChange={(v) => setRow(idx, rf.key, v)}
+                  onBlur={onBlur}
+                />
+              ))}
+            </div>
+            {!disabled && (
+              <button
+                type="button"
+                className="btn-ghost scorecard-structured-row__remove"
+                onClick={() => removeRow(idx)}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        ))}
+        {!disabled && (
+          <button
+            type="button"
+            className="btn-ghost scorecard-structured-add"
+            onClick={addRow}
+          >
+            + Add row
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="scorecard-structured-field">
+      <label className="scorecard-reflection-label">{field.label}</label>
+      <StructuredFieldInput
+        field={field}
+        value={value ?? ''}
+        disabled={disabled}
+        onChange={onChange}
+        onBlur={onBlur}
+      />
+    </div>
+  );
+}
+
+// Single-input renderer for primitive field types. Used by all three patterns
+// inside their per-row or per-field loops. row_list is handled at the parent
+// (NamedFieldInput) since it requires its own rowFields scope.
+function StructuredFieldInput({ field, value, disabled, onChange, onBlur }) {
+  const inputId = `structured-${field.key}-${Math.random().toString(36).slice(2, 8)}`;
+
+  if (disabled) {
+    if (field.type === 'yes_no') {
+      const label = value === 'yes' ? 'Yes' : value === 'no' ? 'No' : '—';
+      return (
+        <div className="scorecard-structured-fieldlet">
+          <span className="scorecard-structured-fieldlet__label">{field.label}</span>
+          <span className="scorecard-structured-fieldlet__readonly">{label}</span>
+        </div>
+      );
+    }
+    const display = value === '' || value === null || value === undefined ? '—' : String(value);
+    const prefix = field.type === 'currency' && display !== '—' ? '$' : '';
+    return (
+      <div className="scorecard-structured-fieldlet">
+        <span className="scorecard-structured-fieldlet__label">{field.label}</span>
+        <span className="scorecard-structured-fieldlet__readonly">{prefix}{display}</span>
+      </div>
+    );
+  }
+
+  if (field.type === 'yes_no') {
+    return (
+      <div className="scorecard-structured-fieldlet">
+        <span className="scorecard-structured-fieldlet__label">{field.label}</span>
+        <div className="scorecard-yn-row scorecard-structured-yn-row">
+          <button
+            type="button"
+            className={`scorecard-yn-btn yes${value === 'yes' ? ' active' : ''}`}
+            onClick={() => {
+              onChange('yes');
+              if (onBlur) onBlur();
+            }}
+          >
+            Yes
+          </button>
+          <button
+            type="button"
+            className={`scorecard-yn-btn no${value === 'no' ? ' active' : ''}`}
+            onClick={() => {
+              onChange('no');
+              if (onBlur) onBlur();
+            }}
+          >
+            No
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (field.type === 'textarea') {
+    return (
+      <div className="scorecard-structured-fieldlet">
+        <span className="scorecard-structured-fieldlet__label">{field.label}</span>
+        <textarea
+          id={inputId}
+          className="scorecard-structured-fieldlet__input"
+          rows={3}
+          value={value ?? ''}
+          placeholder={field.placeholder ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+        />
+      </div>
+    );
+  }
+
+  if (field.type === 'number' || field.type === 'currency') {
+    const isCurrency = field.type === 'currency';
+    return (
+      <div className="scorecard-structured-fieldlet">
+        <span className="scorecard-structured-fieldlet__label">{field.label}</span>
+        <div className="scorecard-structured-fieldlet__numeric">
+          {isCurrency && <span className="scorecard-structured-fieldlet__prefix">$</span>}
+          <input
+            id={inputId}
+            type="number"
+            step={isCurrency ? '0.01' : '1'}
+            min="0"
+            className="scorecard-structured-fieldlet__input"
+            value={value ?? ''}
+            placeholder={field.placeholder ?? ''}
+            onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
+            onBlur={onBlur}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Default: text
+  return (
+    <div className="scorecard-structured-fieldlet">
+      <span className="scorecard-structured-fieldlet__label">{field.label}</span>
+      <input
+        id={inputId}
+        type="text"
+        className="scorecard-structured-fieldlet__input"
+        value={value ?? ''}
+        placeholder={field.placeholder ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+      />
     </div>
   );
 }
