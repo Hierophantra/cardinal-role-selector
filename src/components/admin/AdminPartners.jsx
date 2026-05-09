@@ -6,6 +6,7 @@ import {
   fetchGrowthPriorities,
   fetchScorecards,
   fetchWeeklyKpiSelectionHistory,
+  fetchKpiTemplates,
   resetPartnerSubmission,
   resetPartnerKpiSelections,
   resetPartnerWeeklyKpiSelections,
@@ -14,8 +15,15 @@ import {
   updateGrowthPriorityStatus,
   updateGrowthPriorityAdminNote,
 } from '../../lib/supabase.js';
-import { PARTNER_DISPLAY, GROWTH_STATUS_COPY, ADMIN_GROWTH_COPY, ADMIN_ACCOUNTABILITY_COPY } from '../../data/content.js';
+import {
+  PARTNER_DISPLAY,
+  GROWTH_STATUS_COPY,
+  ADMIN_GROWTH_COPY,
+  ADMIN_ACCOUNTABILITY_COPY,
+  ADMIN_SUBSTANCE_COPY,
+} from '../../data/content.js';
 import { effectiveResult, getMondayOf, formatWeekRange } from '../../lib/week.js';
+import { computeRecentSubstance } from '../../lib/substance.js';
 
 const MANAGED = ['theo', 'jerry'];
 
@@ -69,6 +77,11 @@ function PartnerSection({ partner }) {
   const [kpis, setKpis] = useState([]);
   const [growth, setGrowth] = useState([]);
   const [scorecards, setScorecards] = useState([]);
+  // Wave 3 Tier 4: kpi_templates feeds computeRecentSubstance so the substance
+  // card can compute structured-field completion percentages against the
+  // template schemas. Templates are stable across the page lifetime — fetched
+  // once per partner section.
+  const [kpiTemplates, setKpiTemplates] = useState([]);
   // Weekly KPI selection history — surfaces "selected on" timestamps per week.
   // Reset semantics are inherited from the (partner, week_start_date) composite
   // PK: each week's row has its own created_at, so a fresh pick mid-week
@@ -92,18 +105,20 @@ function PartnerSection({ partner }) {
     setLoading(true);
     setError('');
     try {
-      const [sub, sels, gps, cards, weekly] = await Promise.all([
+      const [sub, sels, gps, cards, weekly, templates] = await Promise.all([
         fetchSubmission(partner),
         fetchKpiSelections(partner),
         fetchGrowthPriorities(partner),
         fetchScorecards(partner),
         fetchWeeklyKpiSelectionHistory(partner),
+        fetchKpiTemplates(),
       ]);
       setSubmission(sub);
       setKpis(sels);
       setGrowth(gps);
       setScorecards(cards);
       setWeeklyHistory(weekly);
+      setKpiTemplates(templates);
     } catch (err) {
       console.error(err);
       setError('Failed to load state.');
@@ -429,6 +444,12 @@ function PartnerSection({ partner }) {
             })()}
           </div>
 
+          {/* Wave 3 Tier 4: substance trend card. Reflection density +
+              structured-field completion across the last 4 submissions
+              with a week-over-week trend arrow. Reads from already-fetched
+              scorecards + templates — no additional Supabase calls. */}
+          <SubstanceTrendCard scorecards={scorecards} templates={kpiTemplates} />
+
           <div style={{ marginTop: 16 }}>
             <div className="eyebrow" style={{ marginBottom: 8 }}>Reset Controls</div>
             <p className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
@@ -506,6 +527,65 @@ function PartnerSection({ partner }) {
             )}
           </div>
         </>
+      )}
+    </div>
+  );
+}
+
+// Wave 3 (UAT 2026-05-09) — Tier 4: per-partner substance trend card.
+// Renders the last 4 submitted scorecards with reflection density,
+// structured-field completion %, and a trend arrow vs the prior submission.
+// Empty state when no submissions yet.
+function SubstanceTrendCard({ scorecards, templates }) {
+  const rows = computeRecentSubstance(scorecards, templates, 4);
+  const TREND = {
+    up: ADMIN_SUBSTANCE_COPY.trendUp,
+    down: ADMIN_SUBSTANCE_COPY.trendDown,
+    flat: ADMIN_SUBSTANCE_COPY.trendFlat,
+  };
+  const TREND_CLASS = {
+    up: 'submission-substance__trend--up',
+    down: 'submission-substance__trend--down',
+    flat: 'submission-substance__trend--flat',
+  };
+  return (
+    <div className="submission-substance" style={{ marginTop: 16 }}>
+      <div className="eyebrow" style={{ marginBottom: 4 }}>
+        {ADMIN_SUBSTANCE_COPY.eyebrow}
+      </div>
+      <p className="submission-substance__subtext">
+        {ADMIN_SUBSTANCE_COPY.subtext}
+      </p>
+      {rows.length === 0 ? (
+        <p className="muted" style={{ fontSize: 13 }}>
+          {ADMIN_SUBSTANCE_COPY.empty}
+        </p>
+      ) : (
+        <ul className="submission-substance__list">
+          {rows.map((row) => (
+            <li key={row.week_of} className="submission-substance__row">
+              <div className="submission-substance__week">
+                {formatWeekRange(row.week_of)}
+              </div>
+              <div className="submission-substance__metrics">
+                <span className="submission-substance__metric">
+                  {row.total_reflection_words} {ADMIN_SUBSTANCE_COPY.wordsLabel}
+                </span>
+                <span className="submission-substance__metric">
+                  {row.structured_field_completion_pct}% {ADMIN_SUBSTANCE_COPY.completionLabel}
+                </span>
+                {row.trend && (
+                  <span
+                    className={`submission-substance__trend ${TREND_CLASS[row.trend] ?? ''}`}
+                    aria-label={`Trend ${row.trend}`}
+                  >
+                    {TREND[row.trend]}
+                  </span>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
