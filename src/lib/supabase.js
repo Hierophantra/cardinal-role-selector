@@ -54,7 +54,10 @@ export async function fetchKpiSelections(partner) {
     // label_snapshot column. mandatory + countable kept for hub gating.
     // UAT 2026-05-04: pull reflection_prompt (migration 015) so consumers can render
     // per-KPI helper text above the reflection textarea without a second fetch.
-    .select('*, kpi_templates(mandatory, countable, baseline_action, reflection_prompt)')
+    // Wave 1 (migration 020): pull key_fields so consumers can render the per-KPI
+    // structured-input schema alongside the reflection textarea. Templates with
+    // key_fields=NULL render the existing reflection-only path.
+    .select('*, kpi_templates(mandatory, countable, baseline_action, reflection_prompt, key_fields)')
     .eq('partner', partner)
     .order('selected_at', { ascending: true });
   if (error) throw error;
