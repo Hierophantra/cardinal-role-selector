@@ -1493,8 +1493,49 @@ export default function Scorecard() {
             {saveError && (
               <p className="muted" style={{ color: 'var(--red)', textAlign: 'center', marginTop: 8 }}>{saveError}</p>
             )}
-            {submitError && (
-              <p className="muted" style={{ color: 'var(--miss)', textAlign: 'center', marginTop: 8 }}>{submitError}</p>
+            {/* Phase 19 D-04: inline submit checklist. Replaces the prior
+                single-line submitError paragraph when validation gaps exist.
+                Falls back to the legacy submitError <p> only when no gaps
+                are detected (e.g., generic submitErrorDb after a network
+                failure inside performSubmit). */}
+            {!weekClosed && !isSubmitted ? (() => {
+              const gaps = getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner);
+              if (gaps.length === 0) {
+                return submitError ? (
+                  <p className="muted" style={{ color: 'var(--miss)', textAlign: 'center', marginTop: 8 }}>
+                    {submitError}
+                  </p>
+                ) : null;
+              }
+              return (
+                <div className="scorecard-submit-checklist" aria-live="polite">
+                  <p className="scorecard-submit-checklist-eyebrow">
+                    {SCORECARD_COPY.submitChecklistEyebrow}
+                  </p>
+                  <ul>
+                    {gaps.map((gap) => (
+                      <li key={gap.anchor}>
+                        <button
+                          type="button"
+                          className="scorecard-submit-checklist-item"
+                          onClick={() => {
+                            const el = document.getElementById(gap.anchor);
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }}
+                        >
+                          {gap.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })() : (
+              submitError && (
+                <p className="muted" style={{ color: 'var(--miss)', textAlign: 'center', marginTop: 8 }}>
+                  {submitError}
+                </p>
+              )
             )}
 
             {renderHistory()}
@@ -1507,21 +1548,30 @@ export default function Scorecard() {
           but auto-save handles every change silently — no "Resubmit" CTA so the partner
           isn't tempted into thinking the auto-saved edits aren't already persisted.
           After Saturday close the bar disappears regardless of submit state. */}
-      {!weekClosed && !isSubmitted && (
-        <div className="scorecard-sticky-bar">
-          <span className="muted" style={{ fontSize: 12, fontStyle: 'italic' }}>
-            {SCORECARD_COPY.stickyNote}
-          </span>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
-            {SCORECARD_COPY.submitCta}
-          </button>
-        </div>
-      )}
+      {!weekClosed && !isSubmitted && (() => {
+        // Phase 19 D-04: derive gaps once for the sticky-bar disabled binding.
+        // Note: computed here AND in the inline checklist render above (single-
+        // page form; render cost is negligible). If hot-path optimization is
+        // needed later, lift gaps to a useMemo keyed on
+        // (rows, kpiResults, weekRating, growthFollowup, partner).
+        const gaps = getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner);
+        return (
+          <div className="scorecard-sticky-bar">
+            <span className="muted" style={{ fontSize: 12, fontStyle: 'italic' }}>
+              {SCORECARD_COPY.stickyNote}
+            </span>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleSubmit}
+              disabled={submitting || gaps.length > 0}
+              title={gaps.length > 0 ? SCORECARD_COPY.submitChecklistEyebrow : undefined}
+            >
+              {SCORECARD_COPY.submitCta}
+            </button>
+          </div>
+        );
+      })()}
 
       {/* UAT C5: submit confirmation overlay — rendered above the sticky bar. */}
       {confirmingSubmit && (
