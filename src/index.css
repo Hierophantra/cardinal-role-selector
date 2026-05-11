@@ -3361,7 +3361,7 @@ textarea { resize: vertical; min-height: 120px; }
 }
 
 .scorecard-row-timestamp--updated::before {
-  content: "‚2";
+  content: "ï¿½2";
   margin-right: 10px;
   margin-left: -8px;
   opacity: 0.5;
@@ -3474,4 +3474,41 @@ html[data-theme="light"] {
    extra-bright surface + dark shadow looks misplaced. Soften the shadow. */
 [data-theme="light"] .login-card--light {
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.10), 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* ===========================================================================
+   Phase 19 follow-up: subtle Cardinal logo watermark.
+   Fixed-position pseudo on <body>, large but very low-opacity so it reads as
+   a brand wash, not an obstruction. Different blend mode per theme so the
+   logo composites with whatever's below (gradient + bg color) instead of
+   stamping over the foreground.
+   ========================================================================= */
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url('/logo.png');
+  background-repeat: no-repeat;
+  /* Off-center bottom-right anchor so the watermark reads as a corner wash
+     and doesn't sit fully behind centered login/hub cards. Large size so it
+     spills off the edge â€” only a portion is visible at any time, like a
+     brand stamp behind the page. */
+  background-position: 92% 92%;
+  background-size: min(95vmin, 980px) auto;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.05;
+  mix-blend-mode: lighten;
+}
+
+[data-theme="light"] body::before {
+  opacity: 0.09;
+  mix-blend-mode: multiply;
+}
+
+/* Ensure the React tree stacks above the watermark. */
+#root {
+  position: relative;
+  z-index: 1;
 }
