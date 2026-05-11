@@ -150,6 +150,43 @@ function structuredCompletion(schema, data) {
             if (isPopulatedPrimitive(sf, row?.[sf.key])) populated += 1;
           }
         }
+      } else if (f.type === 'multi_choice') {
+        // Phase 19 D-03 (Wave 1, plan 19-02): multi_choice completion tally.
+        // Storage contract (matches Wave 0 validator):
+        //   single_select: data[fieldKey] = '<value>'
+        //                  data[`${fieldKey}__${value}`] = {...per_selection_fields}
+        //   multi-select:  data[fieldKey] = [{value, ...per_selection_fields}, ...]
+        // Tally:
+        //   +1 expected for the multi_choice field itself (selection presence)
+        //   +1 actual when at least one selection exists
+        //   +1 expected per (selection × per_selection_field)
+        //   +1 actual when each per_selection_field has a populated value
+        // per_selection_fields scale with selections; no selection ⇒ no
+        // per-field contribution (the unfilled selection slot is the gap).
+        const isSingle = !!f.single_select;
+        const value = data?.[f.key];
+        const perFields = Array.isArray(f.per_selection_fields) ? f.per_selection_fields : [];
+
+        // Presence slot — every multi_choice field contributes 1 expected.
+        expected += 1;
+        const hasSelection = isSingle
+          ? (typeof value === 'string' && value.length > 0)
+          : (Array.isArray(value) && value.length > 0);
+        if (hasSelection) populated += 1;
+
+        // Per-selection per-field slots.
+        const selections = isSingle
+          ? (hasSelection ? [value] : [])
+          : (Array.isArray(value) ? value.map((s) => s?.value).filter(Boolean) : []);
+        for (const sv of selections) {
+          const sub = isSingle
+            ? (data?.[`${f.key}__${sv}`] ?? {})
+            : (Array.isArray(value) ? (value.find((s) => s?.value === sv) ?? {}) : {});
+          for (const pf of perFields) {
+            expected += 1;
+            if (isPopulatedPrimitive(pf, sub?.[pf.key])) populated += 1;
+          }
+        }
       } else {
         expected += 1;
         if (isPopulatedPrimitive(f, data?.[f.key])) populated += 1;
