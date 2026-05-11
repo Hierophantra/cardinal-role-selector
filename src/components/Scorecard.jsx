@@ -2362,9 +2362,12 @@ function NamedFieldInput({ field, value, disabled, templateId, parentData, paren
     );
   }
 
+  // Phase 19 follow-up: drop the outer label here — StructuredFieldInput emits
+  // its own `.scorecard-structured-fieldlet__label` internally. Keeping both
+  // produced a visible duplicate (e.g. Monday "One actionable idea…" appeared
+  // twice on the actionable_idea card).
   return (
     <div className="scorecard-structured-field">
-      <label className="scorecard-reflection-label">{field.label}</label>
       <StructuredFieldInput
         field={field}
         value={value ?? ''}
