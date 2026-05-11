@@ -1840,24 +1840,38 @@ function CountNoteworthyBlock({ schema, data, disabled, templateId, onChange, on
   const noteworthy = Array.isArray(data?.noteworthy) ? data.noteworthy : [];
   const rowFields = Array.isArray(schema.rowFields) ? schema.rowFields : [];
 
+  // hide_count empty-state seed: when the count input is hidden and the user
+  // has not yet typed anything, render N synthetic blank rows so input boxes
+  // are visible. Default seed is 2 (matches the "two noteworthy boxes already"
+  // CONTEXT specific for outreach + BD actions). First keystroke in a synthetic
+  // row promotes it to real state via setRow.
+  const seedRows = schema.hide_count ? Math.max(schema.default_rows ?? 2, 1) : 0;
+  const displayNoteworthy = schema.hide_count && noteworthy.length === 0
+    ? Array.from({ length: seedRows }, () => Object.fromEntries(rowFields.map((f) => [f.key, ''])))
+    : noteworthy;
+
   function setCount(value) {
     const numeric = value === '' ? 0 : Math.max(0, Math.floor(Number(value)));
     onChange({ ...(data ?? {}), count: Number.isFinite(numeric) ? numeric : 0, noteworthy });
   }
 
   function setRow(idx, key, value) {
-    const next = noteworthy.map((r, i) => (i === idx ? { ...r, [key]: value } : r));
-    onChange({ ...(data ?? {}), count, noteworthy: next });
+    const base = noteworthy.length === 0 ? displayNoteworthy : noteworthy;
+    const next = base.map((r, i) => (i === idx ? { ...r, [key]: value } : r));
+    onChange({ ...(data ?? {}), count: schema.hide_count ? next.length : count, noteworthy: next });
   }
 
   function addRow() {
     const blank = Object.fromEntries(rowFields.map((f) => [f.key, '']));
-    onChange({ ...(data ?? {}), count, noteworthy: [...noteworthy, blank] });
+    const base = noteworthy.length === 0 ? displayNoteworthy : noteworthy;
+    const next = [...base, blank];
+    onChange({ ...(data ?? {}), count: schema.hide_count ? next.length : count, noteworthy: next });
   }
 
   function removeRow(idx) {
-    const next = noteworthy.filter((_, i) => i !== idx);
-    onChange({ ...(data ?? {}), count, noteworthy: next });
+    const base = noteworthy.length === 0 ? displayNoteworthy : noteworthy;
+    const next = base.filter((_, i) => i !== idx);
+    onChange({ ...(data ?? {}), count: schema.hide_count ? next.length : count, noteworthy: next });
   }
 
   return (
@@ -1883,7 +1897,7 @@ function CountNoteworthyBlock({ schema, data, disabled, templateId, onChange, on
       )}
       <div className="scorecard-structured-noteworthy">
         <div className="scorecard-structured-noteworthy__label">{schema.noteworthyLabel}</div>
-        {noteworthy.map((row, idx) => (
+        {displayNoteworthy.map((row, idx) => (
           <div key={idx} className="scorecard-structured-row">
             <div className="scorecard-structured-row__fields">
               {rowFields.map((f) => (
@@ -1930,6 +1944,15 @@ function RowPerItemBlock({ schema, data, disabled, templateId, onChange, onBlur 
   const rows = Array.isArray(data?.rows) ? data.rows : [];
   const rowFields = Array.isArray(schema.rowFields) ? schema.rowFields : [];
 
+  // hide_count empty-state seed: when the count input is hidden and the user
+  // has not yet typed anything, render N synthetic blank rows so input boxes
+  // are visible. Seed defaults to max(min_rows, 1). First keystroke in a
+  // synthetic row promotes it to real state via setRow.
+  const seedRows = schema.hide_count ? Math.max(schema.min_rows ?? 1, 1) : 0;
+  const displayRows = schema.hide_count && rows.length === 0
+    ? Array.from({ length: seedRows }, () => Object.fromEntries(rowFields.map((f) => [f.key, ''])))
+    : rows;
+
   function setCount(rawValue) {
     const numeric = rawValue === '' ? 0 : Math.max(0, Math.floor(Number(rawValue)));
     const next = Number.isFinite(numeric) ? numeric : 0;
@@ -1960,8 +1983,22 @@ function RowPerItemBlock({ schema, data, disabled, templateId, onChange, onBlur 
   }
 
   function setRow(idx, key, value) {
-    const next = rows.map((r, i) => (i === idx ? { ...r, [key]: value } : r));
-    onChange({ ...(data ?? {}), count, rows: next });
+    const base = rows.length === 0 ? displayRows : rows;
+    const next = base.map((r, i) => (i === idx ? { ...r, [key]: value } : r));
+    onChange({ ...(data ?? {}), count: schema.hide_count ? next.length : count, rows: next });
+  }
+
+  function addRow() {
+    const blank = Object.fromEntries(rowFields.map((f) => [f.key, '']));
+    const base = rows.length === 0 ? displayRows : rows;
+    const next = [...base, blank];
+    onChange({ ...(data ?? {}), count: schema.hide_count ? next.length : count, rows: next });
+  }
+
+  function removeRow(idx) {
+    const base = rows.length === 0 ? displayRows : rows;
+    const next = base.filter((_, i) => i !== idx);
+    onChange({ ...(data ?? {}), count: schema.hide_count ? next.length : count, rows: next });
   }
 
   return (
@@ -1985,32 +2022,48 @@ function RowPerItemBlock({ schema, data, disabled, templateId, onChange, onBlur 
           )}
         </div>
       )}
-      {rows.length > 0 && (
-        <div className="scorecard-structured-noteworthy">
-          {schema.rowLabel && (
-            <div className="scorecard-structured-noteworthy__label">{schema.rowLabel}</div>
-          )}
-          {rows.map((row, idx) => (
-            <div key={idx} className="scorecard-structured-row">
-              <div className="scorecard-structured-row__fields">
-                {rowFields.map((f) => (
-                  <StructuredFieldInput
-                    key={f.key}
-                    field={f}
-                    value={row[f.key] ?? ''}
-                    disabled={disabled}
-                    templateId={templateId}
-                    fieldKey={f.key}
-                    rowIndex={idx}
-                    onChange={(v) => setRow(idx, f.key, v)}
-                    onBlur={onBlur}
-                  />
-                ))}
-              </div>
+      <div className="scorecard-structured-noteworthy">
+        {schema.rowLabel && (
+          <div className="scorecard-structured-noteworthy__label">{schema.rowLabel}</div>
+        )}
+        {displayRows.map((row, idx) => (
+          <div key={idx} className="scorecard-structured-row">
+            <div className="scorecard-structured-row__fields">
+              {rowFields.map((f) => (
+                <StructuredFieldInput
+                  key={f.key}
+                  field={f}
+                  value={row[f.key] ?? ''}
+                  disabled={disabled}
+                  templateId={templateId}
+                  fieldKey={f.key}
+                  rowIndex={idx}
+                  onChange={(v) => setRow(idx, f.key, v)}
+                  onBlur={onBlur}
+                />
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+            {!disabled && schema.hide_count && (
+              <button
+                type="button"
+                className="btn-ghost scorecard-structured-row__remove"
+                onClick={() => removeRow(idx)}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        ))}
+        {!disabled && schema.hide_count && (
+          <button
+            type="button"
+            className="btn-ghost scorecard-structured-add"
+            onClick={addRow}
+          >
+            + Add row
+          </button>
+        )}
+      </div>
     </div>
   );
 }
