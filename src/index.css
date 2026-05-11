@@ -3426,3 +3426,52 @@ html[data-theme="light"] {
   border-radius: 50%;
   background: var(--red);
 }
+
+/* ===========================================================================
+   Phase 19 follow-up: light-theme contrast audit.
+   Override token values and specific selectors that were tuned for dark
+   backgrounds and become low-contrast or invisible on the cream/white surface.
+   ========================================================================= */
+
+[data-theme="light"] {
+  /* Performance / status tokens — darken so they read on cream. */
+  --gold:    #8B6914;
+  --warning: #8B6914;
+  --success: #1F6B43;
+  /* --miss / --red stay at #C41E3A — already high-contrast on cream. */
+  /* --blue stays at #2563EB — readable on cream. */
+}
+
+/* Translucent sticky bars — flip from dark overlay to light overlay so the
+   header / progress wrap / meeting nav / scorecard sticky-bar read as a
+   frosted-white pane on the cream background, not a black stripe. */
+[data-theme="light"] .app-header,
+[data-theme="light"] .progress-wrap {
+  background: rgba(255, 255, 255, 0.65);
+}
+[data-theme="light"] .meeting-shell-header,
+[data-theme="light"] .meeting-nav {
+  background: rgba(255, 255, 255, 0.85);
+}
+[data-theme="light"] .scorecard-sticky-bar {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+/* Insight banner text was a pale cream (#e6d9b5) — invisible on cream bg.
+   Darken to a deep amber that still reads as "gold-tinted note". */
+[data-theme="light"] .insight {
+  color: #5A4710;
+}
+
+/* Cap banner text was pale pink (#f2c7cf) — too low-contrast on cream.
+   Switch to deeper red ink. */
+[data-theme="light"] .cap-banner {
+  color: #7A1622;
+}
+
+/* The login-card --light variant was originally built as a paper-card on the
+   dark theme; on light theme the surrounding bg is already light, so the
+   extra-bright surface + dark shadow looks misplaced. Soften the shadow. */
+[data-theme="light"] .login-card--light {
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.10), 0 2px 8px rgba(0, 0, 0, 0.05);
+}
