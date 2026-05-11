@@ -68,12 +68,21 @@ function CountNoteworthyDisplay({ schema, data }) {
   const rowFields = Array.isArray(schema.rowFields) ? schema.rowFields : [];
   const totalLabel = schema.countLabel ?? 'Total';
   const noteworthyLabel = schema.noteworthyLabel ?? 'Noteworthy';
+  // Phase 19: derived count when schema.hide_count is set, so the read-only
+  // total reflects the same value the editor showed.
+  const displayCount = schema.hide_count ? noteworthy.length : count;
   return (
     <div className="structured-fields-display">
-      <div className="structured-fields-display__total">
-        <span className="structured-fields-display__total-label">{totalLabel}:</span>
-        <span className="structured-fields-display__total-value">{count}</span>
-      </div>
+      {/* Phase 19: schema.helperText renders at the top of every pattern display. */}
+      {schema.helperText && (
+        <p className="structured-helper-text">{schema.helperText}</p>
+      )}
+      {!schema.hide_count && (
+        <div className="structured-fields-display__total">
+          <span className="structured-fields-display__total-label">{totalLabel}:</span>
+          <span className="structured-fields-display__total-value">{displayCount}</span>
+        </div>
+      )}
       {noteworthy.length > 0 && (
         <div className="structured-fields-display__rows">
           <div className="structured-fields-display__rows-label">{noteworthyLabel}</div>
@@ -89,6 +98,14 @@ function CountNoteworthyDisplay({ schema, data }) {
           ))}
         </div>
       )}
+      {/* Phase 19 D-06: persisted shortfall_text rendered when min_rows is set
+          AND noteworthy.length is below it AND the partner wrote a value. */}
+      {Number.isInteger(schema.min_rows) && noteworthy.length < schema.min_rows && schema.shortfall_text?.key && data?.[schema.shortfall_text.key] && (
+        <p className="structured-shortfall-text">
+          <span className="structured-shortfall-label">{schema.shortfall_text.label}:</span>{' '}
+          {data[schema.shortfall_text.key]}
+        </p>
+      )}
     </div>
   );
 }
@@ -99,12 +116,19 @@ function RowPerItemDisplay({ schema, data }) {
   const rowFields = Array.isArray(schema.rowFields) ? schema.rowFields : [];
   const totalLabel = schema.countLabel ?? 'Total';
   const rowLabel = schema.rowLabel;
+  const displayCount = schema.hide_count ? rows.length : count;
   return (
     <div className="structured-fields-display">
-      <div className="structured-fields-display__total">
-        <span className="structured-fields-display__total-label">{totalLabel}:</span>
-        <span className="structured-fields-display__total-value">{count}</span>
-      </div>
+      {/* Phase 19: schema.helperText at the top of every pattern display. */}
+      {schema.helperText && (
+        <p className="structured-helper-text">{schema.helperText}</p>
+      )}
+      {!schema.hide_count && (
+        <div className="structured-fields-display__total">
+          <span className="structured-fields-display__total-label">{totalLabel}:</span>
+          <span className="structured-fields-display__total-value">{displayCount}</span>
+        </div>
+      )}
       {rows.length > 0 && (
         <div className="structured-fields-display__rows">
           {rowLabel && (
@@ -122,6 +146,13 @@ function RowPerItemDisplay({ schema, data }) {
           ))}
         </div>
       )}
+      {/* Phase 19 D-06: persisted shortfall_text rendered when min_rows is unmet. */}
+      {Number.isInteger(schema.min_rows) && rows.length < schema.min_rows && schema.shortfall_text?.key && data?.[schema.shortfall_text.key] && (
+        <p className="structured-shortfall-text">
+          <span className="structured-shortfall-label">{schema.shortfall_text.label}:</span>{' '}
+          {data[schema.shortfall_text.key]}
+        </p>
+      )}
     </div>
   );
 }
@@ -130,6 +161,10 @@ function NamedFieldsDisplay({ schema, data, weekOf }) {
   const fields = Array.isArray(schema.fields) ? schema.fields : [];
   return (
     <div className="structured-fields-display">
+      {/* Phase 19: schema.helperText at the top of every pattern display. */}
+      {schema.helperText && (
+        <p className="structured-helper-text">{schema.helperText}</p>
+      )}
       {schema.autoPeriod && (
         <div className="structured-fields-display__period">
           {schema.periodLabel ? `${schema.periodLabel}: ` : 'Reporting period: '}
