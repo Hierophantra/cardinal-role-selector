@@ -525,8 +525,8 @@ export const SCORECARD_COPY = {
   // --- Phase 16 extensions (new Scorecard v2.0 keys) ---
   growthPrefix: 'GROWTH:',
   countLabel: 'Count',
-  reflectionLabel: 'Reflection',
-  reflectionPlaceholder: '',
+  reflectionLabel: 'Questions, Thoughts, or Concerns',
+  reflectionPlaceholder: 'Anything unclear, blocked, or worth raising? (optional)',
   weeklyReflectionHeading: 'Weekly Reflection',
   biggestWinLabel: 'Biggest win (optional)',
   biggestWinPlaceholder: 'What are you proud of?',
@@ -539,7 +539,7 @@ export const SCORECARD_COPY = {
   submitErrorIncomplete: 'Rate each KPI as Met or Not Met before submitting.',
   // UAT 2026-05-04: every row needs a reflection. Per-KPI prompts (migration 015) demand evidence.
   submitErrorReflectionRequired:
-    'Add a reflection to every KPI before submitting. Every Yes, No, and Pending row needs your evidence.',
+    'Add a Questions, Thoughts, or Concerns response to every KPI before submitting. Every Yes, No, and Pending row needs your evidence.',
   // UAT 2026-05-04 (later same day): growth consideration is REQUIRED. Every
   // GROWTH_FOLLOWUP_FIELDS field for the partner must have non-empty trim text
   // — partners with nothing yet should write that explicitly. Submit-time only;
