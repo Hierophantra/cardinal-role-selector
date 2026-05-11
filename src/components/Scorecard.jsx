@@ -29,26 +29,262 @@ const motionProps = {
   transition: { duration: 0.28, ease: 'easeOut' },
 };
 
-// Wave 1 (migration 020): submit-gate validator for the per-KPI structured
-// fields schema. Returns `true` when the structured data fails validation
-// (i.e. the submit should be blocked).
-//
-// Rules:
-//   - count_noteworthy / row_per_item: count must be a non-negative integer.
-//     If count === 0, reflection text must be non-empty (variance note
-//     mandatory). If count > 0, every required rowField in noteworthy[] /
-//     rows[] must have a value; row_per_item requires exactly `count` rows.
-//   - named_fields: every required field must have a value. yes_no fields
-//     accept 'yes' or 'no'. row_list children must have all required sub-
-//     fields filled (count not enforced — row_list rows are partner-driven).
-function validateStructuredFields(schema, data, reflectionText) {
-  if (!schema || typeof schema !== 'object') return false;
+// Phase 19 D-05 — passes-key-fields predicate. A Yes-rated row whose required
+// key_fields fail validation is treated as "not yet rated". This helper
+// inspects ONLY the Yes-side validation question; Pending and No are not
+// covered by D-05 and pass through unchanged.
+function passesKeyFields(tpl, entry) {
+  if (!tpl || !entry) return false;
+  if (entry.result !== 'yes') return true; // only Yes is gated by key_fields per D-05
+  if (!tpl.key_fields) return true;
+  const sd = entry.structured_data ?? {};
+  const reflection = entry.reflection ?? '';
+  // validateStructuredFields returns TRUE on failure; invert so the helper name reads naturally.
+  return !validateStructuredFields(tpl.key_fields, sd, reflection);
+}
 
-  const isMissingPrimitive = (field, value) => {
-    if (!field?.required) return false;
+// Phase 19 D-05 — answered-count predicate (DRIVES THE COUNTER PILL ONLY).
+// Preserves pre-Phase-19 semantics: a row counts toward "answered" iff result
+// is Yes (with valid key_fields) OR No. Pending NEVER counts toward the
+// answered tally — even with follow-through text — because Pending is by
+// definition "not yet rated until Saturday close" (Phase 17 contract). D-05
+// only narrows the Yes-side definition; it does NOT promote Pending. The
+// submit-gate uses a broader predicate below.
+function isRowAnswered(tpl, entry) {
+  if (!tpl || !entry) return false;
+  const r = entry.result;
+  if (r === 'no') return true;
+  if (r === 'yes') return passesKeyFields(tpl, entry);
+  return false;
+}
+
+// Phase 19 D-04 / D-06 — submit-gate predicate (used by getValidationGaps).
+// Broader than isRowAnswered: also accepts Pending rows whose follow-through
+// text is populated, because the submit-gate's purpose is to require a
+// *commitment* on every row (Phase 17 KPI-02 contract), not to declare the
+// row "answered". Reflection required on every rated row (Phase 17
+// reflectionRequired gate preserved). Yes-side requires passesKeyFields.
+function isRowSubmittable(tpl, entry) {
+  if (!tpl || !entry) return false;
+  const r = entry.result;
+  if (r !== 'yes' && r !== 'no' && r !== 'pending') return false;
+  if (r === 'pending') {
+    const pt = entry.pending_text;
+    if (typeof pt !== 'string' || pt.trim().length === 0) return false;
+  }
+  const reflection = entry.reflection;
+  if (typeof reflection !== 'string' || reflection.trim().length === 0) return false;
+  if (r === 'yes' && !passesKeyFields(tpl, entry)) return false;
+  return true;
+}
+
+// Phase 19 D-04: derives the ordered list of missing-field gaps for the
+// inline checklist rendered above the sticky bar. Each gap has a stable
+// anchor matching a deterministic input ID rendered by StructuredFieldInput
+// so document.getElementById(anchor)?.scrollIntoView resolves cleanly.
+// Returns [] when nothing is missing — Submit is enabled iff [].
+//
+// Gap detection order (matches checklist render order):
+//   1. Week rating (REFINE-15)
+//   2. Per-row: result missing (existing incomplete gate)
+//   3. Per-row: Pending without follow-through text (existing KPI-02 gate)
+//   4. Per-row: result='yes' with invalid structured fields (D-05) — points
+//      at first missing field
+//   5. Per-row: reflection text missing (existing reflectionRequired gate)
+//   6. Growth followup missing (existing growthRequired gate)
+function getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner) {
+  const gaps = [];
+  if (weekRating === null || weekRating === undefined) {
+    gaps.push({ anchor: 'week-rating-input', label: 'Overall week rating (1-5)' });
+  }
+  for (const tpl of rows) {
+    const entry = kpiResults[tpl.id] ?? {};
+    const result = entry.result;
+    // 2. result missing
+    if (!result) {
+      gaps.push({
+        anchor: `kpi-${tpl.id}-result`,
+        label: `${tpl.label_snapshot ?? tpl.label ?? tpl.baseline_action ?? 'KPI'}: Mark Yes / No / Pending`,
+      });
+      continue;
+    }
+    // 3. Pending without follow-through text
+    if (result === 'pending') {
+      const pendingText = entry.pending_text;
+      if (typeof pendingText !== 'string' || pendingText.trim().length === 0) {
+        gaps.push({
+          anchor: `kpi-${tpl.id}-pending-text`,
+          label: `${tpl.label_snapshot ?? tpl.label ?? tpl.baseline_action ?? 'KPI'}: Add a what + by when commitment`,
+        });
+      }
+    }
+    // 4. Yes with invalid structured fields — point at the FIRST missing required field on the row
+    if (result === 'yes' && tpl.key_fields) {
+      const sd = entry.structured_data ?? {};
+      const reflection = entry.reflection ?? '';
+      if (validateStructuredFields(tpl.key_fields, sd, reflection)) {
+        const firstAnchor = findFirstMissingFieldAnchor(tpl, sd);
+        gaps.push({
+          anchor: firstAnchor ?? `kpi-${tpl.id}`,
+          label: `${tpl.label_snapshot ?? tpl.label ?? tpl.baseline_action ?? 'KPI'}: Fill in required structured fields`,
+        });
+      }
+    }
+    // 5. reflection text missing
+    const reflection = entry.reflection;
+    if (typeof reflection !== 'string' || reflection.trim().length === 0) {
+      gaps.push({
+        anchor: `kpi-${tpl.id}-reflection`,
+        label: `${tpl.label_snapshot ?? tpl.label ?? tpl.baseline_action ?? 'KPI'}: Add your reflection`,
+      });
+    }
+  }
+  // 6. Growth followup — partner-driven GROWTH_FOLLOWUP_FIELDS check.
+  // GROWTH_FOLLOWUP_FIELDS is already imported at the top of this file
+  // (line ~17) — direct ESM reference (project is ESM per "type": "module"
+  // in package.json; require() is not available at runtime).
+  const partnerFields = (GROWTH_FOLLOWUP_FIELDS && GROWTH_FOLLOWUP_FIELDS[partner]) || [];
+  for (const f of partnerFields) {
+    const val = growthFollowup?.[f.key];
+    if (typeof val !== 'string' || val.trim().length === 0) {
+      gaps.push({ anchor: `growth-followup-${f.key}`, label: `Growth: ${f.label}` });
+    }
+  }
+  return gaps;
+}
+
+// Phase 19 D-04: helper used by getValidationGaps to point the checklist
+// scroll-target at the first actually-missing required field on a Yes-rated
+// row whose structured data fails validation. Falls back to the KPI's anchor
+// when no specific field can be resolved.
+function findFirstMissingFieldAnchor(tpl, data) {
+  const schema = tpl.key_fields;
+  if (!schema) return null;
+  const checkPrimitive = (field, value, row) => {
+    if (!field?.required && !field?.required_when) return false;
+    if (field.required_when) {
+      const sibling = row?.[field.required_when.field];
+      if (sibling !== field.required_when.equals) return false;
+    }
     if (field.type === 'yes_no') return value !== 'yes' && value !== 'no';
     if (field.type === 'number' || field.type === 'currency') {
       return value === '' || value === null || value === undefined || !Number.isFinite(Number(value));
+    }
+    if (field.type === 'multi_choice') {
+      if (field.single_select) return typeof value !== 'string' || value.trim().length === 0;
+      return !Array.isArray(value) || value.length === 0;
+    }
+    return typeof value !== 'string' || value.trim().length === 0;
+  };
+  if (schema.pattern === 'named_fields') {
+    for (const f of (schema.fields || [])) {
+      if (f.type === 'row_list') {
+        const subRows = Array.isArray(data?.[f.key]) ? data[f.key] : [];
+        for (let i = 0; i < subRows.length; i++) {
+          for (const sf of (f.rowFields || [])) {
+            if (checkPrimitive(sf, subRows[i]?.[sf.key], subRows[i])) {
+              return `field-${tpl.id}-${f.key}-${i}-${sf.key}`;
+            }
+          }
+        }
+        if ((f.required || (f.required_when && data?.[f.required_when.field] === f.required_when.equals)) && subRows.length === 0) {
+          return `field-${tpl.id}-${f.key}`;
+        }
+      } else if (f.type === 'multi_choice') {
+        // Phase 19 D-03 canonical anchor scheme:
+        //   single-select per_selection_field:  field-${tplId}-${fieldKey}__${value}-${perFieldKey}
+        //   multi-select  per_selection_field:  field-${tplId}-${fieldKey}-${selectionValue}-${perFieldKey}
+        // Selection-presence missing:            field-${tplId}-${fieldKey}
+        const isSingle = !!f.single_select;
+        const v = data?.[f.key];
+        const presenceMissing = isSingle
+          ? (typeof v !== 'string' || v.trim().length === 0)
+          : (!Array.isArray(v) || v.length === 0);
+        if ((f.required || (f.required_when && data?.[f.required_when.field] === f.required_when.equals)) && presenceMissing) {
+          return `field-${tpl.id}-${f.key}`;
+        }
+        const perFields = Array.isArray(f.per_selection_fields) ? f.per_selection_fields : [];
+        if (isSingle) {
+          const sv = typeof v === 'string' ? v : null;
+          if (sv) {
+            const sub = data?.[`${f.key}__${sv}`] ?? {};
+            for (const pf of perFields) {
+              if (checkPrimitive(pf, sub?.[pf.key], sub)) {
+                return `field-${tpl.id}-${f.key}__${sv}-${pf.key}`;
+              }
+            }
+          }
+        } else if (Array.isArray(v)) {
+          for (const sel of v) {
+            for (const pf of perFields) {
+              if (checkPrimitive(pf, sel?.[pf.key], sel)) {
+                return `field-${tpl.id}-${f.key}-${sel.value}-${pf.key}`;
+              }
+            }
+          }
+        }
+      } else if (checkPrimitive(f, data?.[f.key], data)) {
+        return `field-${tpl.id}-${f.key}`;
+      }
+    }
+  }
+  if (schema.pattern === 'row_per_item') {
+    const rows = Array.isArray(data?.rows) ? data.rows : [];
+    for (let i = 0; i < rows.length; i++) {
+      for (const rf of (schema.rowFields || [])) {
+        if (checkPrimitive(rf, rows[i]?.[rf.key], rows[i])) {
+          return `field-${tpl.id}-${rf.key}-${i}`;
+        }
+      }
+    }
+    if (Number.isInteger(schema.min_rows) && rows.length < schema.min_rows) {
+      return `field-${tpl.id}-${schema.shortfall_text?.key ?? 'shortfall'}`;
+    }
+  }
+  if (schema.pattern === 'count_noteworthy') {
+    const noteworthy = Array.isArray(data?.noteworthy) ? data.noteworthy : [];
+    for (let i = 0; i < noteworthy.length; i++) {
+      for (const rf of (schema.rowFields || [])) {
+        if (checkPrimitive(rf, noteworthy[i]?.[rf.key], noteworthy[i])) {
+          return `field-${tpl.id}-${rf.key}-${i}`;
+        }
+      }
+    }
+    if (Number.isInteger(schema.min_rows) && noteworthy.length < schema.min_rows) {
+      return `field-${tpl.id}-${schema.shortfall_text?.key ?? 'shortfall'}`;
+    }
+  }
+  return null;
+}
+
+// Phase 19: extended validation surface.
+// New schema features honored:
+//   - schema.hide_count (count_noteworthy / row_per_item) — count derived from list length
+//   - schema.min_rows + schema.shortfall_text (count_noteworthy / row_per_item) — REFINE-12 D-06
+//   - field.required_when ({field, equals}) — REFINE-07 D-15 (conditional-required)
+//   - schema.helperText — rendered, not validated (here for completeness)
+// Returns `true` when the structured data fails validation (block submit).
+function validateStructuredFields(schema, data, reflectionText) {
+  if (!schema || typeof schema !== 'object') return false;
+
+  const isRequiredEffective = (field, siblingData) => {
+    if (field?.required) return true;
+    if (field?.required_when && siblingData) {
+      const sibling = siblingData[field.required_when.field];
+      return sibling === field.required_when.equals;
+    }
+    return false;
+  };
+
+  const isMissingPrimitive = (field, value, siblingData) => {
+    if (!isRequiredEffective(field, siblingData)) return false;
+    if (field.type === 'yes_no') return value !== 'yes' && value !== 'no';
+    if (field.type === 'number' || field.type === 'currency') {
+      return value === '' || value === null || value === undefined || !Number.isFinite(Number(value));
+    }
+    if (field.type === 'multi_choice') {
+      if (field.single_select) return typeof value !== 'string' || value.trim().length === 0;
+      return !Array.isArray(value) || value.length === 0;
     }
     // text / textarea / fallback
     return typeof value !== 'string' || value.trim().length === 0;
@@ -57,36 +293,71 @@ function validateStructuredFields(schema, data, reflectionText) {
   const reflectionMissing = !(typeof reflectionText === 'string' && reflectionText.trim().length > 0);
 
   if (schema.pattern === 'count_noteworthy') {
-    const count = Number(data?.count);
-    if (!Number.isFinite(count) || count < 0 || !Number.isInteger(count)) return true;
-    if (count === 0) return reflectionMissing;
     const noteworthy = Array.isArray(data?.noteworthy) ? data.noteworthy : [];
     const rowFields = Array.isArray(schema.rowFields) ? schema.rowFields : [];
-    if (noteworthy.length === 0) return false; // count > 0 but no curated rows is allowed
-    return noteworthy.some((row) => rowFields.some((f) => isMissingPrimitive(f, row?.[f.key])));
+    const derivedCount = noteworthy.length;
+    const count = schema.hide_count ? derivedCount : Number(data?.count);
+    if (!schema.hide_count) {
+      if (!Number.isFinite(count) || count < 0 || !Number.isInteger(count)) return true;
+    }
+    // min_rows + shortfall_text: when noteworthy.length < min_rows, require non-empty shortfall_text
+    if (Number.isInteger(schema.min_rows) && noteworthy.length < schema.min_rows) {
+      const shortfallKey = schema.shortfall_text?.key;
+      const shortfallVal = shortfallKey ? data?.[shortfallKey] : undefined;
+      if (typeof shortfallVal !== 'string' || shortfallVal.trim().length === 0) return true;
+    }
+    if (count === 0 && !Number.isInteger(schema.min_rows)) return reflectionMissing;
+    if (noteworthy.length === 0) return false;
+    return noteworthy.some((row) => rowFields.some((f) => isMissingPrimitive(f, row?.[f.key], row)));
   }
 
   if (schema.pattern === 'row_per_item') {
-    const count = Number(data?.count);
-    if (!Number.isFinite(count) || count < 0 || !Number.isInteger(count)) return true;
-    if (count === 0) return reflectionMissing;
     const rows = Array.isArray(data?.rows) ? data.rows : [];
     const rowFields = Array.isArray(schema.rowFields) ? schema.rowFields : [];
-    if (rows.length !== count) return true;
-    return rows.some((row) => rowFields.some((f) => isMissingPrimitive(f, row?.[f.key])));
+    const derivedCount = rows.length;
+    const count = schema.hide_count ? derivedCount : Number(data?.count);
+    if (!schema.hide_count) {
+      if (!Number.isFinite(count) || count < 0 || !Number.isInteger(count)) return true;
+      if (count === 0) return reflectionMissing;
+      if (rows.length !== count) return true;
+    } else {
+      if (count === 0 && !Number.isInteger(schema.min_rows)) return reflectionMissing;
+    }
+    if (Number.isInteger(schema.min_rows) && rows.length < schema.min_rows) {
+      const shortfallKey = schema.shortfall_text?.key;
+      const shortfallVal = shortfallKey ? data?.[shortfallKey] : undefined;
+      if (typeof shortfallVal !== 'string' || shortfallVal.trim().length === 0) return true;
+    }
+    return rows.some((row) => rowFields.some((f) => isMissingPrimitive(f, row?.[f.key], row)));
   }
 
   if (schema.pattern === 'named_fields') {
     const fields = Array.isArray(schema.fields) ? schema.fields : [];
     return fields.some((f) => {
       if (f.type === 'row_list') {
-        if (!f.required) return false;
+        if (!isRequiredEffective(f, data)) return false;
         const subRows = Array.isArray(data?.[f.key]) ? data[f.key] : [];
         if (subRows.length === 0) return true;
         const subFields = Array.isArray(f.rowFields) ? f.rowFields : [];
-        return subRows.some((row) => subFields.some((sf) => isMissingPrimitive(sf, row?.[sf.key])));
+        return subRows.some((row) => subFields.some((sf) => isMissingPrimitive(sf, row?.[sf.key], row)));
       }
-      return isMissingPrimitive(f, data?.[f.key]);
+      if (f.type === 'multi_choice') {
+        if (!isRequiredEffective(f, data)) return false;
+        const value = data?.[f.key];
+        if (f.single_select) {
+          if (typeof value !== 'string' || value.trim().length === 0) return true;
+          // per_selection_fields are checked once for the single selected value;
+          // single_select stores the per-selection sub-data under data[`${f.key}__${value}`].
+          const perFields = Array.isArray(f.per_selection_fields) ? f.per_selection_fields : [];
+          const sub = data?.[`${f.key}__${value}`] ?? {};
+          return perFields.some((pf) => isMissingPrimitive(pf, sub?.[pf.key], sub));
+        }
+        // multi-select: value is array of {value, ...per_selection_field_values}
+        if (!Array.isArray(value) || value.length === 0) return true;
+        const perFields = Array.isArray(f.per_selection_fields) ? f.per_selection_fields : [];
+        return value.some((sel) => perFields.some((pf) => isMissingPrimitive(pf, sel?.[pf.key], sel)));
+      }
+      return isMissingPrimitive(f, data?.[f.key], data);
     });
   }
 
