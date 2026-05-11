@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, LabelList, ResponsiveContainer } from 'recharts';
 import { fetchKpiSelections, fetchScorecards, fetchGrowthPriorities, fetchBusinessPriorities } from '../lib/supabase.js';
 import { computeSeasonStats, computeStreaks, computeWeekNumber, getPerformanceColor } from '../lib/seasonStats.js';
+import { useCurrentTheme } from './ThemeToggle.jsx';
 import { VALID_PARTNERS, PARTNER_DISPLAY, PROGRESS_COPY, GROWTH_STATUS_COPY } from '../data/content.js';
 import BusinessPrioritiesSection from './BusinessPrioritiesSection.jsx';
 
@@ -17,6 +18,11 @@ const motionProps = {
 export default function PartnerProgress() {
   const { partner } = useParams();
   const navigate = useNavigate();
+  // Phase 19 follow-up: Recharts SVG `fill` attributes can't resolve CSS
+  // variables. Read the live theme so the chart's y-axis ticks and bar-label
+  // text stay visible when the theme flips light/dark.
+  const currentTheme = useCurrentTheme();
+  const chartTextFill = currentTheme === 'light' ? '#0A0A0A' : '#FAFAFA';
   const [kpiSelections, setKpiSelections] = useState([]);
   const [scorecards, setScorecards] = useState([]);
   const [growthPriorities, setGrowthPriorities] = useState([]);
@@ -160,13 +166,10 @@ export default function PartnerProgress() {
                   type="category"
                   dataKey="label"
                   width={180}
-                  /* UAT D2 follow-up: recharts passes `fill` to SVG <text> as an
-                     attribute, not CSS — so `var(--text)` does NOT resolve and
-                     the browser falls back to default (black on dark grey).
-                     Use the literal hex value of --text (#FAFAFA) for both axis
-                     ticks and LabelList. Tooltip contentStyle is HTML CSS and
-                     can keep the variable. */
-                  tick={{ fontSize: 13, fill: '#FAFAFA' }}
+                  /* Recharts passes `fill` to SVG <text> as an attribute, not
+                     CSS — so `var(--text)` does NOT resolve. Use a literal
+                     hex chosen from the live theme (chartTextFill). */
+                  tick={{ fontSize: 13, fill: chartTextFill }}
                 />
                 <Tooltip
                   contentStyle={{
@@ -196,10 +199,9 @@ export default function PartnerProgress() {
                     dataKey="hitRate"
                     position="right"
                     formatter={(v) => `${v}%`}
-                    /* UAT D2: 13px (was 12px) for hit-rate values next to bars.
-                       Use literal hex (--text resolved) — SVG attribute fill does
-                       not understand CSS variables. */
-                    style={{ fontSize: 13, fontWeight: 700, fill: '#FAFAFA' }}
+                    /* 13px hit-rate values next to bars. SVG attribute fill
+                       doesn't resolve CSS vars, so use the theme-derived hex. */
+                    style={{ fontSize: 13, fontWeight: 700, fill: chartTextFill }}
                   />
                 </Bar>
               </BarChart>

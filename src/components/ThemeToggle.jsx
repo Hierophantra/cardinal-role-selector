@@ -5,6 +5,28 @@ import { useEffect, useState } from 'react';
 // Cardinal theme); light is the off-white + black + red variant.
 const STORAGE_KEY = 'cardinal-theme';
 
+// Hook: subscribe to the current theme from <html data-theme>. Re-renders the
+// caller when the attribute changes. Use this for SVG / inline-style code
+// paths that can't resolve CSS variables (e.g. Recharts `fill` attribute).
+export function useCurrentTheme() {
+  const [theme, setTheme] = useState(() => {
+    if (typeof document === 'undefined') return 'dark';
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  });
+
+  useEffect(() => {
+    if (typeof MutationObserver === 'undefined') return undefined;
+    const obs = new MutationObserver(() => {
+      const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+      setTheme(next);
+    });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => obs.disconnect();
+  }, []);
+
+  return theme;
+}
+
 export function readStoredTheme() {
   if (typeof localStorage === 'undefined') return 'dark';
   return localStorage.getItem(STORAGE_KEY) === 'light' ? 'light' : 'dark';
