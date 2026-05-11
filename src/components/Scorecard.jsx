@@ -823,6 +823,14 @@ export default function Scorecard() {
     // doesn't reappear when admin reopens the week.
     setSubmitError(null);
     setSaveError(null);
+    // Phase 19 REFINE-15: hard week-rating gate. Draft persists per existing
+    // persistDraft; only the submit action blocks. Mirrors the existing
+    // single-line error pattern but the inline checklist (Task 2c) also
+    // surfaces this gap with an anchor link to the rating input.
+    if (weekRating === null || weekRating === undefined) {
+      setSubmitError(SCORECARD_COPY.submitErrorWeekRatingRequired);
+      return;
+    }
     // Defensive: rows must exist before submit. Array.some() on [] returns
     // false, so without this guard an empty-rows state would pass the
     // incomplete check and write a submitted row with kpi_results={}.
@@ -1119,9 +1127,15 @@ export default function Scorecard() {
   }
 
   const partnerName = PARTNER_DISPLAY[partner] ?? partner;
-  const answeredCount = rows.reduce((n, tpl) => {
-    const r = kpiResults[tpl.id]?.result;
-    return r === 'yes' || r === 'no' ? n + 1 : n;
+  // Phase 19 D-05: a Yes-rated row whose required key_fields fail validation
+  // is treated as "not yet rated" — it does NOT count toward the answered
+  // tally until those fields pass. No keeps prior semantics (counts
+  // immediately). Pending does NOT count toward the answered tally — D-05
+  // only narrows the Yes-side definition; it does NOT promote Pending
+  // (preserves Phase 16/17 counter-pill semantics).
+  const answeredCount = rows.reduce((acc, tpl) => {
+    const entry = kpiResults[tpl.id];
+    return acc + (isRowAnswered(tpl, entry) ? 1 : 0);
   }, 0);
   const isSubmitted = view === 'submitted';
 
