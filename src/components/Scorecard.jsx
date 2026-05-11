@@ -2037,6 +2037,8 @@ function NamedFieldsBlock({ schema, data, weekOf, disabled, templateId, onChange
           value={data?.[f.key]}
           disabled={disabled}
           templateId={templateId}
+          parentData={data}
+          parentOnChange={onChange}
           onChange={(v) => setField(f.key, v)}
           onBlur={onBlur}
         />
@@ -2045,7 +2047,150 @@ function NamedFieldsBlock({ schema, data, weekOf, disabled, templateId, onChange
   );
 }
 
-function NamedFieldInput({ field, value, disabled, templateId, onChange, onBlur }) {
+function NamedFieldInput({ field, value, disabled, templateId, parentData, parentOnChange, onChange, onBlur }) {
+  // Phase 19 D-03 (Wave 1, plan 19-02): multi_choice field type renders
+  // checkboxes (multi-select) or radio buttons (single_select: true) plus a
+  // per-selection sub-block of per_selection_fields per active selection.
+  //
+  // Storage contract — must match Wave 0 validateStructuredFields exactly:
+  //   single_select: parentData[fieldKey] = '<chosenValue>' (string)
+  //                  parentData[`${fieldKey}__${chosenValue}`] = {...per_selection_fields}
+  //   multi-select:  parentData[fieldKey] = [{value, ...per_selection_fields}, ...]
+  //
+  // Anchor scheme — must match Wave 0 findFirstMissingFieldAnchor:
+  //   outer wrapper: id={`field-${templateId}-${field.key}`}
+  //   per-selection field id (single):  field-${templateId}-${field.key}__${sv}-${perFieldKey}
+  //   per-selection field id (multi):   field-${templateId}-${field.key}-${sv}-${perFieldKey}
+  // Anchor stability is selection-VALUE-keyed (not array-index-keyed) so toggling
+  // selections in any order doesn't break checklist scrolls.
+  if (field.type === 'multi_choice') {
+    const options = Array.isArray(field.options) ? field.options : [];
+    const perFields = Array.isArray(field.per_selection_fields) ? field.per_selection_fields : [];
+    const isSingle = !!field.single_select;
+    const data = parentData ?? {};
+    const currentValue = data?.[field.key];
+
+    // Normalized list of active selection VALUES used to render per-selection sub-blocks.
+    const activeSelections = isSingle
+      ? (typeof currentValue === 'string' && currentValue.length > 0 ? [currentValue] : [])
+      : (Array.isArray(currentValue) ? currentValue.map((sel) => sel.value) : []);
+
+    // Determine effective-required for the * marker (required OR required_when sibling triggers).
+    const effectivelyRequired = field.required
+      || (field.required_when && data?.[field.required_when.field] === field.required_when.equals);
+
+    const toggleSelection = (optionValue) => {
+      if (!parentOnChange) return;
+      if (isSingle) {
+        // Single-select: write value as string; clear any sibling per-selection
+        // buckets `${field.key}__<oldValue>` for prior selections to avoid stale data.
+        const next = { ...data };
+        for (const opt of options) {
+          const siblingKey = `${field.key}__${opt.value}`;
+          if (opt.value !== optionValue && siblingKey in next) delete next[siblingKey];
+        }
+        next[field.key] = optionValue;
+        parentOnChange(next);
+        return;
+      }
+      // Multi-select: array of {value, ...per_selection_field_values}
+      const arr = Array.isArray(currentValue) ? currentValue.slice() : [];
+      const idx = arr.findIndex((sel) => sel.value === optionValue);
+      if (idx === -1) {
+        const fresh = { value: optionValue };
+        for (const pf of perFields) fresh[pf.key] = '';
+        arr.push(fresh);
+      } else {
+        arr.splice(idx, 1);
+      }
+      parentOnChange({ ...data, [field.key]: arr });
+    };
+
+    const updatePerField = (optionValue, perKey, newVal) => {
+      if (!parentOnChange) return;
+      if (isSingle) {
+        const siblingKey = `${field.key}__${optionValue}`;
+        const prev = data?.[siblingKey] && typeof data[siblingKey] === 'object' ? data[siblingKey] : {};
+        parentOnChange({ ...data, [siblingKey]: { ...prev, [perKey]: newVal } });
+        return;
+      }
+      const arr = Array.isArray(currentValue) ? currentValue.slice() : [];
+      const idx = arr.findIndex((sel) => sel.value === optionValue);
+      if (idx === -1) return; // option not selected — shouldn't happen
+      arr[idx] = { ...arr[idx], [perKey]: newVal };
+      parentOnChange({ ...data, [field.key]: arr });
+    };
+
+    return (
+      <div
+        className="scorecard-structured-field structured-multi-choice-block"
+        id={templateId ? `field-${templateId}-${field.key}` : undefined}
+      >
+        <label className="scorecard-reflection-label">
+          {field.label}
+          {effectivelyRequired && <span className="required-marker">*</span>}
+        </label>
+        {field.helperText && (
+          <p className="structured-helper-text">{field.helperText}</p>
+        )}
+        <div className="structured-multi-choice-options">
+          {options.map((opt) => {
+            const isChecked = isSingle
+              ? currentValue === opt.value
+              : activeSelections.includes(opt.value);
+            const inputType = isSingle ? 'radio' : 'checkbox';
+            return (
+              <label key={opt.value} className="structured-multi-choice-option">
+                <input
+                  type={inputType}
+                  name={isSingle && templateId ? `field-${templateId}-${field.key}` : undefined}
+                  checked={isChecked}
+                  disabled={disabled}
+                  onChange={() => {
+                    toggleSelection(opt.value);
+                    if (onBlur) onBlur();
+                  }}
+                />
+                <span>{opt.label ?? opt.value}</span>
+              </label>
+            );
+          })}
+        </div>
+
+        {activeSelections.length > 0 && perFields.length > 0 && (
+          <div className="structured-multi-choice-per-selection">
+            {activeSelections.map((sv) => {
+              const opt = options.find((o) => o.value === sv);
+              const optLabel = opt?.label ?? sv;
+              // Resolve current per-field values for THIS selection
+              const subData = isSingle
+                ? (data?.[`${field.key}__${sv}`] ?? {})
+                : (Array.isArray(currentValue) ? (currentValue.find((s) => s.value === sv) ?? {}) : {});
+              return (
+                <div key={sv} className="structured-multi-choice-selection-card">
+                  <p className="structured-multi-choice-selection-eyebrow">{optLabel}</p>
+                  {perFields.map((pf) => (
+                    <StructuredFieldInput
+                      key={pf.key}
+                      field={pf}
+                      value={subData?.[pf.key] ?? ''}
+                      disabled={disabled}
+                      templateId={templateId}
+                      fieldKey={pf.key}
+                      parentFieldKey={isSingle ? `${field.key}__${sv}` : `${field.key}-${sv}`}
+                      onChange={(newVal) => updatePerField(sv, pf.key, newVal)}
+                      onBlur={onBlur}
+                    />
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // row_list is the nested-rows variant — used inside named_fields (e.g.
   // major_expenses on the Friday financial report). Each child has its own
   // rowFields; the renderer mirrors the count_noteworthy add/remove pattern
