@@ -648,7 +648,7 @@ function KpiStop({
 
               <textarea
                 className="textarea"
-                placeholder="Reflection..."
+                placeholder="Questions, Thoughts, or Concerns..."
                 value={reflection}
                 onChange={(e) => onReflectionChange(p, kpiId, e.target.value)}
                 style={{ minHeight: 72 }}
