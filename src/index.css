@@ -3366,3 +3366,63 @@ textarea { resize: vertical; min-height: 120px; }
   margin-left: -8px;
   opacity: 0.5;
 }
+
+/* ===========================================================================
+   Phase 19 follow-up: light theme variant.
+   Activated via [data-theme="light"] on <html>; default (no attribute or
+   anything other than "light") is the existing Cardinal dark theme.
+   ========================================================================= */
+
+[data-theme="light"] {
+  --bg: #F5F1EA;
+  --surface: #FFFFFF;
+  --surface-2: #EDE8DF;
+  --border: #D6CFC1;
+  --border-strong: #B8AE9A;
+  --text: #0A0A0A;
+  --muted: #5A5A5A;
+  --muted-2: #8A8A8A;
+  /* Keep red, gold, blue accents at the same brand values. */
+}
+
+html[data-theme="light"] {
+  background:
+    radial-gradient(ellipse 100vw 55vh at 50% 0vh, rgba(196, 30, 58, 0.10) 0%, transparent 70%),
+    radial-gradient(ellipse 55vw 40vh at 95vw 100vh, rgba(196, 30, 58, 0.05) 0%, transparent 65%),
+    var(--bg);
+}
+
+/* Theme toggle — fixed bottom-right, low-key, accessible everywhere. */
+.theme-toggle {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.theme-toggle:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.theme-toggle__dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+}

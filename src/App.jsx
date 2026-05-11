@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login.jsx';
+import ThemeToggle from './components/ThemeToggle.jsx';
 import Questionnaire from './components/Questionnaire.jsx';
 import PartnerHub from './components/PartnerHub.jsx';
 import KpiSelection from './components/KpiSelection.jsx';
@@ -26,8 +27,10 @@ import WeeklyKpiSelectionFlow from './components/WeeklyKpiSelectionFlow.jsx';
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Login />} />
+    <>
+      <ThemeToggle />
+      <Routes>
+        <Route path="/" element={<Login />} />
       <Route path="/q/:partner" element={<Questionnaire />} />
       <Route path="/hub/:partner" element={<PartnerHub />} />
       <Route path="/kpi/:partner" element={<KpiSelection />} />
@@ -52,7 +55,8 @@ export default function App() {
       <Route path="/admin/scorecards" element={<AdminScorecards />} />
       <Route path="/admin/meeting" element={<AdminMeeting />} />
       <Route path="/admin/meeting/:id" element={<AdminMeetingSession />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }
