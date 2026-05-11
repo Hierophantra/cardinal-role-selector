@@ -12,6 +12,7 @@
 //   - count_noteworthy: "Total: 12. Noteworthy: [name + outcome rows]"
 //   - row_per_item:     "Total: 4 jobs. [rows with all sub-fields]"
 //   - named_fields:     labeled values stacked (incl. autoPeriod header)
+import { Fragment } from 'react';
 
 // Format the auto-period range for named_fields with autoPeriod=true.
 // Returns "Apr 27 – May 4" — prior Mon to current week_of Mon. Mirrors the
@@ -197,6 +198,66 @@ function NamedFieldsDisplay({ schema, data, weekOf }) {
                     ))}
                   </div>
                 ))}
+              </div>
+            );
+          }
+          // Phase 19 D-03 (Wave 1, plan 19-02): multi_choice read-only render.
+          // Storage contract:
+          //   single_select: data[fieldKey] = '<chosenValue>'
+          //                  data[`${fieldKey}__${chosenValue}`] = {...per_selection_fields}
+          //   multi-select:  data[fieldKey] = [{value, ...per_selection_field_values}, ...]
+          // We collapse both shapes to a normalized [{value, perData}, ...] list, then
+          // render one card per selection with its per-field key/value pairs in a <dl>.
+          if (f.type === 'multi_choice') {
+            const isSingle = !!f.single_select;
+            const v = data?.[f.key];
+            const options = Array.isArray(f.options) ? f.options : [];
+            const perFields = Array.isArray(f.per_selection_fields) ? f.per_selection_fields : [];
+
+            const selections = isSingle
+              ? (typeof v === 'string' && v.length > 0
+                  ? [{ value: v, perData: data?.[`${f.key}__${v}`] ?? {} }]
+                  : [])
+              : (Array.isArray(v) ? v.map((sel) => ({ value: sel.value, perData: sel })) : []);
+
+            if (selections.length === 0) {
+              // Omit empty multi_choice from read-only render — mirrors row_list's
+              // empty-state shape so the display stays compact.
+              return (
+                <div key={f.key} className="structured-fields-display__cell">
+                  <span className="structured-fields-display__cell-label">{f.label}:</span>
+                  <span className="structured-fields-display__cell-value">{'—'}</span>
+                </div>
+              );
+            }
+            return (
+              <div className="readonly-multi-choice" key={f.key}>
+                <p className="readonly-multi-choice-label">{f.label}</p>
+                <ul className="readonly-multi-choice-selections">
+                  {selections.map((sel) => {
+                    const opt = options.find((o) => o.value === sel.value);
+                    const optLabel = opt?.label ?? sel.value;
+                    return (
+                      <li key={sel.value} className="readonly-multi-choice-selection">
+                        <span className="readonly-multi-choice-selection-eyebrow">{optLabel}</span>
+                        {perFields.length > 0 && (
+                          <dl className="readonly-multi-choice-per-fields">
+                            {perFields.map((pf) => {
+                              const pv = sel.perData?.[pf.key];
+                              if (pv === undefined || pv === null || pv === '') return null;
+                              return (
+                                <Fragment key={pf.key}>
+                                  <dt>{pf.label}</dt>
+                                  <dd>{formatPrimitive(pf, pv)}</dd>
+                                </Fragment>
+                              );
+                            })}
+                          </dl>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
             );
           }
