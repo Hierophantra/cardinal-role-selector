@@ -11,13 +11,24 @@ export default function Login() {
     const trimmed = code.trim();
     if (!trimmed) return;
 
+    // Persist the viewer role for the tab so admin can navigate into a
+    // partner hub and still see the "Back to Trace Hub" link, even after
+    // internal nav strips ?admin=1 from the URL.
+    const setRole = (role) => {
+      try { sessionStorage.setItem('cardinal-role', role); } catch {}
+    };
+
     if (trimmed === import.meta.env.VITE_THEO_KEY) {
+      setRole('theo');
       navigate('/hub/theo');
     } else if (trimmed === import.meta.env.VITE_JERRY_KEY) {
+      setRole('jerry');
       navigate('/hub/jerry');
     } else if (trimmed === import.meta.env.VITE_ADMIN_KEY) {
+      setRole('admin');
       navigate('/admin/hub');
     } else if (trimmed === import.meta.env.VITE_TEST_KEY) {
+      setRole('test');
       navigate('/hub/test');
     } else {
       setError("That code doesn't match. Try again.");

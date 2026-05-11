@@ -33,7 +33,16 @@ export default function PartnerHub() {
   const { partner } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const adminView = new URLSearchParams(location.search).get('admin') === '1';
+  // Treat as admin view if EITHER the URL has ?admin=1 (existing convention
+  // from AdminProfile / AdminPartners links) OR the session role flag set at
+  // login says 'admin'. The latter survives internal nav inside the partner
+  // hub stack (Scorecard, KpiSelectionView, etc.) that strips the query param.
+  const sessionRole = (() => {
+    try { return sessionStorage.getItem('cardinal-role'); } catch { return null; }
+  })();
+  const adminView =
+    new URLSearchParams(location.search).get('admin') === '1' ||
+    sessionRole === 'admin';
 
   // ---- Data state ----
   const [submission, setSubmission] = useState(null);

@@ -2161,7 +2161,7 @@ textarea { resize: vertical; min-height: 120px; }
   gap: 8px;
 }
 
-/* Sticky submit bar */
+/* Sticky submit bar — taller, more prominent. */
 .scorecard-sticky-bar {
   position: fixed;
   bottom: 0;
@@ -2171,11 +2171,20 @@ textarea { resize: vertical; min-height: 120px; }
   background: rgba(10, 10, 10, 0.88);
   backdrop-filter: blur(8px);
   border-top: 1px solid var(--border);
-  padding: 12px 24px;
+  padding: 20px 32px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 16px;
+  gap: 20px;
+}
+
+/* Submit button inside the sticky bar — larger CTA. */
+.scorecard-sticky-bar .btn-primary {
+  padding: 14px 32px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  min-width: 180px;
 }
 
 /* === Phase 17 — Pending state + Saturday close === */
@@ -3392,10 +3401,11 @@ html[data-theme="light"] {
     var(--bg);
 }
 
-/* Theme toggle — fixed bottom-right, low-key, accessible everywhere. */
+/* Theme toggle — fixed top-right (moved from bottom-right to avoid overlap
+   with the sticky scorecard Submit bar). */
 .theme-toggle {
   position: fixed;
-  bottom: 16px;
+  top: 16px;
   right: 16px;
   z-index: 1000;
   display: inline-flex;
