@@ -6,7 +6,7 @@
 - v1.1 Mandatory/Choice KPI Model - Phases 5-7 (shipped 2012-04-13)
 - v1.2 Meeting & Insights Expansion - Phases 8-11 (shipped 2026-04-13)
 - v1.3 Monday Prep Redesign - Phases 12-13 (shipped 2026-04-13)
-- v2.0 Role Identity & Weekly KPI Rotation - Phases 14-18 (in progress)
+- v2.0 Role Identity & Weekly KPI Rotation - Phases 14-19 (in progress)
 
 ## Phases
 
@@ -56,6 +56,7 @@
 - [x] **Phase 16: Weekly KPI Selection + Scorecard + Counters** - Partners select a weekly KPI from their pool, submit scorecards against 6 mandatory + 1 weekly choice, and log in-week counts (completed 2026-04-17)
 - [ ] **Phase 17: Friday-Checkpoint / Saturday-Close Cycle** - 3-state KPI results (Yes / No / Pending-Saturday), Saturday 23:59 auto-close, Saturday recap stop on Monday meetings, optional KPI review gate on both meeting types
 - [ ] **Phase 18: Shared Business Priorities Display** - business_priorities table with two seeded shared priorities (Lead Abatement Activation, Salesmen Onboarding); both partners see both priorities on their profile views alongside personal growth, and growth_business_1/2 meeting stops display the priority content (notes captured via existing meeting agenda_notes)
+- [ ] **Phase 19: Scorecard Card Refinement & Required Inputs** - Per-KPI structured fields refined to match how partners actually capture data: choice arrays where multiple categories apply, currency entries for Friday financials, required structured inputs where the data IS the deliverable (focused-time, delegation, gross-margin, operational-process), global rename of per-KPI "Reflection" prompt to "Questions, Thoughts, or Concerns", and a hard week-rating submit gate
 
 ## Phase Details
 
@@ -139,6 +140,21 @@
 - [x] 18-03-PLAN.md — Wave 2: PartnerHub + AdminProfile + AdminMeetingSession integration (GrowthStop kind=business rewrite, single shared textarea per A2 deviation) (BIZ-02, BIZ-03)
 **UI hint**: yes
 
+### Phase 19: Scorecard Card Refinement & Required Inputs
+**Goal**: Refine the weekly scorecard so per-KPI structured inputs match how Theo and Jerry actually capture and review data — choice arrays where multiple categories apply, currency entries for Friday financials, required structured inputs where the data IS the deliverable (focused-time, delegation, gross-margin, operational-process), a global rename of the per-KPI "Reflection" prompt to "Questions, Thoughts, or Concerns", and a hard submit gate on the overall week rating
+**Depends on**: Phase 18
+**Requirements** (new for this phase): REFINE-01 (rename per-KPI reflection prompt globally), REFINE-02 (Monday/Friday meeting card: one actionable-idea text submission as the rating requirement), REFINE-03 (team-member reach-out: lightweight check-in, who + intentional signal only), REFINE-04 (10+ outreach: remove inline count + week-total counter, surface type example in header, keep noteworthy actions), REFINE-05 (Friday financial report: Major Expenses ≥$1500 excluding contractor payments + total expenses/outgoing for the week + open-ended financial notes; drop discrepancy + prevention-plan fields), REFINE-06 (research KPI: category multi-choice with answer + next-steps per selection, similar UX to the existing job / Joan-review boxes), REFINE-07 (social media: drop consultant framing, just yes/no on new reviews or feedback online with required detail on yes), REFINE-08 (expected closings: include outstanding invoices; render under Friday financials; per-item dollar entry for pending estimates, projected revenue, outstanding invoices), REFINE-09 (BD actions: remove count + below-total count, expose noteworthy entries with add-more), REFINE-10 (focused-time coaching: who/what/how-long all required), REFINE-11 (delegation: delegate-to/what/result all required), REFINE-12 (outstanding-invoices follow-up: minimum 3 entries, justify-why text if fewer, add-noteworthy support for more), REFINE-13 (gross margin: job/Acculynx id + value + equation displayed in header, no count box), REFINE-14 (operational process: required choice between documented / updated / improved + required answer), REFINE-15 (overall week rating: hard required to submit)
+**Success Criteria** (what must be TRUE):
+  1. Every per-KPI structured row reads "Questions, Thoughts, or Concerns" instead of "Reflection" in the editor and in every read-only renderer (Scorecard history, AdminMeetingSession KpiStop, MeetingSummary)
+  2. Partner cannot submit the scorecard without a week rating; draft persists, but submit is blocked with an inline pointer to the missing field
+  3. KPIs whose structured fields are listed as required (focused-time, delegation, gross-margin, operational-process) cannot be marked Yes without those fields populated; the row stays not-yet-rated until validation passes
+  4. Financial KPI inputs (major expenses ≥$1500, total expenses, expected closings, outstanding invoices) render with currency formatting in editor + admin views, and surface in the Friday financial meeting stop in consistent order
+  5. The outstanding-invoices follow-up KPI requires at least 3 row_per_item entries before counting as rated; if fewer, a "why" text justification is required and persists alongside the entries
+  6. The research KPI accepts one or more category selections (competitor / certification / award / new standard / other) plus an answer and a next-steps field; admin views surface every selection
+  7. No regression in pre-Phase-19 templates that don't change: any KPI whose key_fields are not edited renders byte-for-byte identically to its Phase 18 form
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -150,3 +166,4 @@
 | 16. Weekly KPI Selection + Scorecard + Counters | v2.0 | 5/5 | Complete   | 2026-04-17 |
 | 17. Friday-Checkpoint / Saturday-Close Cycle | v2.0 | 0/4 | Planned    | - |
 | 18. Shared Business Priorities Display | v2.0 | 1/3 | In Progress | - |
+| 19. Scorecard Card Refinement & Required Inputs | v2.0 | 0/0 | Planned    | - |

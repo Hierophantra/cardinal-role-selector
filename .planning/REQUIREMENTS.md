@@ -89,6 +89,24 @@ Requirements for the Role Identity & Weekly KPI Rotation milestone. Each maps to
 - [x] **BIZ-02**: A "Business Priorities" section renders identically on `PartnerHub.jsx`, `PartnerProfile.jsx` (admin view of either partner), and `AdminProfile.jsx` (Trace's view) — the section lists both rows from `business_priorities` with the same level of prominence as the existing Personal Growth section; each priority shows title, description, and a deliverables list rendered as a collapsible (default collapsed on desktop, same `useState` + CSS `max-height` pattern as Phase 15 ROLE-03..04 collapsibles). Section content is identical for Theo, Jerry, and Trace's view of either partner — no per-partner variance, no per-partner progress data. (Phase 18 Plan 02 shipped BusinessPrioritiesSection component + Phase 18 CSS appendix; Plan 03 wired the component into PartnerHub between PersonalGrowthSection and the workflow card grid, and into AdminProfile at top of partner profile under the Submitted-date header.)
 - [x] **BIZ-03**: `AdminMeetingSession.jsx` `growth_business_1` and `growth_business_2` stop renderers each render the corresponding `business_priorities` row's title and deliverables list as read-only context above the existing `agenda_notes` textarea — `growth_business_1` shows `lead_abatement_activation`, `growth_business_2` shows `salesmen_onboarding` (mapping fixed in `src/data/content.js` MEETING_COPY or equivalent constant). No new progress table or per-stop progress column; per-stop discussion is captured via the existing `meeting_notes.agenda_notes` column unchanged. (Phase 18 Plan 03: `GrowthStop` kind='business' branch added — shared priority card + `meeting-shared-priority-divider` + single shared `StopNotesArea`. A2 deviation locked: ONE shared textarea per stop, NOT per-partner — meeting_notes schema is keyed by `(meeting_id, agenda_stop_key)` only. Personal-kind branch byte-for-byte unchanged.)
 
+### Scorecard Card Refinement & Required Inputs (Phase 19)
+
+- [ ] **REFINE-01**: Per-KPI structured-row prompt renamed from "Reflection" to "Questions, Thoughts, or Concerns" everywhere it surfaces — Scorecard editor + history detail, AdminMeetingSession KpiStop, MeetingSummary KPI cell, and any supporting copy in `src/data/content.js` (reflectionLabel/reflectionEyebrow); the placeholder/help-text only references the new framing — explanatory copy that conflicts with the rename is removed; helper text about "use this if you didn't accomplish the task" is retained where the upper structured field doesn't already capture that data
+- [ ] **REFINE-02**: Monday/Friday meeting KPI rows treat the "one actionable idea, observation, or challenge" text submission as the rating evidence — the text input is required for the row to count as rated; structured field is single-purpose text (no count, no noteworthy list)
+- [ ] **REFINE-03**: "Reach out to team members each week" KPI captures a lightweight intentional check-in only — name(s) reached out to + a brief signal that it was an intentional check-in (not task logistics); no conversation transcript is required
+- [ ] **REFINE-04**: "Minimum 10 outreach actions" KPI removes both the inline count input AND the week-total counter at the bottom; the header reads "Outreach actions (e.g. text, call, in-person, email)" with the type example surfaced inline; the "noteworthy actions worth surfacing" structured-list remains
+- [ ] **REFINE-05**: Friday Financial Report KPI: Major Expenses field labeled `Major Expenses ($1500+)` with helper text noting these exclude contractor payments; new `total_expenses` currency field captures total expenses/outgoing for the week; existing `discrepancy_yes_no` / `discrepancy_detail` / `prevention_plan` fields are removed in favor of one open-ended notes field labeled "Any other important financial information / thoughts? (e.g. upcoming payment deadlines)"
+- [ ] **REFINE-06**: "Researched one item" KPI uses a multi-select choice list — competitor, certification, award, new standard, other — with an answer field and a next-steps field per selection (UX mirrors the existing job-completion / Joan-review row_per_item pattern but keyed by category)
+- [ ] **REFINE-07**: "Check in with social media" KPI drops the social media consultant framing entirely — the row is a yes/no on whether there are new reviews or feedback online; answering Yes requires a "what" detail field; answering No or providing Yes+detail are the only paths to rating the row
+- [ ] **REFINE-08**: "Brief summary of expected closings" KPI is folded into the Friday financial stop and extended with outstanding invoices; the row has per-item currency entries for pending estimates, projected revenue, and outstanding invoices (each as its own dollar input)
+- [ ] **REFINE-09**: BD actions KPI removes both the inline count input AND the redundant total-count below; the existing two noteworthy-entry rows remain with an "add another" affordance for more entries
+- [ ] **REFINE-10**: "Spent focused time coaching" KPI requires three populated fields before the row can be marked Yes — who you coached, what you focused on, and how long
+- [ ] **REFINE-11**: "Delegated one responsibility" KPI requires three populated fields before the row can be marked Yes — who you delegated to, what was delegated, and the current result (acknowledging some results are still pending)
+- [ ] **REFINE-12**: "Followed up on outstanding invoices" KPI requires at least 3 row_per_item entries; if fewer than 3 are provided, a "why" text justification is required and persists alongside the entries; an add-noteworthy affordance supports adding entries beyond 3
+- [ ] **REFINE-13**: "Gross Margin calculated" KPI structured field captures job/Acculynx id + gross margin value per row; the equation used to calculate gross margin is displayed as helper text directly under the KPI title; the inline count input is removed
+- [ ] **REFINE-14**: "One operational process" KPI requires a choice between Documented / Updated / Improved plus a required answer describing what was done; row cannot be marked Yes without both
+- [ ] **REFINE-15**: Overall week rating (1–5) is a hard requirement for scorecard submission — draft persists if missing, but the submit action is blocked with an inline pointer to the missing rating
+
 ## Deferred (future milestones)
 
 - **Build List** — Kanban-style task tracking; deferred per spec section 6 and 12
@@ -179,17 +197,32 @@ ROADMAP.md commit 913cc9f replaced both Phase 17 ("Meeting Stops + Admin Control
 | BIZ-01 | Phase 18 | Complete |
 | BIZ-02 | Phase 18 | Implemented (18-02 component + 18-03 hub/admin integration) |
 | BIZ-03 | Phase 18 | Implemented (18-03 GrowthStop kind='business' rewrite) |
+| REFINE-01 | Phase 19 | Pending |
+| REFINE-02 | Phase 19 | Pending |
+| REFINE-03 | Phase 19 | Pending |
+| REFINE-04 | Phase 19 | Pending |
+| REFINE-05 | Phase 19 | Pending |
+| REFINE-06 | Phase 19 | Pending |
+| REFINE-07 | Phase 19 | Pending |
+| REFINE-08 | Phase 19 | Pending |
+| REFINE-09 | Phase 19 | Pending |
+| REFINE-10 | Phase 19 | Pending |
+| REFINE-11 | Phase 19 | Pending |
+| REFINE-12 | Phase 19 | Pending |
+| REFINE-13 | Phase 19 | Pending |
+| REFINE-14 | Phase 19 | Pending |
+| REFINE-15 | Phase 19 | Pending |
 | MEET-01..06 | (retired) | Deprecated in 2026-04-25 rewrite |
 | ADMIN-01..06 | (retired) | Deprecated in 2026-04-25 rewrite |
 | COMP-01..05 | (retired) | Deprecated in 2026-04-25 rewrite |
 | GROWTH-03..05 | (retired) | Deprecated in 2026-04-25 rewrite |
 
 **Coverage:**
-- v2.0 requirements: 44 total (56 original − 20 deprecated MEET/ADMIN/COMP/GROWTH + 8 new Phase 17/18 IDs)
-- Mapped to phases: 44
+- v2.0 requirements: 59 total (44 prior + 15 new Phase 19 REFINE IDs)
+- Mapped to phases: 59
 - Unmapped: 0
 - Deprecated (out of v2.0 scope): MEET-01..06, ADMIN-01..06, COMP-01..05, GROWTH-03..05
 
 ---
 *Requirements defined: 2026-04-16*
-*Last updated: 2026-04-25 — Phase 17/18 sync after ROADMAP.md rewrite (commit 913cc9f): added WEEK-01, KPI-01, KPI-02, MEET-07, MEET-08, BIZ-01, BIZ-02, BIZ-03; deprecated MEET-01..06, ADMIN-01..06, COMP-01..05, GROWTH-03..05*
+*Last updated: 2026-05-10 — Phase 19 added (REFINE-01..15) for scorecard card refinement and required-input gates*
