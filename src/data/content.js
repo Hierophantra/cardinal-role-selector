@@ -552,6 +552,13 @@ export const SCORECARD_COPY = {
   // the existing reflection textarea explaining why nothing happened.
   submitErrorStructuredRequired:
     'Some KPIs need their structured fields filled. Check each KPI for missing items, or write a variance note if count is zero.',
+  // --- Phase 19 (REFINE-15, D-04, D-06) — submit-gate checklist + new error strings ---
+  submitErrorWeekRatingRequired:
+    "Add an overall week rating (1-5) before submitting. It's near the bottom under Weekly Reflection.",
+  submitErrorShortfallRequired:
+    'Outstanding-invoices follow-up needs at least 3 entries. If fewer, fill in the "why" justification.',
+  submitChecklistEyebrow: 'A few things still need your attention before you can submit:',
+  submitChecklistEmpty: 'Everything looks good. Ready to submit.',
   submitErrorDb: "Couldn't save your scorecard. Try again.",
   submittedNotice: 'Submitted. Nice work.',
   emptyGuardHeading: 'No weekly KPI selected yet.',
