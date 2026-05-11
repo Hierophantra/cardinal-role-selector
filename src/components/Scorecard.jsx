@@ -554,6 +554,11 @@ export default function Scorecard() {
             // existing fields. Defaults to {} so the renderer always receives a
             // controlled object. Templates with key_fields=NULL ignore this.
             structured_data: existing?.structured_data ?? {},
+            // Phase 19 follow-up: per-row timestamps. answered_at is set the
+            // first time the row gets a Yes/No/Pending result and never moves.
+            // updated_at bumps on every change. Persisted in kpi_results JSONB.
+            answered_at: existing?.answered_at ?? null,
+            updated_at: existing?.updated_at ?? null,
           };
         });
         setKpiResults(seededResults);
@@ -720,12 +725,16 @@ export default function Scorecard() {
 
   function setResult(templateId, result) {
     // UAT 2026-04-27 (extended D-16): partners can edit ANY result until
-    // Saturday close, not just Pending re-open. Submit state is informational
+    // Saturday close, not just Pending re-open. Submit state is informability
     // only; weekClosed is the single editability gate. pending_text is
     // PRESERVED on toggle (Q1 strategy a) so SaturdayRecap can detect
     // yes-conversion on the resulting persisted row.
     if (weekClosed) return;
     const current = kpiResults[templateId] ?? { result: null, reflection: '', count: 0, pending_text: '', structured_data: {} };
+    const now = new Date().toISOString();
+    // Phase 19 follow-up: answered_at locks at the first non-null result and
+    // never moves. updated_at bumps on every result change.
+    const firstAnswer = result != null && current.result == null;
     const next = {
       ...kpiResults,
       [templateId]: {
@@ -734,6 +743,8 @@ export default function Scorecard() {
         count: current.count ?? 0,
         pending_text: current.pending_text ?? '',
         structured_data: current.structured_data ?? {},
+        answered_at: current.answered_at ?? (firstAnswer ? now : null),
+        updated_at: now,
       },
     };
     setKpiResults(next);
@@ -749,6 +760,8 @@ export default function Scorecard() {
         count: prev[templateId]?.count ?? 0,
         pending_text: prev[templateId]?.pending_text ?? '',
         structured_data: prev[templateId]?.structured_data ?? {},
+        answered_at: prev[templateId]?.answered_at ?? null,
+        updated_at: new Date().toISOString(),
       },
     }));
   }
@@ -762,6 +775,8 @@ export default function Scorecard() {
         count: prev[templateId]?.count ?? 0,
         pending_text: text,
         structured_data: prev[templateId]?.structured_data ?? {},
+        answered_at: prev[templateId]?.answered_at ?? null,
+        updated_at: new Date().toISOString(),
       },
     }));
   }
@@ -776,6 +791,8 @@ export default function Scorecard() {
         count: Number.isFinite(numeric) ? numeric : 0,
         pending_text: prev[templateId]?.pending_text ?? '',
         structured_data: prev[templateId]?.structured_data ?? {},
+        answered_at: prev[templateId]?.answered_at ?? null,
+        updated_at: new Date().toISOString(),
       },
     }));
   }
@@ -793,6 +810,8 @@ export default function Scorecard() {
         count: prev[templateId]?.count ?? 0,
         pending_text: prev[templateId]?.pending_text ?? '',
         structured_data: structuredData ?? {},
+        answered_at: prev[templateId]?.answered_at ?? null,
+        updated_at: new Date().toISOString(),
       },
     }));
   }
@@ -1387,6 +1406,32 @@ export default function Scorecard() {
                         />
                       )}
                     </div>
+
+                    {/* Phase 19 follow-up: per-row timestamps. answered_at locks at
+                        the first Yes/No/Pending; updated_at bumps on every change.
+                        Only render Updated if it differs from answered_at by more
+                        than a few seconds so a one-shot answer doesn't show both
+                        timestamps at the same time. */}
+                    {(entry.answered_at || entry.updated_at) && (
+                      <div className="scorecard-row-timestamps">
+                        {entry.answered_at && (
+                          <span className="scorecard-row-timestamp">
+                            Answer completed on: {formatRowTimestamp(entry.answered_at)}
+                          </span>
+                        )}
+                        {entry.updated_at && entry.answered_at &&
+                          Math.abs(new Date(entry.updated_at) - new Date(entry.answered_at)) > 5000 && (
+                          <span className="scorecard-row-timestamp scorecard-row-timestamp--updated">
+                            Updated: {formatRowTimestamp(entry.updated_at)}
+                          </span>
+                        )}
+                        {entry.updated_at && !entry.answered_at && (
+                          <span className="scorecard-row-timestamp">
+                            Updated: {formatRowTimestamp(entry.updated_at)}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -1813,6 +1858,17 @@ function StructuredFieldsBlock({ schema, data, weekOf, disabled, templateId, onC
     );
   }
   return null;
+}
+
+// Phase 19 follow-up: per-row timestamp formatter. Renders like
+// "Mon, May 11 · 9:42 AM". Falls back to the raw ISO string on bad input.
+function formatRowTimestamp(iso) {
+  if (!iso) return '';
+  const dt = new Date(iso);
+  if (Number.isNaN(dt.getTime())) return iso;
+  const day = dt.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  const time = dt.toLocaleString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return `${day} · ${time}`;
 }
 
 // Format the auto-period range for named_fields with autoPeriod=true.
