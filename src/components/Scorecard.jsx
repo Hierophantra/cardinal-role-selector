@@ -1833,10 +1833,13 @@ function CountNoteworthyBlock({ schema, data, disabled, templateId, onChange, on
 
   // hide_count empty-state seed: when the count input is hidden and the user
   // has not yet typed anything, render N synthetic blank rows so input boxes
-  // are visible. Default seed is 2 (matches the "two noteworthy boxes already"
-  // CONTEXT specific for outreach + BD actions). First keystroke in a synthetic
-  // row promotes it to real state via setRow.
-  const seedRows = schema.hide_count ? Math.max(schema.default_rows ?? 2, 1) : 0;
+  // are visible. Seed prefers min_rows (so a "minimum N entries" rule is
+  // communicated visually); falls back to default_rows ?? 2 (matches the
+  // "two noteworthy boxes already" CONTEXT specific for BD actions). First
+  // keystroke in a synthetic row promotes it to real state via setRow.
+  const seedRows = schema.hide_count
+    ? Math.max(schema.min_rows ?? schema.default_rows ?? 2, 1)
+    : 0;
   const displayNoteworthy = schema.hide_count && noteworthy.length === 0
     ? Array.from({ length: seedRows }, () => Object.fromEntries(rowFields.map((f) => [f.key, ''])))
     : noteworthy;
