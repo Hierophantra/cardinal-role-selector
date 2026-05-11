@@ -539,19 +539,31 @@ Existing validation (Scorecard.jsx:59-67) requires `count` to be a non-negative 
 
 ---
 
-## Topic 13: Open Questions for the Planner
+## Topic 13: Open Questions for the Planner (RESOLVED)
 
 1. **REFINE-03 shape: `row_per_item` vs `count_noteworthy` with `hide_count`?** Both work. `row_per_item` with `min_rows: 1` is cleaner semantically (every entry mandatory) but adds count rendering. `count_noteworthy` with `hide_count` matches REFINE-04/09 style. Recommendation: **`row_per_item` with `min_rows: 1` + `hide_count: true`** — most predictable validation.
 
+   RESOLVED: `row_per_item` + `min_rows: 1` + `hide_count: true` (plan 19-04 SECTION 4, REFINE-03 / template 7bd0bb5f).
+
 2. **Currency vs text for gross_margin (D-10 + Discretion).** Discretion. Recommendation: **currency** for easier admin aggregation; partners type `25` for 25%, not `0.25` (renderer prefixes `$`, but a small label tweak "gross margin %" makes the unit clear). Alternative `text` accepts "32%" but loses aggregation.
+
+   RESOLVED: `currency` (plan 19-04 SECTION 11, REFINE-13 / template 403778b7).
 
 3. **`hide_count` vs new pattern `noteworthy_list`.** Recommendation above is `hide_count` (one boolean, two render conditions). Planner can convert to a new pattern in a future phase if `count_noteworthy` becomes more split-personality.
 
+   RESOLVED: `hide_count: true` boolean (plan 19-01 validation surface; plan 19-04 SECTIONs 5/6/11/13 emit it on REFINE-04/09/13/12).
+
 4. **Submit-gate confirmation modal interaction (D-04 with existing UAT C5 confirmation modal).** The existing `confirmingSubmit` modal opens AFTER all validation passes (Scorecard.jsx:624). D-04's inline checklist disables Submit BEFORE the modal. The two are orthogonal. Recommendation: leave modal alone; checklist + disabled button gate before reaching modal.
+
+   RESOLVED: Modal untouched; checklist + disabled button fire before reaching the modal (plan 19-01 Task 2 Edit 5).
 
 5. **Reflection rename in `submitErrorReflectionRequired`.** Should "Add a reflection to every KPI..." (line 542) be rewritten to say "Add a Questions, Thoughts, or Concerns response..."? Planner decides — minor cosmetic carryover.
 
+   RESOLVED: Yes — rephrase `submitErrorReflectionRequired` to reference "Questions, Thoughts, or Concerns" (plan 19-03 Task 1, REFINE-01).
+
 6. **`active` column DDL — `ADD COLUMN IF NOT EXISTS` placement.** Phase 19's CONTEXT D-17 says "No DDL". The active column is technically DDL. Two paths: (a) accept the small DDL deviation (recommended — one line, idempotent), or (b) hard-DELETE `cf7ec651` and skip the column. Both are safe FK-wise.
+
+   RESOLVED: **Path (b) — hard-DELETE `cf7ec651`; no `active` column; D-17 honored verbatim** (plan 19-04 SECTION 1; FK ON DELETE SET NULL on referencing tables; `label_snapshot` preserves history per Topic 5).
 
 ---
 
