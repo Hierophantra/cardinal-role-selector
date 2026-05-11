@@ -1240,7 +1240,7 @@ export default function Scorecard() {
                 const bodyDisabled = weekClosed;
                 const showEditablePicker = !weekClosed;
                 return (
-                  <div key={tpl.id} className={rowClass}>
+                  <div key={tpl.id} className={rowClass} id={`kpi-${tpl.id}`}>
                     <div className="scorecard-baseline-label">
                       {tpl.baseline_action}
                       {isLivePending && (
@@ -1259,7 +1259,7 @@ export default function Scorecard() {
                     )}
 
                     {showEditablePicker ? (
-                      <div className="scorecard-yn-row">
+                      <div className="scorecard-yn-row" id={`kpi-${tpl.id}-result`}>
                         <button
                           type="button"
                           className={`scorecard-yn-btn yes${entry.result === 'yes' ? ' active' : ''}`}
@@ -1286,7 +1286,7 @@ export default function Scorecard() {
                         </button>
                       </div>
                     ) : (
-                      <div className="scorecard-yn-row">
+                      <div className="scorecard-yn-row" id={`kpi-${tpl.id}-result`}>
                         <span
                           className={`scorecard-yn-btn ${effective === 'yes' ? 'yes active' : effective === 'no' ? 'no active' : ''}`}
                           style={{ cursor: 'default' }}
@@ -1303,11 +1303,11 @@ export default function Scorecard() {
                       {entry.result === 'pending' && (
                         showEditablePicker ? (
                           <>
-                            <label className="scorecard-reflection-label" htmlFor={`pending-${tpl.id}`}>
+                            <label className="scorecard-reflection-label" htmlFor={`kpi-${tpl.id}-pending-text`}>
                               {SCORECARD_COPY.pendingFollowThroughLabel}
                             </label>
                             <textarea
-                              id={`pending-${tpl.id}`}
+                              id={`kpi-${tpl.id}-pending-text`}
                               rows={2}
                               value={entry.pending_text ?? ''}
                               onChange={(e) => setPendingTextLocal(tpl.id, e.target.value)}
@@ -1366,6 +1366,7 @@ export default function Scorecard() {
                           data={entry.structured_data ?? {}}
                           weekOf={currentWeekOf}
                           disabled={bodyDisabled}
+                          templateId={tpl.id}
                           onChange={(next) => setStructuredDataLocal(tpl.id, next)}
                           onBlur={persistField}
                         />
@@ -1382,9 +1383,10 @@ export default function Scorecard() {
                         <p className="scorecard-reflection-prompt">{tpl.reflection_prompt}</p>
                       )}
                       {bodyDisabled ? (
-                        <p className="muted" style={{ margin: 0 }}>{entry.reflection || '\u2014'}</p>
+                        <p className="muted" style={{ margin: 0 }} id={`kpi-${tpl.id}-reflection`}>{entry.reflection || '\u2014'}</p>
                       ) : (
                         <textarea
+                          id={`kpi-${tpl.id}-reflection`}
                           value={entry.reflection}
                           onChange={(e) => setReflectionLocal(tpl.id, e.target.value)}
                           onBlur={persistField}
@@ -1468,7 +1470,7 @@ export default function Scorecard() {
                 />
               </div>
 
-              <div>
+              <div id="week-rating-input">
                 <label className="scorecard-reflection-label">{SCORECARD_COPY.weekRatingLabel}</label>
                 <div className="scorecard-rating-row">
                   {[1, 2, 3, 4, 5].map((n) => (
@@ -1779,7 +1781,7 @@ function MandatoryGrowthFollowupForm({
 // when no fields have been touched.
 // --------------------------------------------------------------------------
 
-function StructuredFieldsBlock({ schema, data, weekOf, disabled, onChange, onBlur }) {
+function StructuredFieldsBlock({ schema, data, weekOf, disabled, templateId, onChange, onBlur }) {
   if (!schema || typeof schema !== 'object') return null;
   const pattern = schema.pattern;
   if (pattern === 'count_noteworthy') {
@@ -1788,6 +1790,7 @@ function StructuredFieldsBlock({ schema, data, weekOf, disabled, onChange, onBlu
         schema={schema}
         data={data}
         disabled={disabled}
+        templateId={templateId}
         onChange={onChange}
         onBlur={onBlur}
       />
@@ -1799,6 +1802,7 @@ function StructuredFieldsBlock({ schema, data, weekOf, disabled, onChange, onBlu
         schema={schema}
         data={data}
         disabled={disabled}
+        templateId={templateId}
         onChange={onChange}
         onBlur={onBlur}
       />
@@ -1811,6 +1815,7 @@ function StructuredFieldsBlock({ schema, data, weekOf, disabled, onChange, onBlu
         data={data}
         weekOf={weekOf}
         disabled={disabled}
+        templateId={templateId}
         onChange={onChange}
         onBlur={onBlur}
       />
@@ -1830,7 +1835,7 @@ function formatAutoPeriod(weekOf) {
   return `${fmt(start)} – ${fmt(end)}`;
 }
 
-function CountNoteworthyBlock({ schema, data, disabled, onChange, onBlur }) {
+function CountNoteworthyBlock({ schema, data, disabled, templateId, onChange, onBlur }) {
   const count = Number.isFinite(Number(data?.count)) ? Number(data.count) : 0;
   const noteworthy = Array.isArray(data?.noteworthy) ? data.noteworthy : [];
   const rowFields = Array.isArray(schema.rowFields) ? schema.rowFields : [];
@@ -1857,21 +1862,25 @@ function CountNoteworthyBlock({ schema, data, disabled, onChange, onBlur }) {
 
   return (
     <div className="scorecard-structured-fields">
-      <div className="scorecard-structured-field">
-        <label className="scorecard-reflection-label">{schema.countLabel}</label>
-        {disabled ? (
-          <span>{count}</span>
-        ) : (
-          <input
-            type="number"
-            min="0"
-            className="scorecard-count-input"
-            value={count}
-            onChange={(e) => setCount(e.target.value)}
-            onBlur={onBlur}
-          />
-        )}
-      </div>
+      {/* Phase 19 hide_count: skip the count input entirely when schema.hide_count
+          is truthy — the noteworthy list length is the authoritative count. */}
+      {!schema.hide_count && (
+        <div className="scorecard-structured-field">
+          <label className="scorecard-reflection-label">{schema.countLabel}</label>
+          {disabled ? (
+            <span>{count}</span>
+          ) : (
+            <input
+              type="number"
+              min="0"
+              className="scorecard-count-input"
+              value={count}
+              onChange={(e) => setCount(e.target.value)}
+              onBlur={onBlur}
+            />
+          )}
+        </div>
+      )}
       <div className="scorecard-structured-noteworthy">
         <div className="scorecard-structured-noteworthy__label">{schema.noteworthyLabel}</div>
         {noteworthy.map((row, idx) => (
@@ -1883,6 +1892,9 @@ function CountNoteworthyBlock({ schema, data, disabled, onChange, onBlur }) {
                   field={f}
                   value={row[f.key] ?? ''}
                   disabled={disabled}
+                  templateId={templateId}
+                  fieldKey={f.key}
+                  rowIndex={idx}
                   onChange={(v) => setRow(idx, f.key, v)}
                   onBlur={onBlur}
                 />
@@ -1913,7 +1925,7 @@ function CountNoteworthyBlock({ schema, data, disabled, onChange, onBlur }) {
   );
 }
 
-function RowPerItemBlock({ schema, data, disabled, onChange, onBlur }) {
+function RowPerItemBlock({ schema, data, disabled, templateId, onChange, onBlur }) {
   const count = Number.isFinite(Number(data?.count)) ? Number(data.count) : 0;
   const rows = Array.isArray(data?.rows) ? data.rows : [];
   const rowFields = Array.isArray(schema.rowFields) ? schema.rowFields : [];
@@ -1954,21 +1966,25 @@ function RowPerItemBlock({ schema, data, disabled, onChange, onBlur }) {
 
   return (
     <div className="scorecard-structured-fields">
-      <div className="scorecard-structured-field">
-        <label className="scorecard-reflection-label">{schema.countLabel}</label>
-        {disabled ? (
-          <span>{count}</span>
-        ) : (
-          <input
-            type="number"
-            min="0"
-            className="scorecard-count-input"
-            value={count}
-            onChange={(e) => setCount(e.target.value)}
-            onBlur={onBlur}
-          />
-        )}
-      </div>
+      {/* Phase 19 hide_count: skip the count input when schema.hide_count.
+          The rows list length is the authoritative count in that mode. */}
+      {!schema.hide_count && (
+        <div className="scorecard-structured-field">
+          <label className="scorecard-reflection-label">{schema.countLabel}</label>
+          {disabled ? (
+            <span>{count}</span>
+          ) : (
+            <input
+              type="number"
+              min="0"
+              className="scorecard-count-input"
+              value={count}
+              onChange={(e) => setCount(e.target.value)}
+              onBlur={onBlur}
+            />
+          )}
+        </div>
+      )}
       {rows.length > 0 && (
         <div className="scorecard-structured-noteworthy">
           {schema.rowLabel && (
@@ -1983,6 +1999,9 @@ function RowPerItemBlock({ schema, data, disabled, onChange, onBlur }) {
                     field={f}
                     value={row[f.key] ?? ''}
                     disabled={disabled}
+                    templateId={templateId}
+                    fieldKey={f.key}
+                    rowIndex={idx}
                     onChange={(v) => setRow(idx, f.key, v)}
                     onBlur={onBlur}
                   />
@@ -1996,7 +2015,7 @@ function RowPerItemBlock({ schema, data, disabled, onChange, onBlur }) {
   );
 }
 
-function NamedFieldsBlock({ schema, data, weekOf, disabled, onChange, onBlur }) {
+function NamedFieldsBlock({ schema, data, weekOf, disabled, templateId, onChange, onBlur }) {
   const fields = Array.isArray(schema.fields) ? schema.fields : [];
 
   function setField(key, value) {
@@ -2017,6 +2036,7 @@ function NamedFieldsBlock({ schema, data, weekOf, disabled, onChange, onBlur }) 
           field={f}
           value={data?.[f.key]}
           disabled={disabled}
+          templateId={templateId}
           onChange={(v) => setField(f.key, v)}
           onBlur={onBlur}
         />
@@ -2025,7 +2045,7 @@ function NamedFieldsBlock({ schema, data, weekOf, disabled, onChange, onBlur }) 
   );
 }
 
-function NamedFieldInput({ field, value, disabled, onChange, onBlur }) {
+function NamedFieldInput({ field, value, disabled, templateId, onChange, onBlur }) {
   // row_list is the nested-rows variant — used inside named_fields (e.g.
   // major_expenses on the Friday financial report). Each child has its own
   // rowFields; the renderer mirrors the count_noteworthy add/remove pattern
@@ -2047,7 +2067,10 @@ function NamedFieldInput({ field, value, disabled, onChange, onBlur }) {
     }
 
     return (
-      <div className="scorecard-structured-field scorecard-structured-field--row-list">
+      <div
+        className="scorecard-structured-field scorecard-structured-field--row-list"
+        id={templateId ? `field-${templateId}-${field.key}` : undefined}
+      >
         <label className="scorecard-reflection-label">{field.label}</label>
         {rows.map((row, idx) => (
           <div key={idx} className="scorecard-structured-row">
@@ -2058,6 +2081,10 @@ function NamedFieldInput({ field, value, disabled, onChange, onBlur }) {
                   field={rf}
                   value={row[rf.key] ?? ''}
                   disabled={disabled}
+                  templateId={templateId}
+                  fieldKey={rf.key}
+                  rowIndex={idx}
+                  parentFieldKey={field.key}
                   onChange={(v) => setRow(idx, rf.key, v)}
                   onBlur={onBlur}
                 />
@@ -2094,6 +2121,8 @@ function NamedFieldInput({ field, value, disabled, onChange, onBlur }) {
         field={field}
         value={value ?? ''}
         disabled={disabled}
+        templateId={templateId}
+        fieldKey={field.key}
         onChange={onChange}
         onBlur={onBlur}
       />
@@ -2104,8 +2133,56 @@ function NamedFieldInput({ field, value, disabled, onChange, onBlur }) {
 // Single-input renderer for primitive field types. Used by all three patterns
 // inside their per-row or per-field loops. row_list is handled at the parent
 // (NamedFieldInput) since it requires its own rowFields scope.
-function StructuredFieldInput({ field, value, disabled, onChange, onBlur }) {
-  const inputId = `structured-${field.key}-${Math.random().toString(36).slice(2, 8)}`;
+//
+// Phase 19 D-04: deterministic input IDs. The new prop trio (templateId,
+// fieldKey, rowIndex, parentFieldKey) is REQUIRED for any new call site so
+// the inline submit-checklist's document.getElementById(anchor) resolves.
+// Anchor scheme (must match findFirstMissingFieldAnchor):
+//   named_fields top-level field:                 field-${tplId}-${fieldKey}
+//   named_fields row_list nested field:           field-${tplId}-${parentFieldKey}-${rowIndex}-${fieldKey}
+//   row_per_item rowField:                        field-${tplId}-${fieldKey}-${rowIndex}
+//   count_noteworthy noteworthy rowField:         field-${tplId}-${fieldKey}-${rowIndex}
+//   multi_choice single-select per_selection_field:
+//     parentFieldKey = `${fieldKey}__${selectionValue}`
+//     id = field-${tplId}-${parentFieldKey}-${perFieldKey}
+//   multi_choice multi-select per_selection_field:
+//     parentFieldKey = `${fieldKey}-${selectionValue}`
+//     id = field-${tplId}-${parentFieldKey}-${perFieldKey}
+// (Wave 1 plan 19-02 will pass the multi_choice-scoped parentFieldKey when
+// it wires the field-type render. Wave 0 ships the matching emit scheme in
+// findFirstMissingFieldAnchor so anchors resolve once Wave 1 lands.)
+//
+// If templateId or fieldKey are not supplied (legacy / defensive), inputId
+// falls back to a stable string built from field.key — anchors won't resolve
+// but the input still renders.
+function StructuredFieldInput({
+  field,
+  value,
+  disabled,
+  templateId,
+  fieldKey,
+  rowIndex,
+  parentFieldKey,
+  onChange,
+  onBlur,
+}) {
+  const resolvedFieldKey = fieldKey ?? field?.key ?? 'field';
+  let inputId;
+  if (templateId == null) {
+    inputId = `structured-${resolvedFieldKey}`;
+  } else if (parentFieldKey != null && Number.isInteger(rowIndex)) {
+    // row_list sub-row: parent + rowIndex + leaf
+    inputId = `field-${templateId}-${parentFieldKey}-${rowIndex}-${resolvedFieldKey}`;
+  } else if (parentFieldKey != null) {
+    // multi_choice per-selection (no rowIndex — parentFieldKey carries the selection value)
+    inputId = `field-${templateId}-${parentFieldKey}-${resolvedFieldKey}`;
+  } else if (Number.isInteger(rowIndex)) {
+    // row_per_item / count_noteworthy row leaf
+    inputId = `field-${templateId}-${resolvedFieldKey}-${rowIndex}`;
+  } else {
+    // named_fields top-level leaf
+    inputId = `field-${templateId}-${resolvedFieldKey}`;
+  }
 
   if (disabled) {
     if (field.type === 'yes_no') {
