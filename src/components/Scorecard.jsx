@@ -1250,9 +1250,8 @@ export default function Scorecard() {
                         <span className="pending-badge muted">{SCORECARD_COPY.pendingBadgeMuted}</span>
                       )}
                     </div>
-                    <div className="scorecard-growth-clause">
-                      {SCORECARD_COPY.growthPrefix} {tpl.growth_clause}
-                    </div>
+                    {/* Phase 19 refinement: growth_clause subtitle hidden per user
+                        request — data remains stored on kpi_templates. */}
 
                     {isPendingReopen && (
                       <div className="scorecard-pending-update-note">{SCORECARD_COPY.pendingUpdateNote}</div>
@@ -1375,13 +1374,6 @@ export default function Scorecard() {
 
                     <div className="scorecard-reflection" style={{ marginTop: 12 }}>
                       <label className="scorecard-reflection-label">{SCORECARD_COPY.reflectionLabel}</label>
-                      {/* UAT 2026-05-04: per-KPI reflection prompt from migration 015.
-                          Renders as italic muted helper text between label and textarea.
-                          Falls back to no helper for templates without a prompt \u2014 submit
-                          gate still requires non-empty reflection regardless. */}
-                      {tpl.reflection_prompt && (
-                        <p className="scorecard-reflection-prompt">{tpl.reflection_prompt}</p>
-                      )}
                       {bodyDisabled ? (
                         <p className="muted" style={{ margin: 0 }} id={`kpi-${tpl.id}-reflection`}>{entry.reflection || '\u2014'}</p>
                       ) : (
@@ -1392,7 +1384,6 @@ export default function Scorecard() {
                           onBlur={persistField}
                           disabled={bodyDisabled}
                           rows={3}
-                          placeholder={SCORECARD_COPY.reflectionPlaceholder}
                         />
                       )}
                     </div>
