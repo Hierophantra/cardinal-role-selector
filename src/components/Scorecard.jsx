@@ -85,18 +85,19 @@ function isRowSubmittable(tpl, entry) {
 // Returns [] when nothing is missing — Submit is enabled iff [].
 //
 // Gap detection order (matches checklist render order):
-//   1. Week rating (REFINE-15)
-//   2. Per-row: result missing (existing incomplete gate)
-//   3. Per-row: Pending without follow-through text (existing KPI-02 gate)
-//   4. Per-row: result='yes' with invalid structured fields (D-05) — points
+//   1. Per-row: result missing (existing incomplete gate)
+//   2. Per-row: Pending without follow-through text (existing KPI-02 gate)
+//   3. Per-row: result='yes' with invalid structured fields (D-05) — points
 //      at first missing field
-//   5. Per-row: reflection text missing (existing reflectionRequired gate)
-//   6. Growth followup missing (existing growthRequired gate)
+//   4. Per-row: reflection text missing (existing reflectionRequired gate)
+//   5. Growth followup missing (existing growthRequired gate)
+//
+// Phase 19 follow-up: REFINE-15 week-rating gate REMOVED. Partners shouldn't
+// be forced to rate the overall week until the week is actually closing —
+// blocking submit on the rating prevented mid-week saves. Rating is still
+// captured and persisted via auto-save, just no longer a submit blocker.
 function getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner) {
   const gaps = [];
-  if (weekRating === null || weekRating === undefined) {
-    gaps.push({ anchor: 'week-rating-input', label: 'Overall week rating (1-5)' });
-  }
   for (const tpl of rows) {
     const entry = kpiResults[tpl.id] ?? {};
     const result = entry.result;
@@ -292,29 +293,44 @@ function validateStructuredFields(schema, data, reflectionText) {
 
   const reflectionMissing = !(typeof reflectionText === 'string' && reflectionText.trim().length > 0);
 
+  // Phase 19 follow-up: a row is "fully empty" when every field is blank.
+  // hide_count cards seed N synthetic blank rows so the inputs are visible;
+  // if the partner fills only some of those rows, the leftover blank rows
+  // were failing validation. Skip fully-empty rows from per-row checks AND
+  // from the min_rows count.
+  const rowIsEmpty = (row, rowFields) =>
+    rowFields.every((f) => {
+      const v = row?.[f.key];
+      if (v === null || v === undefined) return true;
+      if (typeof v === 'string') return v.trim().length === 0;
+      return v === '';
+    });
+
   if (schema.pattern === 'count_noteworthy') {
     const noteworthy = Array.isArray(data?.noteworthy) ? data.noteworthy : [];
     const rowFields = Array.isArray(schema.rowFields) ? schema.rowFields : [];
-    const derivedCount = noteworthy.length;
+    const nonEmpty = noteworthy.filter((r) => !rowIsEmpty(r, rowFields));
+    const derivedCount = nonEmpty.length;
     const count = schema.hide_count ? derivedCount : Number(data?.count);
     if (!schema.hide_count) {
       if (!Number.isFinite(count) || count < 0 || !Number.isInteger(count)) return true;
     }
-    // min_rows + shortfall_text: when noteworthy.length < min_rows, require non-empty shortfall_text
-    if (Number.isInteger(schema.min_rows) && noteworthy.length < schema.min_rows) {
+    // min_rows + shortfall_text: when populated rows < min_rows, require non-empty shortfall_text
+    if (Number.isInteger(schema.min_rows) && nonEmpty.length < schema.min_rows) {
       const shortfallKey = schema.shortfall_text?.key;
       const shortfallVal = shortfallKey ? data?.[shortfallKey] : undefined;
       if (typeof shortfallVal !== 'string' || shortfallVal.trim().length === 0) return true;
     }
     if (count === 0 && !Number.isInteger(schema.min_rows)) return reflectionMissing;
-    if (noteworthy.length === 0) return false;
-    return noteworthy.some((row) => rowFields.some((f) => isMissingPrimitive(f, row?.[f.key], row)));
+    if (nonEmpty.length === 0) return false;
+    return nonEmpty.some((row) => rowFields.some((f) => isMissingPrimitive(f, row?.[f.key], row)));
   }
 
   if (schema.pattern === 'row_per_item') {
     const rows = Array.isArray(data?.rows) ? data.rows : [];
     const rowFields = Array.isArray(schema.rowFields) ? schema.rowFields : [];
-    const derivedCount = rows.length;
+    const nonEmpty = rows.filter((r) => !rowIsEmpty(r, rowFields));
+    const derivedCount = nonEmpty.length;
     const count = schema.hide_count ? derivedCount : Number(data?.count);
     if (!schema.hide_count) {
       if (!Number.isFinite(count) || count < 0 || !Number.isInteger(count)) return true;
@@ -323,12 +339,12 @@ function validateStructuredFields(schema, data, reflectionText) {
     } else {
       if (count === 0 && !Number.isInteger(schema.min_rows)) return reflectionMissing;
     }
-    if (Number.isInteger(schema.min_rows) && rows.length < schema.min_rows) {
+    if (Number.isInteger(schema.min_rows) && nonEmpty.length < schema.min_rows) {
       const shortfallKey = schema.shortfall_text?.key;
       const shortfallVal = shortfallKey ? data?.[shortfallKey] : undefined;
       if (typeof shortfallVal !== 'string' || shortfallVal.trim().length === 0) return true;
     }
-    return rows.some((row) => rowFields.some((f) => isMissingPrimitive(f, row?.[f.key], row)));
+    return nonEmpty.some((row) => rowFields.some((f) => isMissingPrimitive(f, row?.[f.key], row)));
   }
 
   if (schema.pattern === 'named_fields') {
@@ -842,14 +858,9 @@ export default function Scorecard() {
     // doesn't reappear when admin reopens the week.
     setSubmitError(null);
     setSaveError(null);
-    // Phase 19 REFINE-15: hard week-rating gate. Draft persists per existing
-    // persistDraft; only the submit action blocks. Mirrors the existing
-    // single-line error pattern but the inline checklist (Task 2c) also
-    // surfaces this gap with an anchor link to the rating input.
-    if (weekRating === null || weekRating === undefined) {
-      setSubmitError(SCORECARD_COPY.submitErrorWeekRatingRequired);
-      return;
-    }
+    // Phase 19 follow-up: REFINE-15 week-rating gate REMOVED. Partners
+    // shouldn't be required to rate the overall week mid-week; the rating
+    // is still captured and auto-saved, just no longer a submit blocker.
     // Defensive: rows must exist before submit. Array.some() on [] returns
     // false, so without this guard an empty-rows state would pass the
     // incomplete check and write a submitted row with kpi_results={}.
