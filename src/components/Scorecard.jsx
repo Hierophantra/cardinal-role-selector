@@ -1982,6 +1982,10 @@ function CountNoteworthyBlock({ schema, data, disabled, templateId, onChange, on
 
   return (
     <div className="scorecard-structured-fields">
+      {/* Phase 19 follow-up: helperText renders at the top of the editor too. */}
+      {schema.helperText && (
+        <p className="structured-helper-text">{schema.helperText}</p>
+      )}
       {/* Phase 19 hide_count: skip the count input entirely when schema.hide_count
           is truthy — the noteworthy list length is the authoritative count. */}
       {!schema.hide_count && (
@@ -2109,6 +2113,12 @@ function RowPerItemBlock({ schema, data, disabled, templateId, onChange, onBlur 
 
   return (
     <div className="scorecard-structured-fields">
+      {/* Phase 19 follow-up: helperText renders at the top of the structured
+          block in the editor so the equation / guideline sits next to the
+          card heading (e.g. gross-margin formula on Jerry's job profitability). */}
+      {schema.helperText && (
+        <p className="structured-helper-text">{schema.helperText}</p>
+      )}
       {/* Phase 19 hide_count: skip the count input when schema.hide_count.
           The rows list length is the authoritative count in that mode. */}
       {!schema.hide_count && (
@@ -2183,6 +2193,10 @@ function NamedFieldsBlock({ schema, data, weekOf, disabled, templateId, onChange
 
   return (
     <div className="scorecard-structured-fields">
+      {/* Phase 19 follow-up: helperText renders at top of named_fields too. */}
+      {schema.helperText && (
+        <p className="structured-helper-text">{schema.helperText}</p>
+      )}
       {schema.autoPeriod && (
         <div className="scorecard-structured-period">
           {schema.periodLabel ? `${schema.periodLabel}: ` : 'Reporting period: '}

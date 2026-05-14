@@ -3524,20 +3524,33 @@ body::before {
 }
 
 /* Phase 19 follow-up: "Nothing to add this week" opt-out checkbox above the
-   per-KPI reflection textarea. */
+   per-KPI reflection textarea. Use display:flex on the label with
+   justify-content:flex-start + width:max-content so a parent flex / grid
+   layout can't stretch the children apart. */
 .scorecard-reflection-optout {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
+  width: max-content;
+  max-width: 100%;
   margin: 6px 0 8px;
   font-size: 12px;
   color: var(--muted);
   cursor: pointer;
   user-select: none;
+  white-space: nowrap;
 }
 .scorecard-reflection-optout input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin: 0;
   accent-color: var(--red);
   cursor: pointer;
+}
+.scorecard-reflection-optout span {
+  flex: 0 0 auto;
 }
 .scorecard-reflection-optout:hover { color: var(--text); }
 
