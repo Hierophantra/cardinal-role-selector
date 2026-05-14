@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchSubmission, fetchBusinessPriorities } from '../../lib/supabase.js';
+import { fetchSubmission, fetchBusinessPriorities, fetchScorecards } from '../../lib/supabase.js';
 import {
   purposeOptions,
   salesOptions,
@@ -50,20 +50,85 @@ export default function AdminProfile() {
   const { partner } = useParams();
   const [sub, setSub] = useState(null);
   const [businessPriorities, setBusinessPriorities] = useState(null);
+  const [scorecardHistory, setScorecardHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       fetchSubmission(partner),
       fetchBusinessPriorities(),
+      fetchScorecards(partner).catch(() => []),
     ])
-      .then(([fetchedSub, biz]) => {
+      .then(([fetchedSub, biz, scorecards]) => {
         setSub(fetchedSub);
         setBusinessPriorities(biz);
+        setScorecardHistory(Array.isArray(scorecards) ? scorecards : []);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [partner]);
+
+  // Phase 19 follow-up: repeat-entry detection. Scan the last 6 weeks of
+  // submitted scorecards for string values that recur 3+ times in the same
+  // KPI's structured_data. Helps Trace spot a partner reusing "Mike, closing
+  // techniques" or delegating the same task week after week. Read-only flag
+  // surface — does not block anything.
+  function detectRepeats(history) {
+    if (!Array.isArray(history) || history.length === 0) return [];
+    const recent = history
+      .filter((s) => s.submitted_at)
+      .sort((a, b) => (b.week_of ?? '').localeCompare(a.week_of ?? ''))
+      .slice(0, 6);
+    if (recent.length < 3) return [];
+    // freq[kpiId][stringValue] = { count, weeks: [...] }
+    const freq = {};
+    for (const sc of recent) {
+      const kr = sc.kpi_results || {};
+      for (const [kpiId, entry] of Object.entries(kr)) {
+        const sd = entry?.structured_data || {};
+        // Walk top-level string values and per-row string values.
+        const collectStrings = (obj) => {
+          const out = [];
+          if (!obj || typeof obj !== 'object') return out;
+          for (const v of Object.values(obj)) {
+            if (typeof v === 'string' && v.trim().length > 2) {
+              out.push(v.trim().toLowerCase());
+            } else if (Array.isArray(v)) {
+              for (const row of v) {
+                if (row && typeof row === 'object') {
+                  for (const rv of Object.values(row)) {
+                    if (typeof rv === 'string' && rv.trim().length > 2) {
+                      out.push(rv.trim().toLowerCase());
+                    }
+                  }
+                }
+              }
+            }
+          }
+          return out;
+        };
+        const strs = collectStrings(sd);
+        if (strs.length === 0) continue;
+        freq[kpiId] = freq[kpiId] || {};
+        for (const s of new Set(strs)) {
+          freq[kpiId][s] = freq[kpiId][s] || { count: 0, weeks: [] };
+          freq[kpiId][s].count += 1;
+          freq[kpiId][s].weeks.push(sc.week_of);
+        }
+      }
+    }
+    const flags = [];
+    for (const [kpiId, valueMap] of Object.entries(freq)) {
+      for (const [value, info] of Object.entries(valueMap)) {
+        if (info.count >= 3) {
+          flags.push({ kpiId, value, count: info.count, weeks: info.weeks });
+        }
+      }
+    }
+    return flags.sort((a, b) => b.count - a.count).slice(0, 10);
+  }
+
+  const repeats = detectRepeats(scorecardHistory);
 
   if (loading) return <div className="container"><p className="muted">Loading...</p></div>;
 
@@ -134,6 +199,26 @@ export default function AdminProfile() {
 
           {/* Business Priorities (Phase 18 BIZ-02, D-11) — shared, identical for both partners */}
           <BusinessPrioritiesSection priorities={businessPriorities} />
+
+          {/* Phase 19 follow-up: repeat-entry watch. Surfaces structured-data
+              values that appeared 3+ times in the partner's last 6 submitted
+              scorecards. Read-only signal — does not block anything. */}
+          {repeats.length > 0 && (
+            <div className="repeat-watch">
+              <div className="repeat-watch-heading">Repeat-entry watch (last 6 weeks)</div>
+              <p className="repeat-watch-subtext">
+                These values recurred 3+ times across recent scorecards. Worth raising at the next Friday meeting if they suggest a stalled commitment.
+              </p>
+              <ul className="repeat-watch-list">
+                {repeats.map((flag, i) => (
+                  <li key={i} className="repeat-watch-item">
+                    <span className="repeat-watch-value">"{flag.value}"</span>
+                    <span className="repeat-watch-count">{flag.count}× across {flag.weeks.length} weeks</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Purpose */}
           <Section title="Purpose Orientation">

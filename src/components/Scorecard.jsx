@@ -131,12 +131,22 @@ function getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner
         });
       }
     }
-    // 5. reflection text missing
+    // 5. reflection text missing OR too short.
+    // Phase 19 follow-up: explicit "Nothing to add this week" opt-out skips
+    // the empty-reflection gap. If text IS present it must clear a 10-char
+    // minimum so single-word "ok"/"yes" entries don't slip through.
     const reflection = entry.reflection;
-    if (typeof reflection !== 'string' || reflection.trim().length === 0) {
+    const optedOut = !!entry.reflection_optout;
+    const trimmed = typeof reflection === 'string' ? reflection.trim() : '';
+    if (!optedOut && trimmed.length === 0) {
       gaps.push({
         anchor: `kpi-${tpl.id}-reflection`,
-        label: `${tpl.label_snapshot ?? tpl.label ?? tpl.baseline_action ?? 'KPI'}: Add your reflection`,
+        label: `${tpl.label_snapshot ?? tpl.label ?? tpl.baseline_action ?? 'KPI'}: Add a reflection or check "Nothing to add"`,
+      });
+    } else if (trimmed.length > 0 && trimmed.length < 10) {
+      gaps.push({
+        anchor: `kpi-${tpl.id}-reflection`,
+        label: `${tpl.label_snapshot ?? tpl.label ?? tpl.baseline_action ?? 'KPI'}: Reflection needs at least 10 characters`,
       });
     }
   }
@@ -278,17 +288,33 @@ function validateStructuredFields(schema, data, reflectionText) {
   };
 
   const isMissingPrimitive = (field, value, siblingData) => {
-    if (!isRequiredEffective(field, siblingData)) return false;
-    if (field.type === 'yes_no') return value !== 'yes' && value !== 'no';
+    const required = isRequiredEffective(field, siblingData);
+    if (field.type === 'yes_no') {
+      if (!required) return false;
+      return value !== 'yes' && value !== 'no';
+    }
     if (field.type === 'number' || field.type === 'currency') {
+      if (!required) return false;
       return value === '' || value === null || value === undefined || !Number.isFinite(Number(value));
     }
     if (field.type === 'multi_choice') {
+      if (!required) return false;
       if (field.single_select) return typeof value !== 'string' || value.trim().length === 0;
       return !Array.isArray(value) || value.length === 0;
     }
     // text / textarea / fallback
-    return typeof value !== 'string' || value.trim().length === 0;
+    // Phase 19 follow-up: min_length enforced for both required + optional text.
+    //   Required + empty -> missing.
+    //   Required + present but shorter than min_length -> missing (lazy entry).
+    //   Optional + empty -> OK.
+    //   Optional + present but shorter than min_length -> missing (forces
+    //     "complete or skip" — no "ok" / "yes" half-entries).
+    const trimmed = typeof value === 'string' ? value.trim() : '';
+    if (required && trimmed.length === 0) return true;
+    if (trimmed.length > 0 && Number.isInteger(field.min_length) && trimmed.length < field.min_length) {
+      return true;
+    }
+    return false;
   };
 
   const reflectionMissing = !(typeof reflectionText === 'string' && reflectionText.trim().length > 0);
@@ -575,6 +601,9 @@ export default function Scorecard() {
             // updated_at bumps on every change. Persisted in kpi_results JSONB.
             answered_at: existing?.answered_at ?? null,
             updated_at: existing?.updated_at ?? null,
+            // Phase 19 follow-up: explicit "Nothing to add this week" opt-out
+            // for the per-KPI reflection. Persisted in kpi_results JSONB.
+            reflection_optout: existing?.reflection_optout ?? false,
           };
         });
         setKpiResults(seededResults);
@@ -754,11 +783,8 @@ export default function Scorecard() {
     const next = {
       ...kpiResults,
       [templateId]: {
+        ...current,
         result,
-        reflection: current.reflection ?? '',
-        count: current.count ?? 0,
-        pending_text: current.pending_text ?? '',
-        structured_data: current.structured_data ?? {},
         answered_at: current.answered_at ?? (firstAnswer ? now : null),
         updated_at: now,
       },
@@ -771,12 +797,24 @@ export default function Scorecard() {
     setKpiResults((prev) => ({
       ...prev,
       [templateId]: {
-        result: prev[templateId]?.result ?? null,
+        ...prev[templateId],
         reflection: text,
-        count: prev[templateId]?.count ?? 0,
-        pending_text: prev[templateId]?.pending_text ?? '',
-        structured_data: prev[templateId]?.structured_data ?? {},
-        answered_at: prev[templateId]?.answered_at ?? null,
+        // Typing text implicitly cancels the "Nothing to add" opt-out.
+        reflection_optout: text.length > 0 ? false : (prev[templateId]?.reflection_optout ?? false),
+        updated_at: new Date().toISOString(),
+      },
+    }));
+  }
+
+  // Phase 19 follow-up: explicit opt-out for the per-KPI reflection.
+  // Checking the box clears any existing text. Unchecking re-enables typing.
+  function setReflectionOptoutLocal(templateId, optout) {
+    setKpiResults((prev) => ({
+      ...prev,
+      [templateId]: {
+        ...prev[templateId],
+        reflection_optout: !!optout,
+        reflection: optout ? '' : (prev[templateId]?.reflection ?? ''),
         updated_at: new Date().toISOString(),
       },
     }));
@@ -786,12 +824,8 @@ export default function Scorecard() {
     setKpiResults((prev) => ({
       ...prev,
       [templateId]: {
-        result: prev[templateId]?.result ?? null,
-        reflection: prev[templateId]?.reflection ?? '',
-        count: prev[templateId]?.count ?? 0,
+        ...prev[templateId],
         pending_text: text,
-        structured_data: prev[templateId]?.structured_data ?? {},
-        answered_at: prev[templateId]?.answered_at ?? null,
         updated_at: new Date().toISOString(),
       },
     }));
@@ -802,12 +836,8 @@ export default function Scorecard() {
     setKpiResults((prev) => ({
       ...prev,
       [templateId]: {
-        result: prev[templateId]?.result ?? null,
-        reflection: prev[templateId]?.reflection ?? '',
+        ...prev[templateId],
         count: Number.isFinite(numeric) ? numeric : 0,
-        pending_text: prev[templateId]?.pending_text ?? '',
-        structured_data: prev[templateId]?.structured_data ?? {},
-        answered_at: prev[templateId]?.answered_at ?? null,
         updated_at: new Date().toISOString(),
       },
     }));
@@ -815,18 +845,13 @@ export default function Scorecard() {
 
   // Wave 1 (migration 020): mutator for the per-KPI structured_data block.
   // The renderer (StructuredFieldsBlock) calls this with the full next-shape
-  // structured_data object — same pattern as setReflectionLocal. Persistence
-  // is via persistField onBlur (no debounce; matches reflection / count).
+  // structured_data object.
   function setStructuredDataLocal(templateId, structuredData) {
     setKpiResults((prev) => ({
       ...prev,
       [templateId]: {
-        result: prev[templateId]?.result ?? null,
-        reflection: prev[templateId]?.reflection ?? '',
-        count: prev[templateId]?.count ?? 0,
-        pending_text: prev[templateId]?.pending_text ?? '',
+        ...prev[templateId],
         structured_data: structuredData ?? {},
-        answered_at: prev[templateId]?.answered_at ?? null,
         updated_at: new Date().toISOString(),
       },
     }));
@@ -1405,16 +1430,36 @@ export default function Scorecard() {
                     <div className="scorecard-reflection" style={{ marginTop: 12 }}>
                       <label className="scorecard-reflection-label">{SCORECARD_COPY.reflectionLabel}</label>
                       {bodyDisabled ? (
-                        <p className="muted" style={{ margin: 0 }} id={`kpi-${tpl.id}-reflection`}>{entry.reflection || '\u2014'}</p>
+                        <p className="muted" style={{ margin: 0 }} id={`kpi-${tpl.id}-reflection`}>
+                          {entry.reflection_optout ? 'Nothing to add this week' : (entry.reflection || '\u2014')}
+                        </p>
                       ) : (
-                        <textarea
-                          id={`kpi-${tpl.id}-reflection`}
-                          value={entry.reflection}
-                          onChange={(e) => setReflectionLocal(tpl.id, e.target.value)}
-                          onBlur={persistField}
-                          disabled={bodyDisabled}
-                          rows={3}
-                        />
+                        <>
+                          {/* Phase 19 follow-up: explicit opt-out checkbox.
+                              Checking it clears the textarea and disables it.
+                              If unchecked AND text is present, the submit gate
+                              enforces a 10-char minimum. */}
+                          <label className="scorecard-reflection-optout">
+                            <input
+                              type="checkbox"
+                              checked={!!entry.reflection_optout}
+                              onChange={(e) => {
+                                setReflectionOptoutLocal(tpl.id, e.target.checked);
+                                persistField();
+                              }}
+                            />
+                            <span>Nothing to add this week</span>
+                          </label>
+                          <textarea
+                            id={`kpi-${tpl.id}-reflection`}
+                            value={entry.reflection_optout ? '' : entry.reflection}
+                            onChange={(e) => setReflectionLocal(tpl.id, e.target.value)}
+                            onBlur={persistField}
+                            disabled={bodyDisabled || !!entry.reflection_optout}
+                            rows={3}
+                            placeholder={entry.reflection_optout ? '' : 'At least 10 characters if you add something'}
+                          />
+                        </>
                       )}
                     </div>
 

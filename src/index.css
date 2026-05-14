@@ -3522,3 +3522,113 @@ body::before {
   position: relative;
   z-index: 1;
 }
+
+/* Phase 19 follow-up: "Nothing to add this week" opt-out checkbox above the
+   per-KPI reflection textarea. */
+.scorecard-reflection-optout {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 8px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.scorecard-reflection-optout input[type="checkbox"] {
+  accent-color: var(--red);
+  cursor: pointer;
+}
+.scorecard-reflection-optout:hover { color: var(--text); }
+
+/* Phase 19 follow-up: draft progress indicator on AdminHub. */
+.draft-progress {
+  margin: 16px 0 24px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.draft-progress-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.draft-progress-row {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.draft-progress-row:first-of-type {
+  border-top: none;
+}
+.draft-progress-label {
+  font-weight: 700;
+  color: var(--text);
+}
+.draft-progress-stat {
+  color: var(--text);
+}
+.draft-progress-time {
+  color: var(--muted);
+  font-size: 12px;
+}
+.draft-progress-time--submitted {
+  color: var(--success);
+  font-weight: 600;
+}
+
+/* Phase 19 follow-up: repeat-entry watch on AdminProfile. */
+.repeat-watch {
+  margin: 16px 0 24px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: 10px;
+}
+.repeat-watch-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+.repeat-watch-subtext {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0 0 10px;
+}
+.repeat-watch-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.repeat-watch-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.repeat-watch-item:first-of-type {
+  border-top: none;
+}
+.repeat-watch-value {
+  color: var(--text);
+  font-style: italic;
+}
+.repeat-watch-count {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}

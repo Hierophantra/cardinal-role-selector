@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { fetchWeeklyKpiSelection } from '../../lib/supabase.js';
+import { fetchWeeklyKpiSelection, fetchScorecard } from '../../lib/supabase.js';
 import { getMondayOf } from '../../lib/week.js';
 import { HUB_COPY } from '../../data/content.js';
 
@@ -8,6 +8,8 @@ export default function AdminHub() {
   const navigate = useNavigate();
   const [theoWeekly, setTheoWeekly] = useState(null);
   const [jerryWeekly, setJerryWeekly] = useState(null);
+  const [theoDraft, setTheoDraft] = useState(null);
+  const [jerryDraft, setJerryDraft] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -16,10 +18,14 @@ export default function AdminHub() {
     Promise.all([
       fetchWeeklyKpiSelection('theo', currentMonday).catch(() => null),
       fetchWeeklyKpiSelection('jerry', currentMonday).catch(() => null),
+      fetchScorecard('theo', currentMonday).catch(() => null),
+      fetchScorecard('jerry', currentMonday).catch(() => null),
     ])
-      .then(([theoRow, jerryRow]) => {
+      .then(([theoRow, jerryRow, theoSc, jerrySc]) => {
         setTheoWeekly(theoRow);
         setJerryWeekly(jerryRow);
+        setTheoDraft(theoSc);
+        setJerryDraft(jerrySc);
       })
       .catch((err) => {
         console.error(err);
@@ -27,6 +33,49 @@ export default function AdminHub() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  // Phase 19 follow-up: per-partner draft progress signal. Counts how many
+  // KPI rows have been touched this week (non-null result OR any structured
+  // data) and surfaces the most recent edit time. Helps Trace spot partners
+  // who're saving everything Friday morning vs engaging through the week.
+  function summarizeDraft(scorecard) {
+    if (!scorecard || !scorecard.kpi_results) {
+      return { touched: 0, total: 0, lastEdit: null, submitted: false };
+    }
+    const entries = Object.values(scorecard.kpi_results || {});
+    const touched = entries.filter((e) => {
+      if (!e) return false;
+      if (e.result === 'yes' || e.result === 'no' || e.result === 'pending') return true;
+      if (typeof e.reflection === 'string' && e.reflection.trim().length > 0) return true;
+      if (e.structured_data && Object.keys(e.structured_data).length > 0) return true;
+      return false;
+    }).length;
+    const lastEdit = entries
+      .map((e) => e?.updated_at)
+      .filter(Boolean)
+      .sort()
+      .pop() || null;
+    return {
+      touched,
+      total: entries.length,
+      lastEdit,
+      submitted: !!scorecard.submitted_at,
+    };
+  }
+
+  function formatRelative(iso) {
+    if (!iso) return 'no activity yet';
+    const dt = new Date(iso);
+    const ms = Date.now() - dt.getTime();
+    const hours = Math.floor(ms / 3600000);
+    if (hours < 1) return 'just now';
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
+
+  const theoSummary = summarizeDraft(theoDraft);
+  const jerrySummary = summarizeDraft(jerryDraft);
 
   if (loading) return null;
 
@@ -78,6 +127,31 @@ export default function AdminHub() {
                 {line.text}
               </div>
             ))}
+          </div>
+
+          {/* Phase 19 follow-up: draft progress indicator. Shows per-partner
+              touch count + last activity so Trace can spot Friday-morning
+              cramming versus genuine through-the-week engagement. */}
+          <div className="draft-progress">
+            <div className="draft-progress-heading">Draft progress (this week)</div>
+            <div className="draft-progress-row">
+              <span className="draft-progress-label">Theo</span>
+              <span className="draft-progress-stat">
+                {theoSummary.touched}/{theoSummary.total || '—'} KPIs touched
+              </span>
+              <span className={`draft-progress-time${theoSummary.submitted ? ' draft-progress-time--submitted' : ''}`}>
+                {theoSummary.submitted ? 'Submitted' : `Last edit: ${formatRelative(theoSummary.lastEdit)}`}
+              </span>
+            </div>
+            <div className="draft-progress-row">
+              <span className="draft-progress-label">Jerry</span>
+              <span className="draft-progress-stat">
+                {jerrySummary.touched}/{jerrySummary.total || '—'} KPIs touched
+              </span>
+              <span className={`draft-progress-time${jerrySummary.submitted ? ' draft-progress-time--submitted' : ''}`}>
+                {jerrySummary.submitted ? 'Submitted' : `Last edit: ${formatRelative(jerrySummary.lastEdit)}`}
+              </span>
+            </div>
           </div>
 
           {/* Meeting Mode Hero Card (per D-02 / Pitfall 6) — lives OUTSIDE .hub-grid so it renders full-width */}
