@@ -13,6 +13,10 @@ import {
   fetchScorecard,
   fetchBusinessPriorities,
   fetchWeekPlanForWeek,
+  fetchWeeklyObjectives,
+  addWeeklyObjective,
+  updateWeeklyObjective,
+  deleteWeeklyObjective,
 } from '../../lib/supabase.js';
 import { formatWeekRange, effectiveResult, isWeekClosed } from '../../lib/week.js';
 import { composePartnerKpis } from '../../lib/partnerKpis.js';
@@ -856,6 +860,16 @@ function StopRenderer({
     );
   }
 
+  if (stopKey === 'week_objectives') {
+    return (
+      <WeekObjectivesStop
+        weekOf={meeting?.week_of}
+        copy={copy}
+        isEnded={isEnded}
+      />
+    );
+  }
+
   if (stopKey === 'priorities_focus') {
     return (
       <PrioritiesFocusStop
@@ -1304,6 +1318,164 @@ function WeekPreviewStop({ notes, savedFlash, onNoteChange, copy, isEnded }) {
         copy={copy}
         isEnded={isEnded}
       />
+    </>
+  );
+}
+
+// UAT 2026-05-18 (Week Objectives): card-based consolidation of the four
+// legacy WEEK PLAN stops. Each card is one objective assigned to a partner
+// (or both), with priority / risks / deadline. Persists to weekly_objectives.
+const OBJECTIVE_ASSIGNEES = [
+  { value: 'theo', label: 'Theo' },
+  { value: 'jerry', label: 'Jerry' },
+  { value: 'both', label: 'Both' },
+];
+
+function WeekObjectivesStop({ weekOf, copy, isEnded }) {
+  const [objectives, setObjectives] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!weekOf) { setLoading(false); return undefined; }
+    let active = true;
+    fetchWeeklyObjectives(weekOf)
+      .then((rows) => { if (active) setObjectives(rows); })
+      .catch(console.error)
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [weekOf]);
+
+  async function handleAdd() {
+    if (busy || !weekOf) return;
+    setBusy(true);
+    try {
+      const row = await addWeeklyObjective(weekOf, 'theo');
+      setObjectives((prev) => [...prev, row]);
+    } catch (e) { console.error(e); }
+    finally { setBusy(false); }
+  }
+
+  // Local edit — controlled inputs update state immediately; persistence
+  // fires on blur (field) or on click (assignee).
+  function setLocal(id, field, value) {
+    setObjectives((prev) => prev.map((o) => (o.id === id ? { ...o, [field]: value } : o)));
+  }
+
+  async function persist(id, field, value) {
+    if (isEnded) return;
+    try {
+      await updateWeeklyObjective(id, { [field]: value });
+    } catch (e) { console.error(e); }
+  }
+
+  async function handleAssignee(id, assignee) {
+    setLocal(id, 'assignee', assignee);
+    await persist(id, 'assignee', assignee);
+  }
+
+  async function handleRemove(id) {
+    if (busy) return;
+    if (typeof window !== 'undefined' && !window.confirm('Remove this objective?')) return;
+    setBusy(true);
+    try {
+      await deleteWeeklyObjective(id);
+      setObjectives((prev) => prev.filter((o) => o.id !== id));
+    } catch (e) { console.error(e); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <>
+      <div className="eyebrow meeting-stop-eyebrow">{copy.stops.weekObjectivesEyebrow}</div>
+      <h2 className="meeting-stop-heading" style={{ fontSize: 28, lineHeight: 1.2 }}>
+        {copy.stops.weekObjectivesHeading}
+      </h2>
+      <p className="meeting-stop-subtext">{copy.stops.weekObjectivesSubtext}</p>
+
+      {loading ? null : (
+        <div className="objective-board">
+          {objectives.length === 0 && (
+            <p className="objective-empty">
+              {isEnded ? 'No objectives were captured for this week.' : 'No objectives yet. Add the first one below.'}
+            </p>
+          )}
+
+          {objectives.map((obj) => (
+            <div key={obj.id} className="objective-card">
+              <div className="objective-card-head">
+                <div className="objective-assignee-toggle">
+                  {OBJECTIVE_ASSIGNEES.map((a) => (
+                    <button
+                      key={a.value}
+                      type="button"
+                      className={`objective-assignee-btn${obj.assignee === a.value ? ' active' : ''}`}
+                      disabled={isEnded}
+                      onClick={() => handleAssignee(obj.id, a.value)}
+                    >
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+                {!isEnded && (
+                  <button
+                    type="button"
+                    className="btn-ghost objective-remove"
+                    disabled={busy}
+                    onClick={() => handleRemove(obj.id)}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+
+              <label className="objective-field-label">Priority</label>
+              <textarea
+                className="objective-field"
+                rows={2}
+                value={obj.priority ?? ''}
+                disabled={isEnded}
+                placeholder="What is the priority?"
+                onChange={(e) => setLocal(obj.id, 'priority', e.target.value)}
+                onBlur={(e) => persist(obj.id, 'priority', e.target.value)}
+              />
+
+              <label className="objective-field-label">Risks &amp; blockers</label>
+              <textarea
+                className="objective-field"
+                rows={2}
+                value={obj.risks ?? ''}
+                disabled={isEnded}
+                placeholder="What could get in the way? Where is help needed?"
+                onChange={(e) => setLocal(obj.id, 'risks', e.target.value)}
+                onBlur={(e) => persist(obj.id, 'risks', e.target.value)}
+              />
+
+              <label className="objective-field-label">Deadline / commitment window</label>
+              <input
+                type="text"
+                className="objective-field objective-field--deadline"
+                value={obj.deadline ?? ''}
+                disabled={isEnded}
+                placeholder="e.g. by Friday, end of month, 2026-05-22"
+                onChange={(e) => setLocal(obj.id, 'deadline', e.target.value)}
+                onBlur={(e) => persist(obj.id, 'deadline', e.target.value)}
+              />
+            </div>
+          ))}
+
+          {!isEnded && (
+            <button
+              type="button"
+              className="btn-ghost objective-add"
+              disabled={busy || !weekOf}
+              onClick={handleAdd}
+            >
+              + New priority
+            </button>
+          )}
+        </div>
+      )}
     </>
   );
 }

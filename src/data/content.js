@@ -855,6 +855,11 @@ export const MONDAY_PREP_COPY = {
     weekPreviewEyebrow: 'WEEK PREVIEW',
     weekPreviewHeading: "What's Coming This Week",
     weekPreviewSubtext: "Jobs going up, deadlines, weekly objectives, and uncertainties to surface.",
+    // UAT 2026-05-18 (Week Objectives): the consolidated card-based stop.
+    weekObjectivesEyebrow: 'WEEK PLAN',
+    weekObjectivesHeading: "This Week's Accountability Objectives",
+    weekObjectivesSubtext:
+      'One card per objective. Assign it to Theo, Jerry, or both, then capture the priority, any risks or blockers, and the deadline or commitment window. Cards land on the assigned partner’s hub for the week.',
     // UAT 2026-05-04 (Week Plan): three Monday Prep stops rebranded as one
     // logical "WEEK PLAN" section so the eyebrow reads consistently with the
     // hub WeekPlanCard and the Friday week_plan_recap stop. Headings + subtexts
@@ -945,15 +950,26 @@ export const FRIDAY_STOPS = [
   'additional_notes',
 ];
 
+// UAT 2026-05-18 (Week Objectives): the four legacy WEEK PLAN stops
+// (week_preview, priorities_focus, risks_blockers, commitments) collapse into
+// a single card-based 'week_objectives' stop. Cards persist in the
+// weekly_objectives table, not meeting notes.
 export const MONDAY_STOPS = [
   'clear_the_air',
   'saturday_recap',
   'acculynx_task_review',
+  'week_objectives',
+  'additional_notes',
+];
+
+// Legacy Monday stop keys retired by the week_objectives consolidation.
+// MeetingSummary appends any of these that still have captured notes so
+// historical Monday meetings remain fully viewable (read-only).
+export const LEGACY_MONDAY_STOPS = [
   'week_preview',
   'priorities_focus',
   'risks_blockers',
   'commitments',
-  'additional_notes',
 ];
 
 // Phase 17: filter narrowed to numbered kpi stops only ('kpi_1'..'kpi_7') so the new

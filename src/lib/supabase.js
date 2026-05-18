@@ -1306,3 +1306,57 @@ export async function deleteInfraction(id) {
     .eq('id', id);
   if (error) throw error;
 }
+
+// --- Phase 19 follow-up: weekly objectives (card-based Monday plan) ---
+// Card-per-objective replacing the 4 legacy Monday stops. assignee is
+// 'theo' | 'jerry' | 'both'. Keyed by week_of (Monday date string).
+
+export async function fetchWeeklyObjectives(weekOf) {
+  const { data, error } = await supabase
+    .from('weekly_objectives')
+    .select('*')
+    .eq('week_of', weekOf)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchWeeklyObjectivesForPartner(partner, weekOf) {
+  const { data, error } = await supabase
+    .from('weekly_objectives')
+    .select('*')
+    .eq('week_of', weekOf)
+    .in('assignee', [partner, 'both'])
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function addWeeklyObjective(weekOf, assignee) {
+  const { data, error } = await supabase
+    .from('weekly_objectives')
+    .insert({ week_of: weekOf, assignee, priority: '', risks: '', deadline: '' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateWeeklyObjective(id, fields) {
+  const { data, error } = await supabase
+    .from('weekly_objectives')
+    .update(fields)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteWeeklyObjective(id) {
+  const { error } = await supabase
+    .from('weekly_objectives')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}

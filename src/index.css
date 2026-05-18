@@ -3738,3 +3738,113 @@ body::before {
 .infractions-input--note { flex: 1 1 220px; min-width: 160px; }
 .infractions-btn { font-size: 12px; padding: 6px 12px; }
 .infractions-btn--remove { color: var(--miss); }
+
+/* UAT 2026-05-18 (Week Objectives): card-based Monday objectives. */
+.objective-board {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 16px;
+}
+.objective-empty {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 12px 0;
+}
+.objective-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.objective-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.objective-assignee-toggle {
+  display: flex;
+  gap: 4px;
+}
+.objective-assignee-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.objective-assignee-btn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.objective-assignee-btn.active {
+  background: rgba(196, 30, 58, 0.14);
+  border-color: var(--red);
+  color: var(--text);
+}
+.objective-assignee-btn:disabled { cursor: default; }
+.objective-remove { font-size: 12px; padding: 5px 10px; color: var(--miss); }
+.objective-field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin: 10px 0 4px;
+}
+.objective-field {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  padding: 8px 10px;
+  resize: vertical;
+}
+.objective-field--deadline { resize: none; }
+.objective-add {
+  align-self: flex-start;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+}
+/* Read-only variants (meeting summary + hub). */
+.objective-card--readonly .objective-readonly-field { margin-top: 8px; }
+.objective-card--readonly .objective-readonly-field:first-of-type { margin-top: 0; }
+.objective-readonly-field p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+}
+.objective-card-assignee {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--red);
+  margin-bottom: 4px;
+}
+.objective-card-deadline {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.06);
+}
+.objective-card-deadline-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}

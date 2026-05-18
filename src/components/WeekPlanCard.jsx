@@ -1,71 +1,49 @@
-// src/components/WeekPlanCard.jsx — UAT 2026-05-04 Week Plan feature
-// Read-only display of "This Week's Plan" — surfaces Monday Prep's per-partner
-// notes (priorities_focus, risks_blockers, commitments) on each partner's hub.
-// Receives `weekPlan` as the result shape from fetchWeekPlanForWeek.
-// Empty state: weekPlan.meetingId === null → "No plan captured yet".
-// Trace edits the plan via the meeting flow; partners view only.
+// src/components/WeekPlanCard.jsx
+// UAT 2026-05-18 (Week Objectives): rewritten from the 3-textbox week-plan
+// display to a card list. Surfaces this partner's accountability objectives
+// for the current week — one card per objective, each with priority, risks &
+// blockers, and a deadline / commitment window. Trace builds these in Monday
+// meeting mode; partners view only.
+// Receives `objectives` — the array from fetchWeeklyObjectivesForPartner.
+//   null      -> still loading, render nothing
+//   []        -> loaded, none captured -> empty state
 
-import { PARTNER_DISPLAY } from '../data/content.js';
-
-const PARTNERS = ['theo', 'jerry'];
-
-const SECTIONS = [
-  { key: 'priorities_focus', heading: 'Priorities' },
-  { key: 'risks_blockers', heading: 'Risks & Blockers' },
-  { key: 'commitments', heading: 'Walk-Away Commitments' },
-];
-
-export default function WeekPlanCard({ weekPlan }) {
-  // Loading: parent still resolving — render nothing.
-  if (weekPlan === null || weekPlan === undefined) return null;
-
-  // Empty state: no Monday Prep meeting captured for this week.
-  if (weekPlan.meetingId === null) {
-    return (
-      <section className="week-plan-card hub-section">
-        <div className="eyebrow">MONDAY PREP</div>
-        <h3 className="week-plan-card__heading">This Week&apos;s Plan</h3>
-        <p className="week-plan-card__empty">
-          No plan captured yet. See you at Monday Prep.
-        </p>
-      </section>
-    );
-  }
-
-  const notes = weekPlan.notes ?? {};
+export default function WeekPlanCard({ objectives }) {
+  if (objectives === null || objectives === undefined) return null;
 
   return (
     <section className="week-plan-card hub-section">
-      <div className="eyebrow">MONDAY PREP</div>
-      <h3 className="week-plan-card__heading">This Week&apos;s Plan</h3>
+      <div className="eyebrow">THIS WEEK</div>
+      <h3 className="week-plan-card__heading">Accountability Objectives</h3>
 
-      {SECTIONS.map(({ key, heading }) => {
-        const cell = notes[key] ?? { theo: '', jerry: '' };
-        return (
-          <div key={key} className="week-plan-card__section">
-            <div className="week-plan-card__section-heading">{heading}</div>
-            <div className="week-plan-card__partner-grid">
-              {PARTNERS.map((p) => {
-                const text = (cell[p] ?? '').trim();
-                return (
-                  <div key={p} className="week-plan-card__partner-cell">
-                    <div className="week-plan-card__partner-name">
-                      {PARTNER_DISPLAY[p] ?? p}
-                    </div>
-                    {text ? (
-                      <p className="week-plan-card__partner-text">{text}</p>
-                    ) : (
-                      <p className="week-plan-card__partner-empty">
-                        No notes captured.
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
+      {objectives.length === 0 ? (
+        <p className="week-plan-card__empty">
+          No objectives captured yet. See you at Monday Prep.
+        </p>
+      ) : (
+        <div className="objective-board objective-board--hub">
+          {objectives.map((obj) => (
+            <div key={obj.id} className="objective-card objective-card--readonly">
+              <div className="objective-readonly-field">
+                <span className="objective-field-label">Priority</span>
+                <p>{obj.priority?.trim() || '—'}</p>
+              </div>
+              {obj.risks?.trim() && (
+                <div className="objective-readonly-field">
+                  <span className="objective-field-label">Risks &amp; blockers</span>
+                  <p>{obj.risks.trim()}</p>
+                </div>
+              )}
+              {obj.deadline?.trim() && (
+                <div className="objective-card-deadline">
+                  <span className="objective-field-label">Deadline</span>
+                  <span className="objective-card-deadline-value">{obj.deadline.trim()}</span>
+                </div>
+              )}
             </div>
-          </div>
-        );
-      })}
+          ))}
+        </div>
+      )}
     </section>
   );
 }

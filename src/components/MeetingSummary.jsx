@@ -6,6 +6,7 @@ import {
   fetchScorecard,
   fetchGrowthPriorities,
   fetchWeekPlanForWeek,
+  fetchWeeklyObjectives,
 } from '../lib/supabase.js';
 import { formatWeekRange, effectiveResult } from '../lib/week.js';
 import { composePartnerKpis } from '../lib/partnerKpis.js';
@@ -17,6 +18,7 @@ import {
   GROWTH_STATUS_COPY,
   FRIDAY_STOPS,
   MONDAY_STOPS,
+  LEGACY_MONDAY_STOPS,
   KPI_STOP_COUNT,
 } from '../data/content.js';
 import StructuredFieldsReadOnly from './StructuredFieldsReadOnly.jsx';
@@ -105,6 +107,9 @@ export default function MeetingSummary() {
     // so the week_plan_recap stop renders self-contained. Null on Monday Prep
     // summaries (Monday IS the source).
     weekPlan: null,
+    // UAT 2026-05-18 (Week Objectives): card-based Monday objectives for the
+    // meeting's week. Empty array on weeks before the feature shipped.
+    objectives: [],
   });
 
   useEffect(() => {
@@ -148,6 +153,7 @@ export default function MeetingSummary() {
           theoPrevScorecard,
           jerryPrevScorecard,
           weekPlan,
+          objectives,
         ] = await Promise.all([
           fetchMeetingNotes(ended.id),
           composePartnerKpis('theo', ended.week_of),
@@ -162,6 +168,8 @@ export default function MeetingSummary() {
           // summaries so the week_plan_recap stop is self-contained. Skipped
           // for Monday Prep summaries — they ARE the plan.
           isMondayPrep ? Promise.resolve(null) : fetchWeekPlanForWeek(ended.week_of),
+          // UAT 2026-05-18 (Week Objectives): card-based Monday objectives.
+          fetchWeeklyObjectives(ended.week_of).catch(() => []),
         ]);
 
         if (!alive) return;
@@ -197,6 +205,7 @@ export default function MeetingSummary() {
           },
           lastWeekScorecards,
           weekPlan,
+          objectives: objectives ?? [],
         });
         setLoading(false);
       } catch (err) {
@@ -216,8 +225,19 @@ export default function MeetingSummary() {
 
   if (loading) return null;
 
-  // Select stop array based on meeting type; meeting may be null when error/empty shown
-  const stops = meeting?.meeting_type === 'monday_prep' ? MONDAY_STOPS : FRIDAY_STOPS;
+  // Select stop array based on meeting type; meeting may be null when error/empty shown.
+  // UAT 2026-05-18 (Week Objectives): for Monday Prep, append any legacy
+  // WEEK PLAN stops that still have captured notes so historical meetings
+  // (pre-consolidation) remain fully viewable read-only.
+  let stops = meeting?.meeting_type === 'monday_prep' ? MONDAY_STOPS : FRIDAY_STOPS;
+  if (meeting?.meeting_type === 'monday_prep') {
+    const legacyWithNotes = LEGACY_MONDAY_STOPS.filter(
+      (k) => notesByStop[k] || perPartnerNotesByStop[k],
+    );
+    if (legacyWithNotes.length > 0) {
+      stops = [...stops, ...legacyWithNotes];
+    }
+  }
 
   return (
     <div className="app-shell">
@@ -585,6 +605,41 @@ function StopBlock({ stopKey, stopIndex, notesByStop, perPartnerNotesByStop, dat
         {wpNote
           ? <p style={{ fontSize: 15, lineHeight: 1.6 }}>{wpNote}</p>
           : <p className="muted">No notes for this stop.</p>}
+      </div>
+    );
+  }
+
+  if (stopKey === 'week_objectives') {
+    const objectives = data?.objectives ?? [];
+    return (
+      <div className="meeting-stop" style={{ marginBottom: 24 }}>
+        <div className="eyebrow meeting-stop-eyebrow">WEEK PLAN</div>
+        <h3 className="meeting-stop-heading">This Week&apos;s Accountability Objectives</h3>
+        {objectives.length === 0 ? (
+          <p className="muted">No objectives captured for this week.</p>
+        ) : (
+          <div className="objective-board objective-board--readonly">
+            {objectives.map((obj) => (
+              <div key={obj.id} className="objective-card objective-card--readonly">
+                <div className="objective-card-assignee">
+                  {PARTNER_DISPLAY[obj.assignee] ?? (obj.assignee === 'both' ? 'Both' : obj.assignee)}
+                </div>
+                <div className="objective-readonly-field">
+                  <span className="objective-field-label">Priority</span>
+                  <p>{obj.priority?.trim() || '—'}</p>
+                </div>
+                <div className="objective-readonly-field">
+                  <span className="objective-field-label">Risks &amp; blockers</span>
+                  <p>{obj.risks?.trim() || '—'}</p>
+                </div>
+                <div className="objective-readonly-field">
+                  <span className="objective-field-label">Deadline / commitment window</span>
+                  <p>{obj.deadline?.trim() || '—'}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
