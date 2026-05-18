@@ -3405,7 +3405,9 @@ html[data-theme="light"] {
    with the sticky scorecard Submit bar). */
 .theme-toggle {
   position: fixed;
-  top: 16px;
+  /* Sits below any sticky top header (meeting header is 56px, app header
+     ~64px) so it never overlaps the meeting "End Prep" button. */
+  top: 74px;
   right: 16px;
   z-index: 1000;
   display: inline-flex;

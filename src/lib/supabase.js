@@ -603,6 +603,15 @@ export async function resetMeeting(meetingId) {
   if (!meetingId) {
     throw new Error('resetMeeting: meetingId is required');
   }
+  // 0) Look up week_of + type BEFORE deletion so we can also clear the
+  //    card-based weekly_objectives. Those are keyed by week_of (not
+  //    meeting_id), so they don't FK-cascade when the meeting row is deleted.
+  const { data: meetingRow } = await supabase
+    .from('meetings')
+    .select('week_of, meeting_type')
+    .eq('id', meetingId)
+    .maybeSingle();
+
   // 1) Wipe all per-stop notes for this meeting (both shared body + per-partner columns).
   //    Cascade is by FK in migration 005 (meeting_notes.meeting_id REFERENCES meetings(id)),
   //    but we delete explicitly so the operation is auditable + survives FK schema changes.
@@ -611,6 +620,18 @@ export async function resetMeeting(meetingId) {
     .delete()
     .eq('meeting_id', meetingId);
   if (delErr) throw delErr;
+
+  // 1b) Monday Prep: clear that week's accountability objective cards.
+  //     UAT 2026-05-18 (Week Objectives) — resetting a Monday meeting must
+  //     also clear the cards it produced, otherwise stale objectives keep
+  //     showing on the partner hubs.
+  if (meetingRow?.meeting_type === 'monday_prep' && meetingRow?.week_of) {
+    const { error: objErr } = await supabase
+      .from('weekly_objectives')
+      .delete()
+      .eq('week_of', meetingRow.week_of);
+    if (objErr) throw objErr;
+  }
 
   // 2) Delete the meetings row itself (UAT R3 — Reset is now destructive,
   //    not a rewind). The meeting disappears from past meeting history;
