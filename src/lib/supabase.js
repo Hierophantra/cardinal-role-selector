@@ -1262,3 +1262,47 @@ function sampleField(f) {
   const lbl = typeof f.label === 'string' ? f.label.slice(0, 40) : 'value';
   return `Sample ${lbl} — test data`;
 }
+
+// --- Phase 19 follow-up: KPI infractions ---
+// Business-conduct infractions per the partnership contract. Separate from
+// weekly scorecard KPI results. Managed by Trace from the admin partner
+// profile; surfaced read-only on the partner's Season Overview.
+
+export async function fetchInfractions(partner) {
+  const { data, error } = await supabase
+    .from('kpi_infractions')
+    .select('*')
+    .eq('partner', partner)
+    .order('occurred_on', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function addInfraction(partner, occurredOn, note) {
+  const { data, error } = await supabase
+    .from('kpi_infractions')
+    .insert({ partner, occurred_on: occurredOn, note: note || null })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateInfraction(id, occurredOn, note) {
+  const { data, error } = await supabase
+    .from('kpi_infractions')
+    .update({ occurred_on: occurredOn, note: note || null })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteInfraction(id) {
+  const { error } = await supabase
+    .from('kpi_infractions')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}

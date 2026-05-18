@@ -3645,3 +3645,96 @@ body::before {
   font-size: 12px;
   font-weight: 600;
 }
+
+/* Phase 19 follow-up: conduct-infractions panel (Season Overview + admin profile). */
+.infractions-panel {
+  margin: 16px 0 24px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.infractions-panel--flagged {
+  border-left: 3px solid var(--miss);
+}
+.infractions-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.infractions-panel-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.infractions-panel-count {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--miss);
+}
+.infractions-panel--flagged .infractions-panel-count { color: var(--miss); }
+.infractions-panel-empty {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.infractions-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+.infractions-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.infractions-item:first-child { border-top: none; }
+.infractions-item-date {
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+}
+.infractions-item-note {
+  color: var(--muted);
+}
+.infractions-admin-hint {
+  margin: 8px 0 12px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.infractions-admin-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+.infractions-admin-row,
+.infractions-admin-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+}
+.infractions-admin-row {
+  border-top: 1px solid var(--border);
+}
+.infractions-input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  padding: 6px 10px;
+}
+.infractions-input--date { flex: 0 0 auto; }
+.infractions-input--note { flex: 1 1 220px; min-width: 160px; }
+.infractions-btn { font-size: 12px; padding: 6px 12px; }
+.infractions-btn--remove { color: var(--miss); }

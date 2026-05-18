@@ -21,6 +21,7 @@ import {
 } from '../../data/content.js';
 import { effectiveResult } from '../../lib/week.js';
 import BusinessPrioritiesSection from '../BusinessPrioritiesSection.jsx';
+import InfractionsPanel from '../InfractionsPanel.jsx';
 
 // Phase 17 D-02 audit footprint:
 // AdminProfile renders the partner's questionnaire submission (Purpose, Sales,
@@ -199,6 +200,11 @@ export default function AdminProfile() {
 
           {/* Business Priorities (Phase 18 BIZ-02, D-11) — shared, identical for both partners */}
           <BusinessPrioritiesSection priorities={businessPriorities} />
+
+          {/* Phase 19 follow-up: conduct-infraction management (admin-editable). */}
+          {(partner === 'theo' || partner === 'jerry') && (
+            <InfractionsPanel partner={partner} editable />
+          )}
 
           {/* Phase 19 follow-up: repeat-entry watch. Surfaces structured-data
               values that appeared 3+ times in the partner's last 6 submitted

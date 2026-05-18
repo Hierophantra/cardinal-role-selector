@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, LabelList, ResponsiveContai
 import { fetchKpiSelections, fetchScorecards, fetchGrowthPriorities, fetchBusinessPriorities } from '../lib/supabase.js';
 import { computeSeasonStats, computeStreaks, computeWeekNumber, getPerformanceColor } from '../lib/seasonStats.js';
 import { useCurrentTheme } from './ThemeToggle.jsx';
+import InfractionsPanel from './InfractionsPanel.jsx';
 import { VALID_PARTNERS, PARTNER_DISPLAY, PROGRESS_COPY, GROWTH_STATUS_COPY } from '../data/content.js';
 import BusinessPrioritiesSection from './BusinessPrioritiesSection.jsx';
 
@@ -155,6 +156,9 @@ export default function PartnerProgress() {
               {PROGRESS_COPY.hubCard.weekFmt(weekNumber)}
             </div>
           </div>
+
+          {/* Phase 19 follow-up: conduct-infraction tally (read-only). */}
+          <InfractionsPanel partner={partner} />
 
           {/* Section 2: Per-KPI Bar Chart (D-06, D-07, D-08, D-10) */}
           <div className="progress-chart">
