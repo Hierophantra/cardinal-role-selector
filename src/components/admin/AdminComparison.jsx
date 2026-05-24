@@ -44,11 +44,28 @@ export default function AdminComparison() {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
 
-  // Smart back target: prefer location.state.from (set by PartnerHub/AdminHub links),
-  // else default to /admin/hub. Partners get routed back to their own hub, admins to theirs.
-  const backTo = location.state?.from || '/admin/hub';
-  const backLabel = backTo.startsWith('/hub/') ? '\u2190 Back to Hub' : '\u2190 Back to Admin Hub';
-  const tag = backTo.startsWith('/hub/') ? 'Comparison' : 'Admin';
+  // Back target: sessionRole (set at login) is the authoritative source \u2014
+  // robust even on deep-link/refresh, and prevents partners from ever seeing
+  // the "Back to Admin Hub" label that was leaking through when RoleDiscovery
+  // (or any other partner-side surface) linked here without explicit state.
+  // location.state.from is honored when present as an explicit override.
+  const sessionRole = (() => {
+    try { return sessionStorage.getItem('cardinal-role'); } catch { return null; }
+  })();
+  const isPartner = sessionRole && sessionRole !== 'admin';
+  let backTo;
+  if (location.state?.from) {
+    backTo = location.state.from;
+  } else if (isPartner) {
+    backTo = `/hub/${sessionRole}`;
+  } else {
+    backTo = '/admin/hub';
+  }
+  // Label + page tag follow sessionRole, NOT the URL pattern of backTo.
+  // Otherwise a partner navigating from /role-discovery/theo would see
+  // "Back to Admin Hub" because the from URL doesn't start with /hub/.
+  const backLabel = isPartner ? '\u2190 Back to Hub' : '\u2190 Back to Admin Hub';
+  const tag = isPartner ? 'Comparison' : 'Admin';
 
   useEffect(() => {
     fetchSubmissions()

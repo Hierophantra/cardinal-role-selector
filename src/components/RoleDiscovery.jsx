@@ -138,7 +138,12 @@ export default function RoleDiscovery() {
                   Compare your role definition against your partner's — see where you align and
                   where the boundaries sit.
                 </p>
-                <Link to="/comparison" className="btn btn-primary" style={{ textDecoration: 'none', marginTop: 12 }}>
+                <Link
+                  to="/comparison"
+                  state={{ from: `/role-discovery/${partner}` }}
+                  className="btn btn-primary"
+                  style={{ textDecoration: 'none', marginTop: 12 }}
+                >
                   Open Role Questionnaire Comparison
                 </Link>
               </>
