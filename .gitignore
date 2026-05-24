@@ -9,3 +9,6 @@ dist
 
 # Claude Code local config + ephemeral agent worktrees (never commit)
 .claude/
+
+# GSD2 working directory (compromised tool — never reintroduce)
+.gsd/
