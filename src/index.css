@@ -4082,3 +4082,32 @@ select:focus,
   border-color: var(--red);
   color: var(--text);
 }
+
+/* Tier 2 follow-up: visually distinguish the counterpart-scorecard card
+   from the partner's own scorecard card. Uses brand-blue (the Monday-meeting
+   accent) so it reads as "someone else's data" — different signal from the
+   brand-red used for primary edit/own surfaces. Prevents confusion where
+   the partner accidentally clicks into the counterpart's scorecard
+   expecting their own. */
+.hub-card--partner-view {
+  border-color: rgba(37, 99, 235, 0.32);
+  border-left: 3px solid var(--blue);
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.05), transparent 60%), var(--surface);
+}
+.hub-card--partner-view .eyebrow {
+  color: var(--blue);
+}
+.hub-card--partner-view:hover {
+  border-color: var(--blue);
+  border-left-color: var(--blue);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.16), 0 0 0 1px rgba(37, 99, 235, 0.20) inset;
+}
+[data-theme="light"] .hub-card--partner-view {
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.06), transparent 60%), var(--surface);
+}
+[data-theme="light"] .hub-card--partner-view:hover {
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.14);
+}
+.hub-card--partner-view .hub-card-cta {
+  color: var(--blue);
+}

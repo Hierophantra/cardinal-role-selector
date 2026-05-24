@@ -398,7 +398,7 @@ export default function PartnerHub() {
                 {kpiReady && partner !== 'test' && (
                   <Link
                     to={`/scorecard/${partner === 'theo' ? 'jerry' : 'theo'}`}
-                    className="hub-card"
+                    className="hub-card hub-card--partner-view"
                   >
                     <span className="eyebrow">PARTNER VIEW</span>
                     <h3>{PARTNER_DISPLAY[partner === 'theo' ? 'jerry' : 'theo']}'s Scorecard</h3>
