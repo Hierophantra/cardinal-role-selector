@@ -119,15 +119,26 @@ function getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner
         });
       }
     }
-    // 4. Yes with invalid structured fields — point at the FIRST missing required field on the row
+    // 4. Yes with invalid structured fields — Phase 19 follow-up: produce a
+    //    specific message ("Margin ($): needs an entry" vs "Outcome: needs at
+    //    least 10 characters") rather than the generic "Fill in required
+    //    structured fields" copy. findFirstMissingFieldAnchor now returns
+    //    { anchor, fieldLabel, reason } so we can format per case.
     if (result === 'yes' && tpl.key_fields) {
       const sd = entry.structured_data ?? {};
       const reflection = entry.reflection ?? '';
       if (validateStructuredFields(tpl.key_fields, sd, reflection)) {
-        const firstAnchor = findFirstMissingFieldAnchor(tpl, sd);
+        const first = findFirstMissingFieldAnchor(tpl, sd);
+        const kpiName = tpl.label_snapshot ?? tpl.label ?? tpl.baseline_action ?? 'KPI';
+        let fieldPart = 'Required entry';
+        if (first?.fieldLabel) fieldPart = first.fieldLabel;
+        let reasonPart = 'needs an entry';
+        if (first?.reason === 'too_short') reasonPart = 'needs a longer answer';
+        else if (first?.reason === 'no_rows') reasonPart = 'needs at least one row';
+        else if (first?.reason === 'min_rows') reasonPart = 'needs more rows or a "why not" note';
         gaps.push({
-          anchor: firstAnchor ?? `kpi-${tpl.id}`,
-          label: `${tpl.label_snapshot ?? tpl.label ?? tpl.baseline_action ?? 'KPI'}: Fill in required structured fields`,
+          anchor: first?.anchor ?? `kpi-${tpl.id}`,
+          label: `${kpiName} — ${fieldPart}: ${reasonPart}`,
         });
       }
     }
@@ -171,48 +182,72 @@ function getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner
 function findFirstMissingFieldAnchor(tpl, data) {
   const schema = tpl.key_fields;
   if (!schema) return null;
-  const checkPrimitive = (field, value, row) => {
-    if (!field?.required && !field?.required_when) return false;
-    if (field.required_when) {
-      const sibling = row?.[field.required_when.field];
-      if (sibling !== field.required_when.equals) return false;
+  // Phase 19 follow-up: helper now returns either null (all good) or
+  // { anchor, fieldLabel, reason } so the gap-checklist label can say
+  // specifically what's wrong ("Margin ($): needs an entry" vs
+  // "Outcome: needs at least 10 characters") instead of the generic
+  // "Fill in required structured fields" copy.
+  const checkPrimitive = (field, value, row, parent) => {
+    let required = !!field?.required;
+    if (!required && field?.required_when) {
+      // Match validateStructuredFields's parent-fallback logic.
+      let sibling;
+      if (row && Object.prototype.hasOwnProperty.call(row, field.required_when.field)) {
+        sibling = row[field.required_when.field];
+      } else if (parent && Object.prototype.hasOwnProperty.call(parent, field.required_when.field)) {
+        sibling = parent[field.required_when.field];
+      }
+      if (sibling === field.required_when.equals) required = true;
     }
-    if (field.type === 'yes_no') return value !== 'yes' && value !== 'no';
+    if (field.type === 'yes_no') {
+      if (!required) return null;
+      return (value !== 'yes' && value !== 'no') ? 'empty' : null;
+    }
     if (field.type === 'number' || field.type === 'currency') {
-      return value === '' || value === null || value === undefined || !Number.isFinite(Number(value));
+      if (!required) return null;
+      const missing = value === '' || value === null || value === undefined || !Number.isFinite(Number(value));
+      return missing ? 'empty' : null;
     }
     if (field.type === 'multi_choice') {
-      if (field.single_select) return typeof value !== 'string' || value.trim().length === 0;
-      return !Array.isArray(value) || value.length === 0;
+      if (!required) return null;
+      if (field.single_select) {
+        return (typeof value !== 'string' || value.trim().length === 0) ? 'empty' : null;
+      }
+      return (!Array.isArray(value) || value.length === 0) ? 'empty' : null;
     }
-    return typeof value !== 'string' || value.trim().length === 0;
+    // text / textarea / fallback
+    const trimmed = typeof value === 'string' ? value.trim() : '';
+    if (required && trimmed.length === 0) return 'empty';
+    if (trimmed.length > 0 && Number.isInteger(field.min_length) && trimmed.length < field.min_length) {
+      return 'too_short';
+    }
+    return null;
   };
+  // Each return now bundles an anchor with the field label + reason so the
+  // gap-checklist renderer can produce a specific message.
+  const result = (anchor, fieldLabel, reason) => ({ anchor, fieldLabel, reason });
+
   if (schema.pattern === 'named_fields') {
     for (const f of (schema.fields || [])) {
       if (f.type === 'row_list') {
         const subRows = Array.isArray(data?.[f.key]) ? data[f.key] : [];
         for (let i = 0; i < subRows.length; i++) {
           for (const sf of (f.rowFields || [])) {
-            if (checkPrimitive(sf, subRows[i]?.[sf.key], subRows[i])) {
-              return `field-${tpl.id}-${f.key}-${i}-${sf.key}`;
-            }
+            const r = checkPrimitive(sf, subRows[i]?.[sf.key], subRows[i], data);
+            if (r) return result(`field-${tpl.id}-${f.key}-${i}-${sf.key}`, sf.label || sf.key, r);
           }
         }
         if ((f.required || (f.required_when && data?.[f.required_when.field] === f.required_when.equals)) && subRows.length === 0) {
-          return `field-${tpl.id}-${f.key}`;
+          return result(`field-${tpl.id}-${f.key}`, f.label || f.key, 'no_rows');
         }
       } else if (f.type === 'multi_choice') {
-        // Phase 19 D-03 canonical anchor scheme:
-        //   single-select per_selection_field:  field-${tplId}-${fieldKey}__${value}-${perFieldKey}
-        //   multi-select  per_selection_field:  field-${tplId}-${fieldKey}-${selectionValue}-${perFieldKey}
-        // Selection-presence missing:            field-${tplId}-${fieldKey}
         const isSingle = !!f.single_select;
         const v = data?.[f.key];
         const presenceMissing = isSingle
           ? (typeof v !== 'string' || v.trim().length === 0)
           : (!Array.isArray(v) || v.length === 0);
         if ((f.required || (f.required_when && data?.[f.required_when.field] === f.required_when.equals)) && presenceMissing) {
-          return `field-${tpl.id}-${f.key}`;
+          return result(`field-${tpl.id}-${f.key}`, f.label || f.key, 'empty');
         }
         const perFields = Array.isArray(f.per_selection_fields) ? f.per_selection_fields : [];
         if (isSingle) {
@@ -220,22 +255,21 @@ function findFirstMissingFieldAnchor(tpl, data) {
           if (sv) {
             const sub = data?.[`${f.key}__${sv}`] ?? {};
             for (const pf of perFields) {
-              if (checkPrimitive(pf, sub?.[pf.key], sub)) {
-                return `field-${tpl.id}-${f.key}__${sv}-${pf.key}`;
-              }
+              const r = checkPrimitive(pf, sub?.[pf.key], sub);
+              if (r) return result(`field-${tpl.id}-${f.key}__${sv}-${pf.key}`, pf.label || pf.key, r);
             }
           }
         } else if (Array.isArray(v)) {
           for (const sel of v) {
             for (const pf of perFields) {
-              if (checkPrimitive(pf, sel?.[pf.key], sel)) {
-                return `field-${tpl.id}-${f.key}-${sel.value}-${pf.key}`;
-              }
+              const r = checkPrimitive(pf, sel?.[pf.key], sel);
+              if (r) return result(`field-${tpl.id}-${f.key}-${sel.value}-${pf.key}`, pf.label || pf.key, r);
             }
           }
         }
-      } else if (checkPrimitive(f, data?.[f.key], data)) {
-        return `field-${tpl.id}-${f.key}`;
+      } else {
+        const r = checkPrimitive(f, data?.[f.key], data);
+        if (r) return result(`field-${tpl.id}-${f.key}`, f.label || f.key, r);
       }
     }
   }
@@ -243,26 +277,32 @@ function findFirstMissingFieldAnchor(tpl, data) {
     const rows = Array.isArray(data?.rows) ? data.rows : [];
     for (let i = 0; i < rows.length; i++) {
       for (const rf of (schema.rowFields || [])) {
-        if (checkPrimitive(rf, rows[i]?.[rf.key], rows[i])) {
-          return `field-${tpl.id}-${rf.key}-${i}`;
-        }
+        const r = checkPrimitive(rf, rows[i]?.[rf.key], rows[i]);
+        if (r) return result(`field-${tpl.id}-${rf.key}-${i}`, rf.label || rf.key, r);
       }
     }
     if (Number.isInteger(schema.min_rows) && rows.length < schema.min_rows) {
-      return `field-${tpl.id}-${schema.shortfall_text?.key ?? 'shortfall'}`;
+      return result(
+        `field-${tpl.id}-${schema.shortfall_text?.key ?? 'shortfall'}`,
+        schema.shortfall_text?.label || 'Add a note',
+        'min_rows',
+      );
     }
   }
   if (schema.pattern === 'count_noteworthy') {
     const noteworthy = Array.isArray(data?.noteworthy) ? data.noteworthy : [];
     for (let i = 0; i < noteworthy.length; i++) {
       for (const rf of (schema.rowFields || [])) {
-        if (checkPrimitive(rf, noteworthy[i]?.[rf.key], noteworthy[i])) {
-          return `field-${tpl.id}-${rf.key}-${i}`;
-        }
+        const r = checkPrimitive(rf, noteworthy[i]?.[rf.key], noteworthy[i]);
+        if (r) return result(`field-${tpl.id}-${rf.key}-${i}`, rf.label || rf.key, r);
       }
     }
     if (Number.isInteger(schema.min_rows) && noteworthy.length < schema.min_rows) {
-      return `field-${tpl.id}-${schema.shortfall_text?.key ?? 'shortfall'}`;
+      return result(
+        `field-${tpl.id}-${schema.shortfall_text?.key ?? 'shortfall'}`,
+        schema.shortfall_text?.label || 'Add a note',
+        'min_rows',
+      );
     }
   }
   return null;
@@ -278,17 +318,32 @@ function findFirstMissingFieldAnchor(tpl, data) {
 function validateStructuredFields(schema, data, reflectionText) {
   if (!schema || typeof schema !== 'object') return false;
 
-  const isRequiredEffective = (field, siblingData) => {
+  const isRequiredEffective = (field, siblingData, parentData) => {
     if (field?.required) return true;
-    if (field?.required_when && siblingData) {
-      const sibling = siblingData[field.required_when.field];
+    if (field?.required_when) {
+      // Look up the trigger field on the row first; if undefined, fall back
+      // to the parent named_fields scope. This makes "required_when references
+      // a parent field" work inside row_list sub-fields.
+      let sibling;
+      if (siblingData && Object.prototype.hasOwnProperty.call(siblingData, field.required_when.field)) {
+        sibling = siblingData[field.required_when.field];
+      } else if (parentData && Object.prototype.hasOwnProperty.call(parentData, field.required_when.field)) {
+        sibling = parentData[field.required_when.field];
+      } else if (siblingData) {
+        sibling = siblingData[field.required_when.field];
+      }
       return sibling === field.required_when.equals;
     }
     return false;
   };
 
-  const isMissingPrimitive = (field, value, siblingData) => {
-    const required = isRequiredEffective(field, siblingData);
+  const isMissingPrimitive = (field, value, siblingData, parentData) => {
+    // Phase 19 follow-up bug fix: when a row_list sub-field's required_when
+    // references a PARENT-scope sibling (a top-level named_fields field, not
+    // a fellow row-field), the row-scoped siblingData wouldn't find it and
+    // the conditional was silently never firing. isRequiredEffective falls
+    // back to parentData when the lookup misses on siblingData.
+    const required = isRequiredEffective(field, siblingData, parentData);
     if (field.type === 'yes_no') {
       if (!required) return false;
       return value !== 'yes' && value !== 'no';
@@ -381,7 +436,10 @@ function validateStructuredFields(schema, data, reflectionText) {
         const subRows = Array.isArray(data?.[f.key]) ? data[f.key] : [];
         if (subRows.length === 0) return true;
         const subFields = Array.isArray(f.rowFields) ? f.rowFields : [];
-        return subRows.some((row) => subFields.some((sf) => isMissingPrimitive(sf, row?.[sf.key], row)));
+        // Phase 19 bug fix: pass parent data so sub-field required_when can
+        // reference top-level named_fields (e.g. a parent yes_no triggers
+        // a row-field requirement).
+        return subRows.some((row) => subFields.some((sf) => isMissingPrimitive(sf, row?.[sf.key], row, data)));
       }
       if (f.type === 'multi_choice') {
         if (!isRequiredEffective(f, data)) return false;
@@ -1602,7 +1660,7 @@ export default function Scorecard() {
                 ) : null;
               }
               return (
-                <div className="scorecard-submit-checklist" aria-live="polite">
+                <div className="scorecard-submit-checklist" id="scorecard-submit-checklist" aria-live="polite">
                   <p className="scorecard-submit-checklist-eyebrow">
                     {SCORECARD_COPY.submitChecklistEyebrow}
                   </p>
@@ -1622,6 +1680,9 @@ export default function Scorecard() {
                       </li>
                     ))}
                   </ul>
+                  <p className="scorecard-submit-checklist-reassurance">
+                    {SCORECARD_COPY.submitChecklistReassurance}
+                  </p>
                 </div>
               );
             })() : (
@@ -1654,6 +1715,22 @@ export default function Scorecard() {
             <span className="muted" style={{ fontSize: 12, fontStyle: 'italic' }}>
               {SCORECARD_COPY.stickyNote}
             </span>
+            {/* Phase 19 follow-up: inline blocked-reason pill next to the
+                disabled Submit. Clicking it scrolls the checklist into view so
+                partners aren't left guessing why the button is grayed out. */}
+            {gaps.length > 0 && (
+              <button
+                type="button"
+                className="scorecard-sticky-bar__blocked"
+                onClick={() => {
+                  const el = document.getElementById('scorecard-submit-checklist');
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
+                title="Click to jump to the checklist"
+              >
+                {SCORECARD_COPY.submitChecklistBadge(gaps.length)}
+              </button>
+            )}
             <button
               type="button"
               className="btn-primary"

@@ -486,11 +486,7 @@ export const WEEKLY_KPI_COPY = {
 
 export const SCORECARD_COPY = {
   eyebrow: 'Weekly Scorecard',
-  headingPreCommit: 'Your week starts here',
-  subtextPreCommit: 'Review your 7 KPIs and commit to tracking them this week.',
   headingEditing: "This week's check-in",
-  commitCta: 'Commit to this week',
-  committingCta: 'Committing\u2026',
   submitCta: 'Submit Scorecard',
   submitNote: 'Answer all KPIs and add your weekly win to submit',
   prompts: {
@@ -501,12 +497,9 @@ export const SCORECARD_COPY = {
   counterComplete: (total) => `${total} of ${total}: all done`,
   savedIndicator: 'Saved',
   weekClosedBanner: (date) => `This week closed on ${date}.`,
-  successHeading: 'Check-in submitted',
-  successSubtext: 'See you next week.',
   historyEyebrow: 'Past Check-ins',
   historyEmpty: 'No previous check-ins yet. Your history will appear here after you submit your first week.',
   historyNoCheckin: 'No check-in this week',
-  errorCommit: 'Could not commit. Try again.',
   errorSubmit: "Couldn't save your check-in. Check your connection and try again.",
   errorLoad: "Couldn't load your KPIs. Refresh to try again.",
   reflectionEyebrow: 'Weekly Reflection',
@@ -515,8 +508,6 @@ export const SCORECARD_COPY = {
   tasksCarriedOverLabel: 'Tasks Carried Over (optional)',
   tasksCarriedOverPlaceholder: "What's moving to next week? (optional)",
   weeklyWinLabel: 'Weekly Win',
-  weeklyWinPlaceholder: 'What went well this week?',
-  weeklyWinRequired: 'Required',
   weeklyLearningLabel: 'Weekly Learning',
   weeklyLearningPlaceholder: 'What did you learn? (optional)',
   weekRatingLabel: 'How was your week overall?',
@@ -557,7 +548,10 @@ export const SCORECARD_COPY = {
     "Add an overall week rating (1-5) before submitting. It's near the bottom under Weekly Reflection.",
   submitErrorShortfallRequired:
     'Outstanding-invoices follow-up needs at least 3 entries. If fewer, fill in the "why" justification.',
-  submitChecklistEyebrow: 'A few things still need your attention before you can submit:',
+  submitChecklistEyebrow: 'Information still needed:',
+  submitChecklistReassurance:
+    'All edits are saved automatically — Submit unlocks once these are filled in.',
+  submitChecklistBadge: (n) => `${n} ${n === 1 ? 'item' : 'items'} need attention`,
   submitChecklistEmpty: 'Everything looks good. Ready to submit.',
   submitErrorDb: "Couldn't save your scorecard. Try again.",
   submittedNotice: 'Submitted. Nice work.',

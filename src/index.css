@@ -3850,3 +3850,130 @@ body::before {
   font-weight: 600;
   color: var(--text);
 }
+
+/* ============================================================================
+   Tier 1 visual refinement — tech-company-built-for-trades direction.
+   Restrained, confident, professional-tool feel. Full overhaul lands in
+   Tier 3; this layer establishes the direction without breaking existing
+   chrome. Inspired by Linear / Stripe / Vercel applied to the construction
+   industry context.
+   ============================================================================ */
+
+/* Tighter, less aggressive eyebrows across the app. */
+.eyebrow,
+.meeting-stop-eyebrow {
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+/* Slightly squarer card chrome — feels more "tool" than "consumer app". */
+.hub-card,
+.scorecard-kpi-row,
+.week-plan-card,
+.business-priority-card,
+.growth-priority-card,
+.objective-card,
+.draft-progress,
+.repeat-watch {
+  border-radius: 10px;
+}
+
+/* Subtle elevation on the primary hub cards — gives layered depth without
+   leaning on heavy shadows. */
+.hub-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02) inset;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.hub-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(196, 30, 58, 0.16) inset;
+}
+[data-theme="light"] .hub-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+[data-theme="light"] .hub-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+}
+
+/* Primary CTA — sharper edges, subtle depth. */
+.btn-primary {
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 2px 6px rgba(196, 30, 58, 0.28);
+}
+
+/* Inputs / focus rings — sharper, more "form library" than "consumer app". */
+input[type="text"],
+input[type="number"],
+input[type="password"],
+textarea,
+select,
+.scorecard-structured-fieldlet__input,
+.scorecard-count-input,
+.objective-field {
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus,
+.scorecard-structured-fieldlet__input:focus,
+.scorecard-count-input:focus,
+.objective-field:focus {
+  outline: none;
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.18);
+}
+
+/* Submit-checklist refinement — clearer card chrome + the new reassurance line. */
+.scorecard-submit-checklist {
+  border-radius: 10px;
+}
+.scorecard-submit-checklist-eyebrow {
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.scorecard-submit-checklist-reassurance {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+}
+[data-theme="light"] .scorecard-submit-checklist-reassurance {
+  border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Sticky-bar blocked badge — sits between the saved-note and the disabled
+   Submit. Clicking it scrolls the checklist into view. */
+.scorecard-sticky-bar__blocked {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--red);
+  background: rgba(196, 30, 58, 0.10);
+  border: 1px solid rgba(196, 30, 58, 0.32);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.scorecard-sticky-bar__blocked:hover {
+  background: rgba(196, 30, 58, 0.18);
+  border-color: var(--red);
+}
+.scorecard-sticky-bar__blocked::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  display: inline-block;
+}
