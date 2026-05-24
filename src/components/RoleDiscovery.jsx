@@ -11,6 +11,11 @@
 // (no Read more truncation here — this IS the reference surface) → focus
 // areas (expanded) → day-in-life bullets (expanded) → Role Questionnaire
 // Submissions link.
+//
+// Test profile: ROLE_IDENTITY['test'] doesn't exist. Exposes a toggle so
+// the test profile can preview EITHER Theo's or Jerry's role identity from
+// one place — matches how the test scorecard surfaces all non-conditional
+// KPI templates for QA review.
 
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -23,6 +28,8 @@ export default function RoleDiscovery() {
   const navigate = useNavigate();
   const [allSubs, setAllSubs] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Test profile only: which partner's role to preview.
+  const [testRoleScope, setTestRoleScope] = useState('theo');
 
   useEffect(() => {
     if (!VALID_PARTNERS.includes(partner)) {
@@ -35,8 +42,14 @@ export default function RoleDiscovery() {
       .finally(() => setLoading(false));
   }, [partner, navigate]);
 
-  const role = ROLE_IDENTITY[partner];
+  // For test partner: resolve the role identity to view based on the toggle.
+  // For real partners: their own role identity.
+  const isTestProfile = partner === 'test';
+  const effectiveRoleKey = isTestProfile ? testRoleScope : partner;
+  const role = ROLE_IDENTITY[effectiveRoleKey];
+
   const partnerName = PARTNER_DISPLAY[partner] ?? partner;
+  const roleSubjectName = PARTNER_DISPLAY[effectiveRoleKey] ?? effectiveRoleKey;
   const comparisonReady = (allSubs?.length ?? 0) >= 2;
   const adminView = (() => {
     try { return sessionStorage.getItem('cardinal-role') === 'admin'; } catch { return false; }
@@ -55,11 +68,34 @@ export default function RoleDiscovery() {
 
           <div className="eyebrow">Role Discovery</div>
           <div className="screen-header">
-            <h2>{partnerName.split(' ')[0]}'s Role</h2>
+            <h2>
+              {isTestProfile
+                ? `${roleSubjectName.split(' ')[0]}'s Role (test profile)`
+                : `${partnerName.split(' ')[0]}'s Role`}
+            </h2>
             <p className="muted" style={{ fontSize: 14, marginTop: 4 }}>
-              Re-anchor: who you are at Cardinal and why this work matters.
+              {isTestProfile
+                ? `Previewing ${roleSubjectName.split(' ')[0]}'s role identity. Test profile — switch between partners using the toggle below.`
+                : 'Re-anchor: who you are at Cardinal and why this work matters.'}
             </p>
           </div>
+
+          {/* Test profile only: scope toggle. */}
+          {isTestProfile && (
+            <div className="role-discovery-test-toggle">
+              <span className="role-discovery-test-toggle__label">View as:</span>
+              {['theo', 'jerry'].map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className={`role-discovery-test-toggle__btn${testRoleScope === p ? ' active' : ''}`}
+                  onClick={() => setTestRoleScope(p)}
+                >
+                  {PARTNER_DISPLAY[p] ?? p}
+                </button>
+              ))}
+            </div>
+          )}
 
           <section className="role-discovery-card">
             <h3 className="role-title">{role.title}</h3>
@@ -74,7 +110,7 @@ export default function RoleDiscovery() {
           </section>
 
           <section className="role-discovery-card">
-            <h3 className="role-discovery-section-heading">What You Focus On</h3>
+            <h3 className="role-discovery-section-heading">What {isTestProfile ? `${roleSubjectName.split(' ')[0]} Focuses` : 'You Focus'} On</h3>
             <div className="focus-area-list">
               {role.focusAreas.map((fa, i) => (
                 <div key={i} className="focus-area-row">
@@ -86,7 +122,7 @@ export default function RoleDiscovery() {
           </section>
 
           <section className="role-discovery-card">
-            <h3 className="role-discovery-section-heading">Your Day Might Involve</h3>
+            <h3 className="role-discovery-section-heading">{isTestProfile ? `${roleSubjectName.split(' ')[0]}'s Day Might Involve` : 'Your Day Might Involve'}</h3>
             <ul className="day-in-life-list">
               {role.dayInLifeBullets.map((b, i) => (
                 <li key={i}>{b}</li>
