@@ -23,8 +23,10 @@ import {
   SCORECARD_COPY,
   PROGRESS_COPY,
 } from '../data/content.js';
-import { ROLE_IDENTITY } from '../data/roles.js';
-import RoleIdentitySection from './RoleIdentitySection.jsx';
+// Tier 2: ROLE_IDENTITY moved to RoleDiscovery.jsx consumer; PartnerHub no
+// longer renders role-identity content.
+// Tier 2: RoleIdentitySection moved to dedicated /role-discovery/:partner page.
+// Import retained as comment for git-history breadcrumb only — no runtime import.
 import ThisWeekKpisSection from './ThisWeekKpisSection.jsx';
 import PersonalGrowthSection from './PersonalGrowthSection.jsx';
 import BusinessPrioritiesSection from './BusinessPrioritiesSection.jsx';
@@ -60,10 +62,8 @@ export default function PartnerHub() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  // ---- UI toggle state (D-09, D-02) — declared BEFORE early return per D-24 / P-U2 ----
-  const [focusAreasOpen, setFocusAreasOpen] = useState(true);       // D-09 expanded by default
-  const [dayInLifeOpen, setDayInLifeOpen] = useState(false);        // D-09 collapsed by default
-  const [narrativeExpanded, setNarrativeExpanded] = useState(false); // D-02 collapsed by default
+  // Tier 2: role-narrative + section-collapse state removed. Those toggles
+  // belong on the RoleDiscovery page now (the role identity content moved).
 
   // ---- Derived before early return ----
   // WR-03: Anchor currentMonday in a ref so a midnight Sunday→Monday rollover
@@ -71,7 +71,7 @@ export default function PartnerHub() {
   // pattern in Scorecard.jsx and WeeklyKpiSelectionFlow.jsx.
   const currentMondayRef = useRef(getMondayOf());
   const currentMonday = currentMondayRef.current;
-  const role = ROLE_IDENTITY[partner];  // undefined for 'test' partner — defensive
+  // role const removed (Tier 2) — RoleDiscovery owns the lookup now.
 
   useEffect(() => {
     if (!VALID_PARTNERS.includes(partner)) {
@@ -307,18 +307,11 @@ export default function PartnerHub() {
             {statusText && <p className="status-line">{statusText}</p>}
           </div>
 
-          {/* Role Identity — renders immediately from static data (UI-SPEC success criterion 1, P-U1) */}
-          {role && (
-            <RoleIdentitySection
-              role={role}
-              narrativeExpanded={narrativeExpanded}
-              onToggleNarrative={() => setNarrativeExpanded((v) => !v)}
-              focusAreasOpen={focusAreasOpen}
-              onToggleFocusAreas={() => setFocusAreasOpen((v) => !v)}
-              dayInLifeOpen={dayInLifeOpen}
-              onToggleDayInLife={() => setDayInLifeOpen((v) => !v)}
-            />
-          )}
+          {/* Tier 2 (post-Phase-19 follow-up): Role identity moved to a dedicated
+              /role-discovery/:partner surface. Per Gemini's "banner blindness to
+              constants" framing, static identity content goes invisible on a
+              daily-visit hub within days; moving it behind a deliberate nav
+              step actually increases its impact. */}
 
           {/* Async content — only render after fetches resolve */}
           {loading ? null : (
@@ -396,8 +389,21 @@ export default function PartnerHub() {
                   </Link>
                 )}
 
-                {/* View Questionnaire link removed (Batch D D4 — Role Questionnaire
-                    Submissions hub-card below covers the same access). */}
+                {/* Tier 2: Counterpart's Scorecard — read-only view of the OTHER
+                    partner's weekly scorecard. Scorecard.jsx detects when the
+                    URL :partner !== sessionRole and disables editing. Lets Theo
+                    and Jerry see each other's progress through the week. */}
+                {kpiReady && (
+                  <Link
+                    to={`/scorecard/${partner === 'theo' ? 'jerry' : 'theo'}`}
+                    className="hub-card"
+                  >
+                    <span className="eyebrow">PARTNER VIEW</span>
+                    <h3>{PARTNER_DISPLAY[partner === 'theo' ? 'jerry' : 'theo']}'s Scorecard</h3>
+                    <p>Read-only view of {partner === 'theo' ? 'Jerry' : 'Theo'}'s weekly check-in and history. See where they stand alongside your own.</p>
+                    <span className="hub-card-cta">View {partner === 'theo' ? 'Jerry' : 'Theo'}'s scorecard {'→'}</span>
+                  </Link>
+                )}
 
                 {/* Weekly Scorecard (kept, D-08) */}
                 {kpiReady && (
@@ -423,25 +429,15 @@ export default function PartnerHub() {
                   </Link>
                 )}
 
-                {/* Role Questionnaire Submissions (renamed Batch D D5; was Side-by-Side Comparison) */}
-                {comparisonReady ? (
-                  <Link
-                    to="/comparison"
-                    state={{ from: `/hub/${partner}${adminView ? '?admin=1' : ''}` }}
-                    className="hub-card"
-                  >
-                    <h3>{copy.cards.comparison.title}</h3>
-                    <p>{copy.cards.comparison.description}</p>
-                  </Link>
-                ) : (
-                  <div className="hub-card hub-card--disabled">
-                    <h3>{copy.cards.comparison.title}</h3>
-                    <p>{copy.cards.comparison.description}</p>
-                    <span className="hub-card-disabled-label">
-                      Unlocks when both partners submit
-                    </span>
-                  </div>
-                )}
+                {/* Tier 2: Role Discovery — secondary nav card. Replaces the
+                    raw Role Questionnaire Submissions card. The questionnaire
+                    comparison still lives behind the Role Discovery page. */}
+                <Link to={`/role-discovery/${partner}`} className="hub-card">
+                  <span className="eyebrow">RE-ANCHOR</span>
+                  <h3>Role Discovery</h3>
+                  <p>Who you are at Cardinal, what you focus on, what your day looks like. Open the role questionnaire comparison from here.</p>
+                  <span className="hub-card-cta">Open Role Discovery {'→'}</span>
+                </Link>
               </div>
             </>
           )}

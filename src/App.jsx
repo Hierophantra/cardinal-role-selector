@@ -24,6 +24,7 @@ import MeetingHistoryMock from './components/admin/MeetingHistoryMock.jsx';
 import PartnerProgressMock from './components/admin/PartnerProgressMock.jsx';
 import PartnerProgress from './components/PartnerProgress.jsx';
 import WeeklyKpiSelectionFlow from './components/WeeklyKpiSelectionFlow.jsx';
+import RoleDiscovery from './components/RoleDiscovery.jsx';
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
       <Route path="/scorecard/:partner" element={<Scorecard />} />
       <Route path="/weekly-kpi/:partner" element={<WeeklyKpiSelectionFlow />} />
       <Route path="/progress/:partner" element={<PartnerProgress />} />
+      <Route path="/role-discovery/:partner" element={<RoleDiscovery />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/admin/hub" element={<AdminHub />} />
       <Route path="/admin/partners" element={<AdminPartners />} />

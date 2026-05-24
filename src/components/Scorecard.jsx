@@ -542,6 +542,22 @@ export default function Scorecard() {
 
   const weekClosed = useMemo(() => isWeekClosed(currentWeekOf), [currentWeekOf]);
 
+  // Tier 2 (post-Phase-19): counterpart-view mode. When sessionRole is one
+  // partner but the URL :partner is the other, we're a partner viewing their
+  // counterpart's scorecard. Force every editing surface read-only and hide
+  // the submit-related chrome — this is observe-only.
+  // - Admin viewing a partner's scorecard does NOT trigger this (admin keeps
+  //   override capability via the existing weekClosed=false path).
+  // - Test partner doesn't trigger it either (it's a synthetic viewer).
+  const sessionRole = useMemo(() => {
+    try { return sessionStorage.getItem('cardinal-role'); } catch { return null; }
+  }, []);
+  const counterpartView = useMemo(() => {
+    if (!sessionRole) return false;
+    if (sessionRole === 'admin' || sessionRole === 'test') return false;
+    return sessionRole !== partner;
+  }, [sessionRole, partner]);
+
   const historyRows = useMemo(
     () => allScorecards.filter((s) => s.week_of !== currentWeekOf),
     [allScorecards, currentWeekOf]
@@ -712,7 +728,7 @@ export default function Scorecard() {
       weekRatingInitialized.current = true;
       return;
     }
-    if (weekClosed) return;
+    if (weekClosed || counterpartView) return;
     // WR-04: call without arg so persistDraft reads the current kpiResults state
     // rather than a potentially stale closure snapshot.
     // UAT 2026-04-27: removed view==='submitted' gate — week rating stays
@@ -764,7 +780,7 @@ export default function Scorecard() {
   // WR-04: this keeps the single source of truth consistent — the weekRating
   // effect calls `persistDraft()` with no arg so it reads the latest state.
   async function persistDraft(nextKpiResults) {
-    if (weekClosed) return;
+    if (weekClosed || counterpartView) return;
     // BUG-2026-04-25 hydration gate: never write before mount fetch hydrates
     // state from DB. Without this, any path that calls persistDraft pre-
     // hydration writes the initial useState defaults (kpi_results={}, win='',
@@ -832,7 +848,7 @@ export default function Scorecard() {
     // only; weekClosed is the single editability gate. pending_text is
     // PRESERVED on toggle (Q1 strategy a) so SaturdayRecap can detect
     // yes-conversion on the resulting persisted row.
-    if (weekClosed) return;
+    if (weekClosed || counterpartView) return;
     const current = kpiResults[templateId] ?? { result: null, reflection: '', count: 0, pending_text: '', structured_data: {} };
     const now = new Date().toISOString();
     // Phase 19 follow-up: answered_at locks at the first non-null result and
@@ -918,7 +934,7 @@ export default function Scorecard() {
   function persistField() {
     // UAT 2026-04-27: extended D-16 — all fields editable until Saturday close.
     // weekClosed is the only persistence gate.
-    if (weekClosed) return;
+    if (weekClosed || counterpartView) return;
     persistDraft(kpiResults);
   }
 
@@ -1255,14 +1271,29 @@ export default function Scorecard() {
   // ---- Render ----
   return (
     <div className="app-shell">
-      <div className="container" style={{ paddingBottom: !weekClosed && !isSubmitted ? 96 : undefined }}>
+      <div className="container" style={{ paddingBottom: !weekClosed && !isSubmitted && !counterpartView ? 96 : undefined }}>
         <AnimatePresence mode="wait">
           <motion.div key={view} className="screen" {...motionProps}>
             <div className="nav-row" style={{ marginBottom: 12 }}>
-              <Link to={`/hub/${partner}`} className="btn-ghost">
+              <Link
+                to={counterpartView && sessionRole ? `/hub/${sessionRole}` : `/hub/${partner}`}
+                className="btn-ghost"
+              >
                 {'\u2190'} Back to Hub
               </Link>
             </div>
+            {/* Tier 2: read-only banner when one partner is viewing the
+                other's scorecard. Makes the observe-only context explicit so
+                there's no confusion about why nothing's editable. */}
+            {counterpartView && (
+              <div className="scorecard-readonly-banner">
+                <span className="scorecard-readonly-banner__dot" aria-hidden="true" />
+                <span>
+                  <strong>Read-only view.</strong> You're looking at {partnerName}'s scorecard.
+                  Nothing here is editable \u2014 head back to your own hub to make changes.
+                </span>
+              </div>
+            )}
             <div className="eyebrow">{SCORECARD_COPY.eyebrow}</div>
             <div className="screen-header">
               <h2>{partnerName}</h2>
@@ -1349,9 +1380,10 @@ export default function Scorecard() {
                   entry.result === 'pending' ? 'pending' : '',
                   isClosedPending ? 'muted' : '',
                 ].filter(Boolean).join(' ');
-                const pickerDisabled = weekClosed;
-                const bodyDisabled = weekClosed;
-                const showEditablePicker = !weekClosed;
+                // Tier 2: counterpart-view forces full read-only mode.
+                const pickerDisabled = weekClosed || counterpartView;
+                const bodyDisabled = weekClosed || counterpartView;
+                const showEditablePicker = !weekClosed && !counterpartView;
                 return (
                   <div key={tpl.id} className={rowClass} id={`kpi-${tpl.id}`}>
                     <div className="scorecard-baseline-label">
@@ -1650,7 +1682,7 @@ export default function Scorecard() {
                 Falls back to the legacy submitError <p> only when no gaps
                 are detected (e.g., generic submitErrorDb after a network
                 failure inside performSubmit). */}
-            {!weekClosed && !isSubmitted ? (() => {
+            {!weekClosed && !isSubmitted && !counterpartView ? (() => {
               const gaps = getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner);
               if (gaps.length === 0) {
                 return submitError ? (
@@ -1703,7 +1735,7 @@ export default function Scorecard() {
           but auto-save handles every change silently — no "Resubmit" CTA so the partner
           isn't tempted into thinking the auto-saved edits aren't already persisted.
           After Saturday close the bar disappears regardless of submit state. */}
-      {!weekClosed && !isSubmitted && (() => {
+      {!weekClosed && !isSubmitted && !counterpartView && (() => {
         // Phase 19 D-04: derive gaps once for the sticky-bar disabled binding.
         // Note: computed here AND in the inline checklist render above (single-
         // page form; render cost is negligible). If hot-path optimization is

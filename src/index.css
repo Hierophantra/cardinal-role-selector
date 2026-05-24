@@ -3977,3 +3977,67 @@ select:focus,
   background: var(--red);
   display: inline-block;
 }
+
+/* ============================================================================
+   Tier 2 — Role Discovery + counterpart read-only scorecard.
+   ============================================================================ */
+
+/* Role Discovery page chrome — secondary "re-anchor" surface. */
+.role-discovery-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px 24px;
+  margin-bottom: 16px;
+}
+.role-discovery-card--cta {
+  border-left: 3px solid var(--red);
+}
+.role-discovery-section-heading {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.role-discovery .role-title {
+  margin-bottom: 14px;
+}
+.role-discovery .role-self-quote {
+  margin-bottom: 16px;
+}
+.role-narrative--full {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text);
+  margin: 0;
+}
+
+/* Counterpart read-only banner on the Scorecard page. Subtle but unmissable. */
+.scorecard-readonly-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(196, 30, 58, 0.08);
+  border: 1px solid rgba(196, 30, 58, 0.28);
+  border-left: 3px solid var(--red);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+}
+.scorecard-readonly-banner strong {
+  color: var(--red);
+  margin-right: 4px;
+}
+.scorecard-readonly-banner__dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--red);
+}
