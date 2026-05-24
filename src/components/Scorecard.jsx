@@ -20,13 +20,14 @@ import {
 } from '../data/content.js';
 import StructuredFieldsReadOnly from './StructuredFieldsReadOnly.jsx';
 import LastWeekCommitments from './LastWeekCommitments.jsx';
+import { SCREEN_TRANSITION } from '../lib/motion.js';
 
 // Motion props shared by all views — matches KpiSelection.jsx pattern
 const motionProps = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -8 },
-  transition: { duration: 0.28, ease: 'easeOut' },
+  transition: SCREEN_TRANSITION,
 };
 
 // Phase 19 D-05 — passes-key-fields predicate. A Yes-rated row whose required

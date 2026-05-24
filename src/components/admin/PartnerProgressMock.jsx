@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, LabelList, ResponsiveContainer } from 'recharts';
 import { getPerformanceColor } from '../../lib/seasonStats.js';
 import { PROGRESS_COPY, GROWTH_STATUS_COPY } from '../../data/content.js';
+import { SCREEN_TRANSITION } from '../../lib/motion.js';
 
 const MOCK_KPI_STATS = [
   { id: 'mock-kpi-1', label: 'Close 3 new enterprise deals', hitRate: 83, hits: 5, possible: 6 },
@@ -48,7 +49,7 @@ const motionProps = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -8 },
-  transition: { duration: 0.28, ease: 'easeOut' },
+  transition: SCREEN_TRANSITION,
 };
 
 export default function PartnerProgressMock() {

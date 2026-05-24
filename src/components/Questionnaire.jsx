@@ -14,6 +14,7 @@ import ScreenVision from './screens/ScreenVision.jsx';
 import ScreenConfirmation from './screens/ScreenConfirmation.jsx';
 import { upsertSubmission, fetchSubmission } from '../lib/supabase.js';
 import { STEPS } from '../data/content.js';
+import { SCREEN_TRANSITION } from '../lib/motion.js';
 
 const VALID_PARTNERS = { theo: 'Theo', jerry: 'Jerry', test: 'Test' };
 
@@ -198,7 +199,7 @@ export default function Questionnaire() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.28, ease: 'easeOut' }}
+            transition={SCREEN_TRANSITION}
           >
             {screens[currentKey]}
           </motion.div>

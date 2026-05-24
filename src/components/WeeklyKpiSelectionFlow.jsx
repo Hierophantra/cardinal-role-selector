@@ -10,13 +10,14 @@ import {
 } from '../lib/supabase.js';
 import { getMondayOf } from '../lib/week.js';
 import { VALID_PARTNERS, PARTNER_DISPLAY, WEEKLY_KPI_COPY, CATEGORY_LABELS, effectivePartnerScope } from '../data/content.js';
+import { SCREEN_TRANSITION } from '../lib/motion.js';
 
 // Motion props shared by all three views — matches questionnaire + KpiSelection pattern
 const motionProps = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -8 },
-  transition: { duration: 0.28, ease: 'easeOut' },
+  transition: SCREEN_TRANSITION,
 };
 
 export default function WeeklyKpiSelectionFlow() {

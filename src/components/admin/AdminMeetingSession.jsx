@@ -33,6 +33,7 @@ import {
   GROWTH_FOLLOWUP_FIELDS,
 } from '../../data/content.js';
 import StructuredFieldsReadOnly from '../StructuredFieldsReadOnly.jsx';
+import { STOP_TRANSITION } from '../../lib/motion.js';
 
 // Stop arrays are now imported from content.js (FRIDAY_STOPS, MONDAY_STOPS).
 // The active stop array is derived from meeting.meeting_type inside the component.
@@ -97,13 +98,14 @@ function previousMondayOf(currentMondayStr) {
 }
 
 // Slide transition for stop swaps — directional based on Prev/Next.
-// Matches existing Framer Motion convention; slightly faster (0.22s) for meeting pace.
+// Matches existing Framer Motion convention; uses the faster STOP_TRANSITION
+// (180ms) for meeting pace rather than the SCREEN_TRANSITION (280ms) default.
 function motionProps(dir) {
   return {
     initial: { opacity: 0, x: dir * 24 },
     animate: { opacity: 1, x: 0 },
     exit: { opacity: 0, x: dir * -24 },
-    transition: { duration: 0.22, ease: 'easeOut' },
+    transition: STOP_TRANSITION,
   };
 }
 

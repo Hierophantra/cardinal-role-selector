@@ -8,12 +8,13 @@ import { useCurrentTheme } from './ThemeToggle.jsx';
 import InfractionsPanel from './InfractionsPanel.jsx';
 import { VALID_PARTNERS, PARTNER_DISPLAY, PROGRESS_COPY, GROWTH_STATUS_COPY } from '../data/content.js';
 import BusinessPrioritiesSection from './BusinessPrioritiesSection.jsx';
+import { SCREEN_TRANSITION } from '../lib/motion.js';
 
 const motionProps = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -8 },
-  transition: { duration: 0.28, ease: 'easeOut' },
+  transition: SCREEN_TRANSITION,
 };
 
 export default function PartnerProgress() {

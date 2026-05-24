@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatWeekRange } from '../../lib/week.js';
+import { STOP_TRANSITION } from '../../lib/motion.js';
 import {
   MEETING_COPY,
   GROWTH_STATUS_COPY,
@@ -180,7 +181,7 @@ function motionProps(dir) {
     initial: { opacity: 0, x: dir * 24 },
     animate: { opacity: 1, x: 0 },
     exit: { opacity: 0, x: dir * -24 },
-    transition: { duration: 0.22, ease: 'easeOut' },
+    transition: STOP_TRANSITION,
   };
 }
 
