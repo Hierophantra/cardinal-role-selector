@@ -607,8 +607,12 @@ export default function Scorecard() {
         setAllScorecards(scorecards);
         setGrowthPriorities(growth ?? []);
 
-        // Empty guard: no weekly KPI selected for current week
-        if (!sel || !sel.kpi_template_id) {
+        // Empty guard: no weekly KPI selected for current week.
+        // Tier 2 fix: the test profile composition path (below) ignores
+        // sel.kpi_template_id entirely and renders every non-conditional
+        // template for QA review. The empty guard would otherwise block
+        // the test view from ever rendering when no weekly selection exists.
+        if (partner !== 'test' && (!sel || !sel.kpi_template_id)) {
           setRows([]);
           setNoSelection(true);
           return;
