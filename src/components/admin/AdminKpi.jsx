@@ -123,6 +123,11 @@ function KpiTemplateLibrary() {
 
   function validate(draft) {
     if (!draft.label.trim()) return 'Label is required.';
+    // baseline_action is NOT NULL in the DB (migration 009). Required here
+    // so we don't slam null into the column and trigger the generic save fail.
+    if (!draft.baseline_action || !draft.baseline_action.trim()) {
+      return 'Baseline action is required — it\'s the line partners see at the top of the KPI card.';
+    }
     if (!KPI_CATEGORIES.includes(draft.category)) return 'Invalid category.';
     if (!PARTNER_SCOPE_OPTIONS.includes(draft.partner_scope)) return 'Invalid partner scope.';
     if (draft.key_fields !== null) {
@@ -174,7 +179,11 @@ function KpiTemplateLibrary() {
       showFlash(ADMIN_KPI_COPY.savedFlash);
     } catch (err2) {
       console.error(err2);
-      setError(ADMIN_KPI_COPY.errors.saveFail);
+      // Surface the actual Supabase / Postgres error inline so the admin
+      // can act on it (e.g. "null value in column X violates not-null
+      // constraint") instead of the generic "Couldn't save" catch-all.
+      const detail = err2?.message || err2?.hint || err2?.details || '';
+      setError(detail ? `${ADMIN_KPI_COPY.errors.saveFail} — ${detail}` : ADMIN_KPI_COPY.errors.saveFail);
     } finally {
       setSaving(false);
     }
