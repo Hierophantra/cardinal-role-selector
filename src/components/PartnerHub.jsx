@@ -392,8 +392,10 @@ export default function PartnerHub() {
                 {/* Tier 2: Counterpart's Scorecard — read-only view of the OTHER
                     partner's weekly scorecard. Scorecard.jsx detects when the
                     URL :partner !== sessionRole and disables editing. Lets Theo
-                    and Jerry see each other's progress through the week. */}
-                {kpiReady && (
+                    and Jerry see each other's progress through the week.
+                    Hidden on the test profile — test has no real counterpart
+                    and its own scorecard view already shows all templates. */}
+                {kpiReady && partner !== 'test' && (
                   <Link
                     to={`/scorecard/${partner === 'theo' ? 'jerry' : 'theo'}`}
                     className="hub-card"
