@@ -608,16 +608,36 @@ export default function Scorecard() {
         setAllScorecards(scorecards);
         setGrowthPriorities(growth ?? []);
 
+        // Counterpart-view inline derivation. Mirrors the useMemo above —
+        // recomputed here so the closure isn't dependent on hook ordering
+        // and so we can branch cleanly inside the .then() callback.
+        const isCounterpartView =
+          sessionRole &&
+          sessionRole !== 'admin' &&
+          sessionRole !== 'test' &&
+          sessionRole !== partner;
+
         // Empty guard: no weekly KPI selected for current week.
         // Tier 2 fix: the test profile composition path (below) ignores
         // sel.kpi_template_id entirely and renders every non-conditional
         // template for QA review. The empty guard would otherwise block
         // the test view from ever rendering when no weekly selection exists.
-        if (partner !== 'test' && (!sel || !sel.kpi_template_id)) {
+        //
+        // 2026-05-24: counterpart view (Theo viewing Jerry's scorecard or
+        // vice versa) now bypasses the bail too — the mandatory + conditional
+        // rows are always there for the season, and partners should be able
+        // to see them even when the counterpart hasn't picked this week's
+        // optional KPI yet. The weekly slot is gracefully omitted via the
+        // existing `weeklyTpl ? [weeklyTpl] : []` composition below.
+        if (partner !== 'test' && !isCounterpartView && (!sel || !sel.kpi_template_id)) {
           setRows([]);
           setNoSelection(true);
           return;
         }
+
+        // When sel is missing in counterpart-view, synthesize a placeholder
+        // so downstream references (counter_value, kpi_template_id) work.
+        const safeSel = sel ?? { kpi_template_id: null, counter_value: {} };
 
         // Compose rows (Pattern 5): mandatory (non-conditional) + conditional (if jerry+active) + weekly choice
         const scope = effectivePartnerScope(partner);
@@ -631,7 +651,7 @@ export default function Scorecard() {
           partner === 'jerry' && jerryActive
             ? templates.find((t) => t.conditional === true && t.partner_scope === 'jerry')
             : null;
-        const weeklyTpl = templates.find((t) => t.id === sel.kpi_template_id);
+        const weeklyTpl = templates.find((t) => t.id === safeSel.kpi_template_id);
 
         // UAT 2026-05-09: test partner shows EVERY non-conditional template
         // (theo + jerry + shared) so Trace can review every KPI's structured
@@ -658,7 +678,7 @@ export default function Scorecard() {
             ];
 
         setRows(composed);
-        setWeeklySel(sel);
+        setWeeklySel(safeSel);
 
         // Hydrate / seed row results. If already submitted this week → hydrate from scorecards row.
         // Otherwise → seed count from sel.counter_value (COUNT-04).
@@ -669,7 +689,7 @@ export default function Scorecard() {
           seededResults[tpl.id] = {
             result: existing?.result ?? null,
             reflection: existing?.reflection ?? '',
-            count: existing?.count ?? sel.counter_value?.[tpl.id] ?? 0,
+            count: existing?.count ?? safeSel.counter_value?.[tpl.id] ?? 0,
             pending_text: existing?.pending_text ?? '',
             // Wave 1 (migration 020): hydrate per-KPI structured_data alongside
             // existing fields. Defaults to {} so the renderer always receives a
@@ -1289,13 +1309,22 @@ export default function Scorecard() {
             </div>
             {/* Tier 2: read-only banner when one partner is viewing the
                 other's scorecard. Makes the observe-only context explicit so
-                there's no confusion about why nothing's editable. */}
+                there's no confusion about why nothing's editable.
+                2026-05-24: when the counterpart hasn't picked their weekly
+                (optional) KPI yet, extend the banner copy so the viewer
+                understands why only the mandatory rows are showing. */}
             {counterpartView && (
               <div className="scorecard-readonly-banner">
                 <span className="scorecard-readonly-banner__dot" aria-hidden="true" />
                 <span>
                   <strong>Read-only view.</strong> You're looking at {partnerName}'s scorecard.
                   Nothing here is editable \u2014 head back to your own hub to make changes.
+                  {!weeklySel?.kpi_template_id && (
+                    <>
+                      {' '}
+                      <em>{partnerName} hasn't picked this week's optional KPI yet, so only the mandatory rows show below.</em>
+                    </>
+                  )}
                 </span>
               </div>
             )}

@@ -394,8 +394,14 @@ export default function PartnerHub() {
                     URL :partner !== sessionRole and disables editing. Lets Theo
                     and Jerry see each other's progress through the week.
                     Hidden on the test profile — test has no real counterpart
-                    and its own scorecard view already shows all templates. */}
-                {kpiReady && partner !== 'test' && (
+                    and its own scorecard view already shows all templates.
+                    2026-05-24: kpiReady gate removed — partners can browse
+                    the counterpart's scorecard independent of their own
+                    season-KPI setup. Scorecard.jsx counterpart-view also
+                    bypasses the "no weekly KPI picked" empty-guard, so the
+                    mandatory rows always render even when the counterpart
+                    hasn't picked this week's optional KPI yet. */}
+                {partner !== 'test' && (
                   <Link
                     to={`/scorecard/${partner === 'theo' ? 'jerry' : 'theo'}`}
                     className="hub-card hub-card--partner-view"
