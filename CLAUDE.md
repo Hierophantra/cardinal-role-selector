@@ -1,4 +1,3 @@
-<!-- GSD:project-start source:PROJECT.md -->
 ## Project
 
 **Cardinal Partner Accountability System**
@@ -14,9 +13,7 @@ An internal tool for Cardinal's two business partners (Theo and Jerry) and their
 - **Users**: Exactly 3 (Theo, Jerry, admin) — no need for generic multi-user architecture
 - **Data**: Supabase PostgreSQL — new tables for KPIs, scorecards, growth priorities
 - **Design**: Cardinal dark theme with existing CSS patterns — extend, don't redesign
-<!-- GSD:project-end -->
 
-<!-- GSD:stack-start source:codebase/STACK.md -->
 ## Technology Stack
 
 ## Languages
@@ -54,9 +51,7 @@ An internal tool for Cardinal's two business partners (Theo and Jerry) and their
 - Static site output via `npm run build` → `dist/`
 - Deployable to any static host (Netlify, Vercel, etc.)
 - Requires server-side redirect for SPA routing (all paths → `index.html`)
-<!-- GSD:stack-end -->
 
-<!-- GSD:conventions-start source:CONVENTIONS.md -->
 ## Conventions
 
 ## Naming Patterns
@@ -116,9 +111,7 @@ An internal tool for Cardinal's two business partners (Theo and Jerry) and their
 - Short-circuit `{condition && <Component />}` for optional UI
 - Ternary `{loading ? <Loading /> : <Content />}` for state branches
 - Early return for blocking states (loading, redirect) before main render tree
-<!-- GSD:conventions-end -->
 
-<!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
 
 ## Pattern Overview
@@ -198,26 +191,3 @@ An internal tool for Cardinal's two business partners (Theo and Jerry) and their
 - Invalid partner slug in URL redirects to `/` via `navigate('/', { replace: true })`
 - Wrong access code on Login sets `error` state string displayed inline
 ## Cross-Cutting Concerns
-<!-- GSD:architecture-end -->
-
-<!-- GSD:workflow-start source:GSD defaults -->
-## GSD Workflow Enforcement
-
-Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
-
-Use these entry points:
-- `/gsd:quick` for small fixes, doc updates, and ad-hoc tasks
-- `/gsd:debug` for investigation and bug fixing
-- `/gsd:execute-phase` for planned phase work
-
-Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
-<!-- GSD:workflow-end -->
-
-
-
-<!-- GSD:profile-start -->
-## Developer Profile
-
-> Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
-> This section is managed by `generate-claude-profile` -- do not edit manually.
-<!-- GSD:profile-end -->
