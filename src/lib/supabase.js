@@ -340,20 +340,61 @@ export const resetTestScorecards = () => resetPartnerScorecards('test');
 
 // --- Admin: KPI Template CRUD (ADMIN-04) — Phase 4 ---
 
-export async function createKpiTemplate({ label, category, description, measure, partner_scope, mandatory }) {
+// Tier 3A: signature widened to accept every editable column on
+// kpi_templates so the admin EditForm can surface them. Callers pass only
+// the fields they're changing; undefined values are dropped before the DB
+// write so we don't blank out unrelated columns.
+function _prune(obj) {
+  const out = {};
+  for (const k of Object.keys(obj)) {
+    if (obj[k] !== undefined) out[k] = obj[k];
+  }
+  return out;
+}
+
+export async function createKpiTemplate(fields) {
+  const insert = _prune({
+    label: fields.label,
+    category: fields.category,
+    description: fields.description,
+    measure: fields.measure,
+    partner_scope: fields.partner_scope,
+    mandatory: fields.mandatory,
+    countable: fields.countable,
+    conditional: fields.conditional,
+    baseline_action: fields.baseline_action,
+    reflection_prompt: fields.reflection_prompt,
+    growth_clause: fields.growth_clause,
+    key_fields: fields.key_fields,
+  });
   const { data, error } = await supabase
     .from('kpi_templates')
-    .insert({ label, category, description, measure, partner_scope, mandatory })
+    .insert(insert)
     .select()
     .single();
   if (error) throw error;
   return data;
 }
 
-export async function updateKpiTemplate(id, { label, category, description, measure, partner_scope, mandatory }) {
+export async function updateKpiTemplate(id, fields) {
+  const update = _prune({
+    label: fields.label,
+    category: fields.category,
+    description: fields.description,
+    measure: fields.measure,
+    partner_scope: fields.partner_scope,
+    mandatory: fields.mandatory,
+    countable: fields.countable,
+    conditional: fields.conditional,
+    baseline_action: fields.baseline_action,
+    reflection_prompt: fields.reflection_prompt,
+    growth_clause: fields.growth_clause,
+    key_fields: fields.key_fields,
+    updated_at: new Date().toISOString(),
+  });
   const { data, error } = await supabase
     .from('kpi_templates')
-    .update({ label, category, description, measure, partner_scope, mandatory, updated_at: new Date().toISOString() })
+    .update(update)
     .eq('id', id)
     .select()
     .single();

@@ -4111,3 +4111,287 @@ select:focus,
 .hub-card--partner-view .hub-card-cta {
   color: var(--blue);
 }
+
+/* ============================================================================
+   Tier 3A — Admin KPI editor (Pattern-Driven Form Builder + Magic String).
+   ============================================================================ */
+
+.kpi-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.kpi-edit-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.kpi-edit-section-heading {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+.kpi-edit-hint {
+  color: var(--muted);
+  font-size: 12px;
+  margin: -4px 0 12px;
+  line-height: 1.5;
+}
+.kpi-edit-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 10px 0 4px;
+}
+.kpi-edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.kpi-edit-flags {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.kpi-edit-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+.kpi-edit-error {
+  color: var(--miss);
+  margin: 0;
+}
+.kpi-magic-suggest {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(180deg, rgba(212, 168, 67, 0.08), rgba(212, 168, 67, 0.02));
+  border: 1px solid rgba(212, 168, 67, 0.32);
+  border-left: 3px solid var(--gold);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+.kpi-magic-suggest__text strong {
+  color: var(--gold);
+  margin-right: 4px;
+}
+
+/* KeyFieldsEditor */
+.kf-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.kf-editor-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.kf-pattern-select {
+  min-width: 280px;
+}
+.kf-advanced-toggle {
+  font-size: 12px;
+  padding: 6px 12px;
+}
+.kf-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0 0 4px;
+}
+.kf-hint {
+  color: var(--muted-2);
+  font-size: 11px;
+  margin-left: 8px;
+}
+.kf-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.kf-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.kf-row--inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.kf-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+.kf-input--narrow { width: 120px; }
+.kf-empty {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 8px 0;
+  font-style: italic;
+}
+
+.kf-fields-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.kf-fields-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 6px 0 2px;
+}
+.kf-fields-head h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.kf-add-field {
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.kf-field {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.kf-field-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.kf-field-index {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--surface-2);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.kf-field-label-input {
+  flex: 1;
+}
+.kf-field-head-actions {
+  display: flex;
+  gap: 4px;
+}
+.kf-icon-btn {
+  font-size: 14px;
+  padding: 4px 10px;
+}
+.kf-icon-btn--danger {
+  color: var(--miss);
+}
+.kf-icon-btn--danger:hover {
+  color: var(--text);
+  background: rgba(196, 30, 58, 0.14);
+}
+.kf-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.kf-field-grid--flags {
+  grid-template-columns: max-content max-content 1fr;
+  align-items: end;
+}
+.kf-required-when-inputs {
+  display: flex;
+  gap: 6px;
+}
+.kf-mc-options {
+  padding: 12px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.kf-mc-option {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.kf-add-option {
+  align-self: flex-start;
+  font-size: 12px;
+  padding: 5px 12px;
+}
+.kf-json-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.kf-json-textarea {
+  font-family: 'Consolas', 'Menlo', 'Monaco', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+  min-height: 240px;
+}
+.kf-json-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.kf-error {
+  color: var(--miss);
+  font-size: 12px;
+  margin: 0;
+}
+.kf-errors {
+  background: rgba(196, 30, 58, 0.08);
+  border: 1px solid rgba(196, 30, 58, 0.28);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--text);
+}
+.kf-errors strong {
+  color: var(--miss);
+  display: block;
+  margin-bottom: 4px;
+}
+.kf-errors ul {
+  margin: 0;
+  padding-left: 18px;
+}

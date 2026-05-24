@@ -17,12 +17,14 @@ import {
   cascadeTemplateLabelSnapshot,
 } from '../../lib/supabase.js';
 import { ADMIN_KPI_COPY, PARTNER_DISPLAY, CATEGORY_LABELS } from '../../data/content.js';
+import KeyFieldsEditor, { suggestBaselineAction, validateKeyFields } from './KeyFieldsEditor.jsx';
 
 const KPI_CATEGORIES = ['sales', 'ops', 'client', 'team', 'finance'];
 const GROWTH_TYPES = ['personal', 'business'];
 const MANAGED = ['theo', 'jerry'];
 const ARM_DISARM_MS = 3000;
-const SCOPE_DISPLAY = { shared: 'Shared', theo: 'Theo', jerry: 'Jerry' };
+const SCOPE_DISPLAY = { shared: 'Shared', theo: 'Theo', jerry: 'Jerry', both: 'Both' };
+const PARTNER_SCOPE_OPTIONS = ['shared', 'both', 'theo', 'jerry'];
 
 export default function AdminKpi() {
   return (
@@ -63,7 +65,7 @@ function KpiTemplateLibrary() {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null); // null | uuid | 'new'
-  const [editDraft, setEditDraft] = useState({ label: '', category: KPI_CATEGORIES[0], description: '', measure: '' });
+  const [editDraft, setEditDraft] = useState(makeBlankDraft());
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -97,25 +99,36 @@ function KpiTemplateLibrary() {
       category: t.category ?? KPI_CATEGORIES[0],
       description: t.description ?? '',
       measure: t.measure ?? '',
+      baseline_action: t.baseline_action ?? '',
+      partner_scope: t.partner_scope ?? 'shared',
+      mandatory: t.mandatory ?? false,
+      countable: t.countable ?? false,
+      reflection_prompt: t.reflection_prompt ?? '',
+      key_fields: t.key_fields ?? null,
     });
     setError('');
   }
 
   function beginAdd() {
     setEditingId('new');
-    setEditDraft({ label: '', category: KPI_CATEGORIES[0], description: '', measure: '' });
+    setEditDraft(makeBlankDraft());
     setError('');
   }
 
   function cancelEdit() {
     setEditingId(null);
-    setEditDraft({ label: '', category: KPI_CATEGORIES[0], description: '', measure: '' });
+    setEditDraft(makeBlankDraft());
     setError('');
   }
 
   function validate(draft) {
     if (!draft.label.trim()) return 'Label is required.';
     if (!KPI_CATEGORIES.includes(draft.category)) return 'Invalid category.';
+    if (!PARTNER_SCOPE_OPTIONS.includes(draft.partner_scope)) return 'Invalid partner scope.';
+    if (draft.key_fields !== null) {
+      const kfErrors = validateKeyFields(draft.key_fields);
+      if (kfErrors.length > 0) return `Structured fields: ${kfErrors[0]}`;
+    }
     return null;
   }
 
@@ -133,6 +146,12 @@ function KpiTemplateLibrary() {
         category: editDraft.category,
         description: editDraft.description?.trim() || null,
         measure: editDraft.measure?.trim() || null,
+        baseline_action: editDraft.baseline_action?.trim() || null,
+        partner_scope: editDraft.partner_scope,
+        mandatory: !!editDraft.mandatory,
+        countable: !!editDraft.countable,
+        reflection_prompt: editDraft.reflection_prompt?.trim() || null,
+        key_fields: editDraft.key_fields,
       };
       if (editingId === 'new') {
         await createKpiTemplate(payload);
@@ -348,45 +367,153 @@ function KpiTemplateLibrary() {
   );
 }
 
+function makeBlankDraft() {
+  return {
+    label: '',
+    category: KPI_CATEGORIES[0],
+    description: '',
+    measure: '',
+    baseline_action: '',
+    partner_scope: 'shared',
+    mandatory: false,
+    countable: false,
+    reflection_prompt: '',
+    key_fields: null,
+  };
+}
+
 function EditForm({ draft, setDraft, onSave, onCancel, saving, error }) {
+  const baselineSuggestion = suggestBaselineAction(draft.key_fields);
+  const canSuggest = !!baselineSuggestion && baselineSuggestion !== (draft.baseline_action || '').trim();
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <input
-        type="text"
-        className="input"
-        placeholder="Template label"
-        value={draft.label}
-        onChange={(e) => setDraft({ ...draft, label: e.target.value })}
-      />
-      <select
-        className="input"
-        value={draft.category}
-        onChange={(e) => setDraft({ ...draft, category: e.target.value })}
-      >
-        {KPI_CATEGORIES.map((c) => (
-          <option key={c} value={c}>
-            {CATEGORY_LABELS[c] ?? c}
-          </option>
-        ))}
-      </select>
-      <textarea
-        className="input"
-        placeholder="Description (optional)"
-        value={draft.description}
-        onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-        rows={3}
-      />
-      <textarea
-        className="input"
-        placeholder="How this KPI is tracked (e.g. Weekly pipeline report, CRM updated)"
-        value={draft.measure}
-        onChange={(e) => setDraft({ ...draft, measure: e.target.value })}
-        rows={2}
-      />
-      {error && (
-        <p className="muted" style={{ color: 'var(--miss)', margin: 0 }}>
-          {error}
+    <div className="kpi-edit-form">
+      {/* --- BASICS --- */}
+      <section className="kpi-edit-section">
+        <h4 className="kpi-edit-section-heading">Basics</h4>
+        <label className="kpi-edit-label">Template name (admin / internal)</label>
+        <input
+          type="text"
+          className="input"
+          placeholder="e.g. New leads contacted or followed up"
+          value={draft.label}
+          onChange={(e) => setDraft({ ...draft, label: e.target.value })}
+        />
+
+        <label className="kpi-edit-label">Baseline action (what partners actually see at the top of the card)</label>
+        <textarea
+          className="input"
+          placeholder="e.g. Minimum 10 outreach actions per week: calls, meetings, follow-ups with referral partners or prospects."
+          value={draft.baseline_action}
+          onChange={(e) => setDraft({ ...draft, baseline_action: e.target.value })}
+          rows={3}
+        />
+        {canSuggest && (
+          <div className="kpi-magic-suggest">
+            <div className="kpi-magic-suggest__text">
+              <strong>Suggested from structured fields:</strong> {baselineSuggestion}
+            </div>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => setDraft({ ...draft, baseline_action: baselineSuggestion })}
+            >
+              Apply suggestion
+            </button>
+          </div>
+        )}
+
+        <div className="kpi-edit-grid">
+          <div>
+            <label className="kpi-edit-label">Category</label>
+            <select
+              className="input"
+              value={draft.category}
+              onChange={(e) => setDraft({ ...draft, category: e.target.value })}
+            >
+              {KPI_CATEGORIES.map((c) => (
+                <option key={c} value={c}>{CATEGORY_LABELS[c] ?? c}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="kpi-edit-label">Partner scope</label>
+            <select
+              className="input"
+              value={draft.partner_scope}
+              onChange={(e) => setDraft({ ...draft, partner_scope: e.target.value })}
+            >
+              {PARTNER_SCOPE_OPTIONS.map((s) => (
+                <option key={s} value={s}>{SCOPE_DISPLAY[s] ?? s}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="kpi-edit-flags">
+          <label className="kpi-edit-checkbox">
+            <input
+              type="checkbox"
+              checked={!!draft.mandatory}
+              onChange={(e) => setDraft({ ...draft, mandatory: e.target.checked })}
+            />
+            Mandatory (auto-selected on every weekly scorecard)
+          </label>
+          <label className="kpi-edit-checkbox">
+            <input
+              type="checkbox"
+              checked={!!draft.countable}
+              onChange={(e) => setDraft({ ...draft, countable: e.target.checked })}
+            />
+            Countable (+1 counter on hub)
+          </label>
+        </div>
+      </section>
+
+      {/* --- STRUCTURED FIELDS --- */}
+      <section className="kpi-edit-section">
+        <h4 className="kpi-edit-section-heading">Structured fields</h4>
+        <p className="kpi-edit-hint">
+          What partners type in below the Yes/No/Pending picker. Use this for evidence
+          partners must capture each week (job IDs, currency values, who they coached, etc.).
         </p>
+        <KeyFieldsEditor
+          value={draft.key_fields}
+          onChange={(next) => setDraft({ ...draft, key_fields: next })}
+        />
+      </section>
+
+      {/* --- ADVANCED / OPTIONAL --- */}
+      <section className="kpi-edit-section">
+        <h4 className="kpi-edit-section-heading">Advanced (optional)</h4>
+        <label className="kpi-edit-label">Reflection prompt (helper text under "Questions, Thoughts, or Concerns")</label>
+        <input
+          type="text"
+          className="input"
+          placeholder="Leave blank to use the default reflection textarea"
+          value={draft.reflection_prompt}
+          onChange={(e) => setDraft({ ...draft, reflection_prompt: e.target.value })}
+        />
+
+        <label className="kpi-edit-label">Description (internal notes; not shown to partners)</label>
+        <textarea
+          className="input"
+          value={draft.description}
+          onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+          rows={2}
+        />
+
+        <label className="kpi-edit-label">Measure (legacy / internal — how the KPI was originally tracked)</label>
+        <textarea
+          className="input"
+          value={draft.measure}
+          onChange={(e) => setDraft({ ...draft, measure: e.target.value })}
+          rows={2}
+        />
+      </section>
+
+      {error && (
+        <p className="muted kpi-edit-error">{error}</p>
       )}
       <div className="kpi-template-editor-actions">
         <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={saving}>
