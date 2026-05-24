@@ -608,28 +608,26 @@ export default function Scorecard() {
         setAllScorecards(scorecards);
         setGrowthPriorities(growth ?? []);
 
-        // Counterpart-view inline derivation. Mirrors the useMemo above —
-        // recomputed here so the closure isn't dependent on hook ordering
-        // and so we can branch cleanly inside the .then() callback.
-        const isCounterpartView =
-          sessionRole &&
-          sessionRole !== 'admin' &&
-          sessionRole !== 'test' &&
-          sessionRole !== partner;
-
         // Empty guard: no weekly KPI selected for current week.
-        // Tier 2 fix: the test profile composition path (below) ignores
-        // sel.kpi_template_id entirely and renders every non-conditional
-        // template for QA review. The empty guard would otherwise block
-        // the test view from ever rendering when no weekly selection exists.
         //
-        // 2026-05-24: counterpart view (Theo viewing Jerry's scorecard or
-        // vice versa) now bypasses the bail too — the mandatory + conditional
-        // rows are always there for the season, and partners should be able
-        // to see them even when the counterpart hasn't picked this week's
-        // optional KPI yet. The weekly slot is gracefully omitted via the
+        // Only the partner THEMSELVES viewing their own scorecard should be
+        // pushed to "go pick a KPI first" — everyone else (admin/Trace,
+        // counterpart, test, and direct-URL unauthenticated visits) should
+        // see the mandatory + conditional rows that are always there for
+        // the season. The weekly slot is gracefully omitted via the
         // existing `weeklyTpl ? [weeklyTpl] : []` composition below.
-        if (partner !== 'test' && !isCounterpartView && (!sel || !sel.kpi_template_id)) {
+        //
+        // 2026-05-24 evolution:
+        //   - Originally: bail whenever no weekly KPI picked (broke counterpart view).
+        //   - First fix: bypass for explicit counterpart view via sessionRole.
+        //   - Current:   bypass for everyone except the partner themselves.
+        //                Admin gets full edit override on Jerry's rows even
+        //                when Jerry hasn't picked. Counterpart sees read-only
+        //                mandatory rows. Direct-URL visit shows the rows
+        //                without forcing a pick.
+        const isOwnScorecard = sessionRole === partner;
+
+        if (partner !== 'test' && isOwnScorecard && (!sel || !sel.kpi_template_id)) {
           setRows([]);
           setNoSelection(true);
           return;
