@@ -1422,3 +1422,138 @@ export async function deleteWeeklyObjective(id) {
     .eq('id', id);
   if (error) throw error;
 }
+
+// ============================================================================
+// Contracts (Tier 3 v2 follow-up).
+// Stores partnership/agreement PDFs uploaded by admin (Trace), visible to
+// everyone. Files live in the `contracts` Supabase Storage bucket; metadata
+// lives in the `contracts` table.
+// ============================================================================
+
+/**
+ * Fetch all contracts, newest-first.
+ * @returns {Promise<Array>} contract rows
+ */
+export async function fetchContracts() {
+  const { data, error } = await supabase
+    .from('contracts')
+    .select('*')
+    .order('uploaded_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * Upload a contract PDF + insert its metadata row.
+ * Two-step operation: file → storage, then row → table. If the row insert
+ * fails after a successful upload, the orphaned file is best-effort cleaned.
+ *
+ * @param {object} args
+ * @param {File} args.file — must be a PDF (bucket has a mime allowlist)
+ * @param {string} args.name — display name (does not need to match filename)
+ * @param {string} [args.description]
+ * @param {string} [args.category]
+ * @returns {Promise<object>} the inserted contracts row
+ */
+export async function uploadContract({ file, name, description, category }) {
+  if (!file) throw new Error('uploadContract: file is required');
+  if (file.type !== 'application/pdf') {
+    throw new Error('Only PDF files are allowed.');
+  }
+  if (!name || !name.trim()) throw new Error('uploadContract: name is required');
+
+  // Build a unique storage path so two uploads with the same filename don't
+  // collide. Format: `{epoch_ms}-{sanitized-original-name}.pdf`
+  const ts = Date.now();
+  const safeOriginal = (file.name || 'contract.pdf')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const path = `${ts}-${safeOriginal}`;
+
+  // 1. Upload to storage. cacheControl: '3600' is the Supabase default for
+  //    signed URLs; safe value for partnership docs that won't change often.
+  const { error: uploadErr } = await supabase
+    .storage
+    .from('contracts')
+    .upload(path, file, {
+      contentType: 'application/pdf',
+      cacheControl: '3600',
+      upsert: false,
+    });
+  if (uploadErr) throw uploadErr;
+
+  // 2. Insert metadata row.
+  const { data, error } = await supabase
+    .from('contracts')
+    .insert({
+      name: name.trim(),
+      description: description?.trim() || null,
+      category: category?.trim() || null,
+      file_path: path,
+      file_size_bytes: file.size,
+      file_mime_type: file.type,
+      uploaded_by: 'admin',
+    })
+    .select()
+    .single();
+
+  if (error) {
+    // Best-effort cleanup of the orphaned file. If this fails the file
+    // stays in storage but isn't referenced — admin can sweep later.
+    await supabase.storage.from('contracts').remove([path]).catch(() => {});
+    throw error;
+  }
+  return data;
+}
+
+/**
+ * Delete a contract — removes the storage object AND the metadata row.
+ * Idempotent: if the row is already gone, treats as success. If the file
+ * is missing but the row exists, deletes the row anyway (data hygiene).
+ *
+ * @param {string} id contracts.id
+ * @returns {Promise<void>}
+ */
+export async function deleteContract(id) {
+  if (!id) throw new Error('deleteContract: id is required');
+
+  // Look up the file_path first so we know what to remove from storage.
+  const { data: row, error: fetchErr } = await supabase
+    .from('contracts')
+    .select('file_path')
+    .eq('id', id)
+    .maybeSingle();
+  if (fetchErr) throw fetchErr;
+  if (!row) return; // already gone
+
+  // Remove the storage object. Errors here aren't fatal — proceed to
+  // delete the row regardless so the metadata doesn't outlive a missing file.
+  await supabase.storage.from('contracts').remove([row.file_path]).catch((e) => {
+    console.error('deleteContract: storage removal failed', e);
+  });
+
+  const { error: delErr } = await supabase
+    .from('contracts')
+    .delete()
+    .eq('id', id);
+  if (delErr) throw delErr;
+}
+
+/**
+ * Generate a short-lived signed URL for viewing/downloading a contract.
+ * The bucket is private — direct public URLs won't work. Signed URLs
+ * expire after `expiresInSeconds`.
+ *
+ * @param {string} filePath — value from contracts.file_path
+ * @param {number} [expiresInSeconds=3600] — default 1 hour
+ * @returns {Promise<string>} signed URL
+ */
+export async function fetchContractSignedUrl(filePath, expiresInSeconds = 3600) {
+  if (!filePath) throw new Error('fetchContractSignedUrl: filePath is required');
+  const { data, error } = await supabase
+    .storage
+    .from('contracts')
+    .createSignedUrl(filePath, expiresInSeconds);
+  if (error) throw error;
+  return data.signedUrl;
+}

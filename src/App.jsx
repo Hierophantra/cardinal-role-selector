@@ -26,6 +26,7 @@ import PartnerProgressMock from './components/admin/PartnerProgressMock.jsx';
 import PartnerProgress from './components/PartnerProgress.jsx';
 import WeeklyKpiSelectionFlow from './components/WeeklyKpiSelectionFlow.jsx';
 import RoleDiscovery from './components/RoleDiscovery.jsx';
+import Contracts from './components/Contracts.jsx';
 
 export default function App() {
   return (
@@ -59,6 +60,7 @@ export default function App() {
       <Route path="/admin/scorecards" element={<AdminScorecards />} />
       <Route path="/admin/meeting" element={<AdminMeeting />} />
       <Route path="/admin/meeting/:id" element={<AdminMeetingSession />} />
+      <Route path="/contracts" element={<Contracts />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </AppShell>

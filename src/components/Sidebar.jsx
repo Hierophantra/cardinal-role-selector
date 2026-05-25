@@ -23,6 +23,7 @@ import {
   Target,
   Scale,
   FlaskConical,
+  FileText,
   LogOut,
   ChevronsLeft,
   ChevronsRight,
@@ -82,6 +83,7 @@ function PartnerNav({ partner, collapsed, onItemClick }) {
       <div className="sidebar-divider" aria-hidden="true" />
 
       <NavItem to={`/role-discovery/${partner}`} icon={Compass} label="Role Discovery" collapsed={collapsed} onClick={onItemClick} />
+      <NavItem to="/contracts" icon={FileText} label="Contracts" collapsed={collapsed} onClick={onItemClick} />
     </>
   );
 }
@@ -98,6 +100,7 @@ function AdminNav({ collapsed, onItemClick }) {
       <NavItem to="/admin/kpi" icon={Target} label="KPI Editor" collapsed={collapsed} onClick={onItemClick} />
       <NavItem to="/admin/meeting" icon={Calendar} label="Meetings" collapsed={collapsed} onClick={onItemClick} />
       <NavItem to="/admin/comparison" icon={Scale} label="Comparison" collapsed={collapsed} onClick={onItemClick} />
+      <NavItem to="/contracts" icon={FileText} label="Contracts" collapsed={collapsed} onClick={onItemClick} />
 
       <div className="sidebar-divider" aria-hidden="true" />
 
