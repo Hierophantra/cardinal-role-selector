@@ -20,10 +20,15 @@ import Sidebar, { useSidebarCollapsed } from './Sidebar.jsx';
 
 // Routes that should NOT show the sidebar shell — render children plain.
 // Login is the entry point; the questionnaire is a guided flow that should
-// own the full viewport. Add new full-bleed routes here as they come up.
+// own the full viewport; the meeting routes use a specialized .meeting-shell
+// that's optimized for TV/projector readability and works best full-bleed.
+// Add new full-bleed routes here as they come up.
 function isShellSuppressedRoute(pathname) {
   if (pathname === '/' || pathname === '') return true;
   if (pathname.startsWith('/q/')) return true;
+  // Wave 6b: meeting routes get the full viewport for their TV-readable mode.
+  if (pathname.startsWith('/admin/meeting/')) return true;
+  if (pathname.startsWith('/admin/test/meeting-mock')) return true;
   return false;
 }
 
