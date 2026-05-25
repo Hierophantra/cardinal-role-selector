@@ -18,6 +18,8 @@ import {
 } from '../../lib/supabase.js';
 import { ADMIN_KPI_COPY, PARTNER_DISPLAY, CATEGORY_LABELS } from '../../data/content.js';
 import KeyFieldsEditor, { suggestBaselineAction, validateKeyFields } from './KeyFieldsEditor.jsx';
+import PageHeader from '../PageHeader.jsx';
+import TagPill from '../TagPill.jsx';
 
 const KPI_CATEGORIES = ['sales', 'ops', 'client', 'team', 'finance'];
 const GROWTH_TYPES = ['personal', 'business'];
@@ -29,23 +31,16 @@ const PARTNER_SCOPE_OPTIONS = ['shared', 'both', 'theo', 'jerry'];
 export default function AdminKpi() {
   return (
     <div className="app-shell">
-      <div className="app-header">
-        <div className="brand">
-          <img src="/logo.png" alt="Cardinal" />
-          <span>Role Definition Tool</span>
-        </div>
-        <div className="partner-tag">Admin</div>
-      </div>
       <div className="container">
         <div className="screen fade-in">
-          <div style={{ marginBottom: 16 }}>
-            <Link to="/admin/hub" className="btn btn-ghost" style={{ textDecoration: 'none' }}>
-              {'\u2190'} Back to Admin Hub
-            </Link>
-          </div>
+          {/* Tier 3 v2 Wave 6a: in-page app-header + back link removed.
+              Sidebar provides nav. PageHeader carries the Admin / KPI Editor context. */}
+          <PageHeader
+            eyebrow={ADMIN_KPI_COPY.eyebrow}
+            greeting={null}
+          />
 
-          <div className="screen-header">
-            <div className="eyebrow">{ADMIN_KPI_COPY.eyebrow}</div>
+          <div className="screen-header" style={{ marginBottom: 'var(--space-4)' }}>
             <h2>{ADMIN_KPI_COPY.heading}</h2>
           </div>
 
@@ -262,7 +257,7 @@ function KpiTemplateLibrary() {
                     <h4 className="kpi-card-label" style={{ margin: 0 }}>
                       {t.label}
                     </h4>
-                    <span className="kpi-category-tag">{CATEGORY_LABELS[t.category] ?? t.category}</span>
+                    <TagPill category={t.category} size="sm">{CATEGORY_LABELS[t.category] ?? t.category}</TagPill>
                     <div className="kpi-template-tag-row">
                       <span className="kpi-scope-tag">
                         {SCOPE_DISPLAY[t.partner_scope] ?? t.partner_scope}
