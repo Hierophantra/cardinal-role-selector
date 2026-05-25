@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Sun, Moon } from 'lucide-react';
 
 // Phase 19 follow-up: light/dark theme toggle. Persists to localStorage and
 // drives the [data-theme] attribute on <html>. Default is dark (existing
@@ -47,6 +48,10 @@ export default function ThemeToggle() {
 
   const next = theme === 'light' ? 'dark' : 'light';
   const label = theme === 'light' ? 'Light' : 'Dark';
+  // Tier 3 v2 Wave 8: replace the brand-red dot with a Lucide Sun/Moon icon.
+  // The dot CSS class is preserved on the button for layout continuity
+  // (it's a no-op as long as no .theme-toggle__dot child exists).
+  const Icon = theme === 'light' ? Sun : Moon;
 
   return (
     <button
@@ -56,7 +61,7 @@ export default function ThemeToggle() {
       title={`Switch to ${next} theme`}
       aria-label={`Switch to ${next} theme`}
     >
-      <span className="theme-toggle__dot" aria-hidden="true" />
+      <Icon size={14} strokeWidth={1.75} aria-hidden="true" />
       {label}
     </button>
   );
