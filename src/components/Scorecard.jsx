@@ -21,6 +21,12 @@ import {
 import StructuredFieldsReadOnly from './StructuredFieldsReadOnly.jsx';
 import LastWeekCommitments from './LastWeekCommitments.jsx';
 import { SCREEN_TRANSITION } from '../lib/motion.js';
+import ScorecardRail from './ScorecardRail.jsx';
+import TagPill from './TagPill.jsx';
+import StreakBadge from './continuity/StreakBadge.jsx';
+import PendingForBadge from './continuity/PendingForBadge.jsx';
+import GhostedPriorContext from './continuity/GhostedPriorContext.jsx';
+import { computeHitStreak, computePendingWeekCount, priorWeekReflection } from '../lib/continuity.js';
 
 // Motion props shared by all views — matches KpiSelection.jsx pattern
 const motionProps = {
@@ -1292,9 +1298,22 @@ export default function Scorecard() {
   const isSubmitted = view === 'submitted';
 
   // ---- Render ----
+  // Tier 3 v2 Wave 5: scorecard-with-rail layout. Desktop (>= 901px) renders
+  // a sticky left-rail KPI list alongside the form. Mobile keeps the
+  // existing single-column flow (rail is hidden via CSS).
   return (
-    <div className="app-shell">
-      <div className="container" style={{ paddingBottom: !weekClosed && !isSubmitted && !counterpartView ? 96 : undefined }}>
+    <div className="app-shell scorecard-with-rail">
+      {/* Left rail — desktop only, hidden via CSS at mobile breakpoint */}
+      {!noSelection && !loading && rows.length > 0 && (
+        <ScorecardRail
+          rows={rows}
+          kpiResults={kpiResults}
+          currentWeekOf={currentWeekOf}
+          answeredCount={answeredCount}
+          totalCount={rows.length}
+        />
+      )}
+      <div className="container scorecard-with-rail__form" style={{ paddingBottom: !weekClosed && !isSubmitted && !counterpartView ? 96 : undefined }}>
         <AnimatePresence mode="wait">
           <motion.div key={view} className="screen" {...motionProps}>
             <div className="nav-row" style={{ marginBottom: 12 }}>
@@ -1416,6 +1435,10 @@ export default function Scorecard() {
                 const pickerDisabled = weekClosed || counterpartView;
                 const bodyDisabled = weekClosed || counterpartView;
                 const showEditablePicker = !weekClosed && !counterpartView;
+                // Tier 3 v2 Wave 5: state-continuity primitives per KPI row.
+                const hitStreak = computeHitStreak(tpl.id, allScorecards);
+                const pendingForWeeks = computePendingWeekCount(tpl.id, allScorecards);
+                const ghostedReflection = priorWeekReflection(tpl.id, allScorecards, currentWeekOf);
                 return (
                   <div key={tpl.id} className={rowClass} id={`kpi-${tpl.id}`}>
                     <div className="scorecard-baseline-label">
@@ -1427,6 +1450,15 @@ export default function Scorecard() {
                         <span className="pending-badge muted">{SCORECARD_COPY.pendingBadgeMuted}</span>
                       )}
                     </div>
+                    {/* Tier 3 v2 Wave 5: category + continuity badges row.
+                        Only renders if at least one badge has content. */}
+                    {(tpl.category || hitStreak >= 2 || pendingForWeeks >= 2) && (
+                      <div className="scorecard-kpi-badges">
+                        {tpl.category && <TagPill category={tpl.category} size="sm" />}
+                        <StreakBadge weeks={hitStreak} />
+                        <PendingForBadge weeks={pendingForWeeks} />
+                      </div>
+                    )}
                     {/* Phase 19 refinement: growth_clause subtitle hidden per user
                         request — data remains stored on kpi_templates. */}
 
@@ -1551,6 +1583,10 @@ export default function Scorecard() {
 
                     <div className="scorecard-reflection" style={{ marginTop: 12 }}>
                       <label className="scorecard-reflection-label">{SCORECARD_COPY.reflectionLabel}</label>
+                      {/* Tier 3 v2 Wave 5: ghosted prior-week reflection. Recall
+                          without pre-fill — partner sees what they wrote last
+                          week, has to write fresh this week. */}
+                      <GhostedPriorContext text={ghostedReflection} />
                       {bodyDisabled ? (
                         <p className="muted" style={{ margin: 0 }} id={`kpi-${tpl.id}-reflection`}>
                           {entry.reflection_optout ? 'Nothing to add this week' : (entry.reflection || '\u2014')}

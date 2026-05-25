@@ -5091,3 +5091,173 @@ select:focus,
 .trend-arrow--up { color: var(--success); }
 .trend-arrow--down { color: var(--miss); }
 .trend-arrow--flat { color: var(--muted); }
+
+/* ============================================================================
+   Tier 3 v2 Wave 5 — Scorecard left-rail + per-row continuity badges
+   ============================================================================ */
+
+/* Desktop scorecard layout — 2-column flex with sticky rail on the left.
+   Mobile (<= 900px) keeps the existing single-column form, rail hidden. */
+@media (min-width: 901px) {
+  .scorecard-with-rail {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-6) var(--space-5);
+  }
+  .scorecard-with-rail__form {
+    /* When inside the with-rail layout, the form takes the second column.
+       Override the .container max-width since the grid is the constraint. */
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .scorecard-rail {
+    display: none;
+  }
+}
+
+.scorecard-rail {
+  position: sticky;
+  top: var(--space-4);
+  align-self: start;
+  max-height: calc(100vh - var(--space-8));
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1), var(--shadow-inset-ring);
+}
+
+.scorecard-rail__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--space-2);
+}
+.scorecard-rail__eyebrow {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.scorecard-rail__count {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-2);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+}
+
+.scorecard-rail__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.scorecard-rail__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: background var(--duration-base) ease, color var(--duration-base) ease;
+  position: relative;
+}
+.scorecard-rail__item:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.scorecard-rail__item--active {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.scorecard-rail__item--active::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background: var(--rail-category-color, var(--red));
+  border-radius: 2px;
+}
+.scorecard-rail__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Rail status dots — same color semantics as the existing kpi-status-dot
+   but smaller and sized for the rail's tighter layout. */
+.rail-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--muted-2);
+}
+.rail-status-dot--met            { background: var(--success); }
+.rail-status-dot--missed         { background: var(--miss); }
+.rail-status-dot--pending-active { background: var(--gold); }
+.rail-status-dot--unanswered     { background: var(--muted-2); }
+
+/* Per-row badges container — sits between the baseline-label and the
+   form picker for each KPI. Inline flex so badges flow naturally. */
+.scorecard-kpi-badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin: var(--space-2) 0;
+}
+
+/* GhostedPriorContext — recall text rendered at low opacity above the
+   reflection field. Doesn't pre-fill the input; just shows what was
+   written last week as a memory aid. */
+.ghosted-prior-context {
+  font-size: var(--text-sm);
+  color: var(--muted-2);
+  opacity: 0.7;
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-2);
+  border-left: 2px solid var(--border);
+  border-radius: var(--radius-xs);
+  line-height: 1.5;
+  font-style: italic;
+}
+.ghosted-prior-context__label {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-right: var(--space-2);
+  font-style: normal;
+}
+.ghosted-prior-context__text {
+  /* Use the prior week's text as-is */
+}
