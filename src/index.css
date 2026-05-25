@@ -5261,3 +5261,213 @@ select:focus,
 .ghosted-prior-context__text {
   /* Use the prior week's text as-is */
 }
+
+/* ============================================================================
+   Tier 3 v2 Wave 7 — Callout, Toast, StatusPill, ChecklistBlock
+   Notion-style component primitives. Color tokens defined in :root.
+   ============================================================================ */
+
+/* ---- Callout — persistent info/error block ---- */
+.callout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  margin: var(--space-3) 0;
+  line-height: var(--leading-base);
+  font-size: var(--text-md);
+}
+.callout__icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.callout__body {
+  flex: 1;
+  min-width: 0;
+}
+.callout__title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.callout__content {
+  /* default — children flow as normal text */
+}
+
+/* Color variants — pair with the --callout-{color}-bg/--callout-{color}-border tokens. */
+.callout--blue   { background: var(--callout-blue-bg);   border-color: var(--callout-blue-border);   color: var(--blue); }
+.callout--red    { background: var(--callout-red-bg);    border-color: var(--callout-red-border);    color: var(--red); }
+.callout--gold   { background: var(--callout-gold-bg);   border-color: var(--callout-gold-border);   color: var(--gold); }
+.callout--green  { background: var(--callout-green-bg);  border-color: var(--callout-green-border);  color: var(--success); }
+.callout--violet { background: var(--callout-violet-bg); border-color: var(--callout-violet-border); color: var(--violet); }
+.callout--orange { background: var(--callout-orange-bg); border-color: var(--callout-orange-border); color: var(--orange); }
+.callout--teal   { background: var(--callout-teal-bg);   border-color: var(--callout-teal-border);   color: var(--teal); }
+.callout--rose   { background: var(--callout-rose-bg);   border-color: var(--callout-rose-border);   color: var(--rose); }
+
+/* Inside a callout, body text should still read as normal text color —
+   not the tint color (which would be hard to read on the tinted bg).
+   Only the icon stays the tint color. */
+.callout__body {
+  color: var(--text);
+}
+[data-theme="light"] .callout__body {
+  color: var(--text);
+}
+
+/* ---- Toast — transient notification ---- */
+.toast {
+  position: fixed;
+  bottom: var(--space-5);
+  right: var(--space-5);
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid;
+  box-shadow: var(--shadow-3);
+  font-size: var(--text-md);
+  max-width: 360px;
+  animation: toastSlideIn var(--duration-slow) var(--ease-out);
+}
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.toast__icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.toast__content {
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+}
+.toast__close {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--duration-base) ease, color var(--duration-base) ease;
+}
+.toast__close:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.toast--green  { background: var(--callout-green-bg);  border-color: var(--callout-green-border);  color: var(--success); }
+.toast--blue   { background: var(--callout-blue-bg);   border-color: var(--callout-blue-border);   color: var(--blue); }
+.toast--red    { background: var(--callout-red-bg);    border-color: var(--callout-red-border);    color: var(--red); }
+.toast--gold   { background: var(--callout-gold-bg);   border-color: var(--callout-gold-border);   color: var(--gold); }
+
+/* ---- StatusPill — successor to kpi-status-dot ---- */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  border: 1px solid transparent;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.status-pill--sm { font-size: 10px; padding: 2px var(--space-2); }
+.status-pill--md { font-size: var(--text-xs); padding: 3px var(--space-2); }
+
+.status-pill__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: currentColor;
+}
+
+.status-pill--met     { background: var(--callout-green-bg);  border-color: var(--callout-green-border);  color: var(--success); }
+.status-pill--missed  { background: var(--callout-red-bg);    border-color: var(--callout-red-border);    color: var(--miss); }
+.status-pill--pending { background: var(--callout-gold-bg);   border-color: var(--callout-gold-border);   color: var(--gold); }
+.status-pill--closed  { background: var(--surface-2);         border-color: var(--border);                color: var(--muted); }
+.status-pill--unknown { background: var(--surface-2);         border-color: var(--border);                color: var(--muted-2); }
+
+/* dotOnly variant — pure status dot, no text, used in tight spaces */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.status-dot.status-pill--met     { background: var(--success); }
+.status-dot.status-pill--missed  { background: var(--miss); }
+.status-dot.status-pill--pending { background: var(--gold); }
+.status-dot.status-pill--closed  { background: var(--muted-2); }
+.status-dot.status-pill--unknown { background: var(--muted-2); }
+
+/* ---- ChecklistBlock — interactive submit-style checklist ---- */
+.checklist-block {
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid;
+  margin: var(--space-3) 0;
+}
+.checklist-block--gold   { background: var(--callout-gold-bg);   border-color: var(--callout-gold-border); }
+.checklist-block--blue   { background: var(--callout-blue-bg);   border-color: var(--callout-blue-border); }
+.checklist-block--red    { background: var(--callout-red-bg);    border-color: var(--callout-red-border); }
+
+.checklist-block__title {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--space-3);
+}
+.checklist-block__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.checklist-block__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  font: inherit;
+  color: var(--text);
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--duration-base) ease;
+}
+.checklist-block__item:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+.checklist-block__item:disabled {
+  cursor: default;
+}
+.checklist-block__item--done {
+  color: var(--muted);
+  text-decoration: line-through;
+}

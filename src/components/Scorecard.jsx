@@ -23,6 +23,7 @@ import LastWeekCommitments from './LastWeekCommitments.jsx';
 import { SCREEN_TRANSITION } from '../lib/motion.js';
 import ScorecardRail from './ScorecardRail.jsx';
 import TagPill from './TagPill.jsx';
+import Callout from './Callout.jsx';
 import StreakBadge from './continuity/StreakBadge.jsx';
 import PendingForBadge from './continuity/PendingForBadge.jsx';
 import GhostedPriorContext from './continuity/GhostedPriorContext.jsx';
@@ -1324,26 +1325,21 @@ export default function Scorecard() {
                 {'\u2190'} Back to Hub
               </Link>
             </div>
-            {/* Tier 2: read-only banner when one partner is viewing the
-                other's scorecard. Makes the observe-only context explicit so
-                there's no confusion about why nothing's editable.
-                2026-05-24: when the counterpart hasn't picked their weekly
-                (optional) KPI yet, extend the banner copy so the viewer
-                understands why only the mandatory rows are showing. */}
+            {/* Tier 3 v2 Wave 7: read-only banner now uses <Callout> for
+                consistent chrome with the rest of the v2 redesign.
+                Counterpart-view context + the "no weekly KPI picked yet"
+                clarification both flow through the callout. */}
             {counterpartView && (
-              <div className="scorecard-readonly-banner">
-                <span className="scorecard-readonly-banner__dot" aria-hidden="true" />
-                <span>
-                  <strong>Read-only view.</strong> You're looking at {partnerName}'s scorecard.
-                  Nothing here is editable \u2014 head back to your own hub to make changes.
-                  {!weeklySel?.kpi_template_id && (
-                    <>
-                      {' '}
-                      <em>{partnerName} hasn't picked this week's optional KPI yet, so only the mandatory rows show below.</em>
-                    </>
-                  )}
-                </span>
-              </div>
+              <Callout color="blue" className="scorecard-readonly-banner">
+                <strong>Read-only view.</strong> You're looking at {partnerName}'s scorecard.
+                Nothing here is editable \u2014 head back to your own hub to make changes.
+                {!weeklySel?.kpi_template_id && (
+                  <>
+                    {' '}
+                    <em>{partnerName} hasn't picked this week's optional KPI yet, so only the mandatory rows show below.</em>
+                  </>
+                )}
+              </Callout>
             )}
             <div className="eyebrow">{SCORECARD_COPY.eyebrow}</div>
             <div className="screen-header">
