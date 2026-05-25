@@ -4612,3 +4612,64 @@ select:focus,
   margin: 0;
   padding-left: 18px;
 }
+
+/* ============================================================================
+   TagPill — Tier 3 v2 Wave 2
+   Used app-wide for category labels (KPI categories) and status labels.
+   Reads its color from the --tag-pill-color CSS variable set inline by the
+   component, which in turn references a --category-* or functional color
+   token. See src/components/TagPill.jsx + docs/tier3-v2-redesign/RESEARCH.md
+   ============================================================================ */
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  white-space: nowrap;
+  line-height: 1;
+  vertical-align: middle;
+  /* No default cursor change — pills are presentational unless wrapped */
+}
+
+/* Size scale — three steps. md is the default. */
+.tag-pill--sm {
+  font-size: 10px;
+  padding: 3px var(--space-2);
+  letter-spacing: 0.04em;
+}
+.tag-pill--md {
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-2);
+}
+.tag-pill--lg {
+  font-size: var(--text-sm);
+  padding: var(--space-1) var(--space-3);
+}
+
+/* Filled — solid tinted background + matching text color. Default per
+   Gemini synthesis (filled has better weight in dark mode than outlined). */
+.tag-pill--filled {
+  /* color-mix is widely supported in modern browsers. Falls back to the
+     raw tag color if color-mix is unsupported (rare). */
+  background: color-mix(in srgb, var(--tag-pill-color) 18%, transparent);
+  color: var(--tag-pill-color);
+  border-color: color-mix(in srgb, var(--tag-pill-color) 22%, transparent);
+}
+
+/* Outlined — transparent background, colored border + text. Used for
+   dense lists (AdminKpi editor list rail) where filled feels heavy. */
+.tag-pill--outlined {
+  background: transparent;
+  color: var(--tag-pill-color);
+  border-color: color-mix(in srgb, var(--tag-pill-color) 40%, transparent);
+}
+
+/* Light theme: bump the filled background alpha a bit because cream
+   backgrounds need more saturation for the tint to register. */
+[data-theme="light"] .tag-pill--filled {
+  background: color-mix(in srgb, var(--tag-pill-color) 12%, transparent);
+  border-color: color-mix(in srgb, var(--tag-pill-color) 28%, transparent);
+}

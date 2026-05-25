@@ -7,12 +7,44 @@ export const SEASON_START_DATE = '2026-01-05'; // First Monday of the season
 export const SEASON_END_DATE = '2026-06-30T23:59:59Z';
 
 export const CATEGORY_LABELS = {
+  // v1 categories (existing kpi_templates data uses these keys)
   sales: 'Sales & BD',
   ops: 'Operations',
   client: 'Client Satisfaction',
   team: 'Team & Culture',
   finance: 'Finance',
+  // v2 categories added in Tier 3 v2 Wave 2 — extend the vocabulary without
+  // breaking existing data. AdminKpi (Wave 6a) will offer these in the editor.
+  financial: 'Financial',
+  quality: 'Quality & Conduct',
+  growth: 'Growth & Personal',
+  reflection: 'Reflection',
 };
+
+// Category → CSS custom property name. The actual color value resolves
+// through --category-* tokens defined in src/index.css (:root). Both old
+// (v1) and new (v2) category keys map to the same color so existing
+// kpi_templates rows render correctly without data migration.
+//
+// Reference: docs/tier3-v2-redesign/RESEARCH.md §2 (KPI category coloring)
+// — ChatGPT's "memory architecture" framing.
+export const CATEGORY_COLOR = {
+  // v1 keys (existing data)
+  sales:      '--category-sales',
+  ops:        '--category-ops',
+  client:     '--category-quality',    // client satisfaction == quality semantics
+  team:       '--category-team',
+  finance:    '--category-financial',
+  // v2 keys (new vocabulary)
+  financial:  '--category-financial',
+  quality:    '--category-quality',
+  growth:     '--category-growth',
+  reflection: '--category-reflection',
+};
+
+export function getCategoryColor(category) {
+  return CATEGORY_COLOR[category] || '--muted';
+}
 
 export const purposeOptions = [
   {
