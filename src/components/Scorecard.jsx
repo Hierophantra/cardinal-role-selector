@@ -24,10 +24,9 @@ import { SCREEN_TRANSITION } from '../lib/motion.js';
 import ScorecardRail from './ScorecardRail.jsx';
 import TagPill from './TagPill.jsx';
 import Callout from './Callout.jsx';
-import StreakBadge from './continuity/StreakBadge.jsx';
 import PendingForBadge from './continuity/PendingForBadge.jsx';
 import GhostedPriorContext from './continuity/GhostedPriorContext.jsx';
-import { computeHitStreak, computePendingWeekCount, priorWeekReflection } from '../lib/continuity.js';
+import { computePendingWeekCount, priorWeekReflection } from '../lib/continuity.js';
 
 // Motion props shared by all views — matches KpiSelection.jsx pattern
 const motionProps = {
@@ -1332,7 +1331,7 @@ export default function Scorecard() {
             {counterpartView && (
               <Callout color="blue" className="scorecard-readonly-banner">
                 <strong>Read-only view.</strong> You're looking at {partnerName}'s scorecard.
-                Nothing here is editable \u2014 head back to your own hub to make changes.
+                Nothing here is editable. Head back to your own hub to make changes.
                 {!weeklySel?.kpi_template_id && (
                   <>
                     {' '}
@@ -1432,7 +1431,8 @@ export default function Scorecard() {
                 const bodyDisabled = weekClosed || counterpartView;
                 const showEditablePicker = !weekClosed && !counterpartView;
                 // Tier 3 v2 Wave 5: state-continuity primitives per KPI row.
-                const hitStreak = computeHitStreak(tpl.id, allScorecards);
+                // StreakBadge removed 2026-05-24 per partner feedback;
+                // PendingForBadge + GhostedPriorContext kept.
                 const pendingForWeeks = computePendingWeekCount(tpl.id, allScorecards);
                 const ghostedReflection = priorWeekReflection(tpl.id, allScorecards, currentWeekOf);
                 return (
@@ -1448,10 +1448,9 @@ export default function Scorecard() {
                     </div>
                     {/* Tier 3 v2 Wave 5: category + continuity badges row.
                         Only renders if at least one badge has content. */}
-                    {(tpl.category || hitStreak >= 2 || pendingForWeeks >= 2) && (
+                    {(tpl.category || pendingForWeeks >= 2) && (
                       <div className="scorecard-kpi-badges">
                         {tpl.category && <TagPill category={tpl.category} size="sm" />}
-                        <StreakBadge weeks={hitStreak} />
                         <PendingForBadge weeks={pendingForWeeks} />
                       </div>
                     )}

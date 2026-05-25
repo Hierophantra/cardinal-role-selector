@@ -332,7 +332,6 @@ export default function PartnerHub() {
                     weeklySelection={weeklySelection}
                     previousSelection={previousSelection}
                     counters={counters}
-                    scorecards={scorecards}
                     onIncrementCounter={handleIncrementCounter}
                   />
                 )}

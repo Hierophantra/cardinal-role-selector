@@ -8,8 +8,6 @@ import { Link } from 'react-router-dom';
 import { WEEKLY_KPI_COPY } from '../data/content.js';
 import { effectiveResult, isWeekClosed } from '../lib/week.js';
 import TagPill from './TagPill.jsx';
-import StreakBadge from './continuity/StreakBadge.jsx';
-import { computeHitStreak } from '../lib/continuity.js';
 
 /**
  * Maps scorecard entry raw result to status-dot color class.
@@ -53,7 +51,6 @@ export default function ThisWeekKpisSection({
   weeklySelection,
   previousSelection,
   counters = {},
-  scorecards = [],   // Tier 3 v2 Wave 4: needed for StreakBadge computation
   onIncrementCounter,
 }) {
   // IN-06: weeklyChoiceLocked prop removed. D-03 always shows the locked
@@ -71,8 +68,8 @@ export default function ThisWeekKpisSection({
       <h3>This Week's KPIs</h3>
 
       {/* Mandatory KPI list with status dots (HUB-02) + inline +1 counter pill (COUNT-01).
-          Tier 3 v2 Wave 4: each row carries a category TagPill + StreakBadge for
-          temporal continuity. */}
+          Tier 3 v2 Wave 4: each row carries a category TagPill for visual identity.
+          Streak badge removed per partner feedback (2026-05-24 follow-up). */}
       <ul className="kpi-week-list">
         {mandatorySelections.map((k) => {
           // kpi_results is keyed by kpi_templates.id (v2.0 Scorecard write shape) — read by k.template_id
@@ -80,7 +77,6 @@ export default function ThisWeekKpisSection({
           const isCountable = Boolean(k.kpi_templates?.countable);
           const count = counters?.[k.template_id] ?? 0;
           const category = k.kpi_templates?.category;
-          const hitStreak = computeHitStreak(k.template_id, scorecards);
           return (
             <li key={k.id} className="kpi-week-row">
               <span
@@ -89,7 +85,6 @@ export default function ThisWeekKpisSection({
               />
               <span className="kpi-week-label">{k.label_snapshot}</span>
               {category && <TagPill category={category} size="sm" />}
-              <StreakBadge weeks={hitStreak} />
               {isCountable && onIncrementCounter && (
                 <div className={`kpi-counter${count > 0 ? ' has-count' : ''}`}>
                   <span className="kpi-counter-number">{count}</span>
