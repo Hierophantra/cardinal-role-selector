@@ -1,42 +1,112 @@
 :root {
+  /* ========================================================================
+     TIER 3 V2 — Notion/Asana-inspired warm-dark token foundation
+     Reference: docs/tier3-v2-redesign/RESEARCH.md
+     ======================================================================== */
+
   /* ------------------------------------------------------------------------
-     Color tokens (pre-existing — Wave 1 leaves these untouched)
+     Brand identity (kept sacred — never categorical, never decorative)
      ------------------------------------------------------------------------ */
-  --red: #C41E3A;
-  --red-dim: #8a1428;
-  --black: #0A0A0A;
-  --bg: #141414;
-  --surface: #1E1E1E;
-  --surface-2: #242424;
-  --border: #2e2e2e;
-  --border-strong: #3a3a3a;
-  --text: #FAFAFA;
-  --muted: #AAAAAA;
+  --red:      #C41E3A;  /* primary CTA + "miss" status + critical alert ONLY */
+  --red-dim:  #8a1428;
+  --black:    #0A0A0A;
+  --text-on-brand: #FFFFFF;
+
+  /* ------------------------------------------------------------------------
+     Surface palette — WARM DARK (v2 shift from cool neutral)
+     #141414 → #1a1614 etc. Adds subtle brown undertone — reads as "inhabited"
+     vs the previous "developer terminal" tone. See RESEARCH §2.
+     ------------------------------------------------------------------------ */
+  --bg:             #1a1614;
+  --surface:        #23201d;
+  --surface-2:      #2a2622;
+  --surface-3:      #33302c;  /* new — for deeper nested cards */
+  --border:         #3a3530;
+  --border-strong:  #4a443e;
+  --border-subtle:  rgba(255, 255, 255, 0.06);
+
+  /* Text */
+  --text:    #FAFAFA;
+  --muted:   #AAAAAA;
   --muted-2: #777777;
-  --gold: #D4A843;
-  --blue: #2563EB;
-  --blue-dim: #1d4ed8;
-  --success: #2D8F5E;
-  --warning: #D4A843;
-  --miss: #C41E3A;
 
   /* ------------------------------------------------------------------------
-     Tier 3 Wave 1 — design tokens
-     Reference: docs/tier3-visual-overhaul/RESEARCH.md
+     Functional palette — expanded for v2.
+     Used for status, callouts, KPI categories, and inline accents.
      ------------------------------------------------------------------------ */
+  --blue:     #2563EB;  /* info, counterpart-view, sales category */
+  --blue-dim: #1d4ed8;
+  --success:  #2D8F5E;  /* met / on-track / financial category */
+  --gold:     #D4A843;  /* warning, pending status, reflection category */
+  --warning:  #D4A843;
+  --miss:     #C41E3A;  /* miss status (aliases --red but semantically distinct) */
 
-  /* Radii — 5-step scale + pill.
-     12px, 14px, 20px collapse to nearest neighbor (10 or 16). */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-xl: 16px;
+  /* New in v2 */
+  --violet:   #8B5CF6;  /* growth/personal category, re-anchor surfaces */
+  --orange:   #EA580C;  /* operations category, conduct infractions, alert-not-fatal */
+  --teal:     #14B8A6;  /* team/collaboration category, "in progress" state */
+  --rose:     #F43F5E;  /* quality/conduct category — red-family but distinct from brand red */
+
+  /* ------------------------------------------------------------------------
+     KPI category color aliases. Components reference --category-* so the
+     concrete color can shift later without touching call sites.
+     See RESEARCH §2 (KPI category coloring) — "memory architecture."
+     ------------------------------------------------------------------------ */
+  --category-financial:  var(--success);
+  --category-sales:      var(--blue);
+  --category-ops:        var(--orange);
+  --category-quality:    var(--rose);
+  --category-growth:     var(--violet);
+  --category-team:       var(--teal);
+  --category-reflection: var(--gold);
+
+  /* ------------------------------------------------------------------------
+     Callout tints — Notion-style background+border pairs.
+     Each functional color gets a low-alpha background + matching border for
+     the <Callout> component (Wave 7) and any inline tinted surface.
+     ------------------------------------------------------------------------ */
+  --callout-blue-bg:     rgba(37, 99, 235, 0.08);
+  --callout-blue-border: rgba(37, 99, 235, 0.30);
+
+  --callout-red-bg:      rgba(196, 30, 58, 0.08);
+  --callout-red-border:  rgba(196, 30, 58, 0.30);
+
+  --callout-gold-bg:     rgba(212, 168, 67, 0.08);
+  --callout-gold-border: rgba(212, 168, 67, 0.30);
+
+  --callout-green-bg:    rgba(45, 143, 94, 0.10);
+  --callout-green-border:rgba(45, 143, 94, 0.30);
+
+  --callout-violet-bg:   rgba(139, 92, 246, 0.08);
+  --callout-violet-border:rgba(139, 92, 246, 0.30);
+
+  --callout-orange-bg:   rgba(234, 88, 12, 0.08);
+  --callout-orange-border:rgba(234, 88, 12, 0.30);
+
+  --callout-teal-bg:     rgba(20, 184, 166, 0.08);
+  --callout-teal-border: rgba(20, 184, 166, 0.30);
+
+  --callout-rose-bg:     rgba(244, 63, 94, 0.08);
+  --callout-rose-border: rgba(244, 63, 94, 0.30);
+
+  /* ------------------------------------------------------------------------
+     Radii — bumped for v2 (warmer, friendlier curvature).
+     Old → new: xs 4→6, sm 6→8, md 8→10, lg 10→14, xl 16→20.
+     New 2xl 28px for the largest containers.
+     ------------------------------------------------------------------------ */
+  --radius-xs:   6px;   /* tight chips, progress fills */
+  --radius-sm:   8px;   /* small chips, tags, inline badges */
+  --radius-md:  10px;   /* primary CTA, secondary buttons */
+  --radius-lg:  14px;   /* default card chrome (v2 canonical) */
+  --radius-xl:  20px;   /* large panels, modals, login card */
+  --radius-2xl: 28px;   /* hero containers, full-bleed callouts */
   --radius-pill: 999px;
 
-  /* Spacing — 4-based scale. Outliers (3/5/7/14/18/22/28) snap to neighbors. */
-  --space-1: 4px;
-  --space-2: 8px;
+  /* ------------------------------------------------------------------------
+     Spacing — 4-based scale. Unchanged from v1 Wave 1.
+     ------------------------------------------------------------------------ */
+  --space-1:  4px;
+  --space-2:  8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 20px;
@@ -44,28 +114,30 @@
   --space-7: 32px;
   --space-8: 48px;
 
-  /* Type scale — 9 named steps + display.
-     16/17/23/25/26 outliers snap to neighbors per §2.3 of RESEARCH.md. */
-  --text-xs:      11px;  /* micro: eyebrows, footnotes, tag text */
-  --text-sm:      12px;  /* small body / muted / captions */
-  --text-base:    13px;  /* secondary body / hint */
-  --text-md:      14px;  /* body */
-  --text-lg:      15px;  /* emphasized body / input */
-  --text-h4:      18px;  /* small heading */
-  --text-h3:      20px;  /* card titles */
-  --text-h2:      24px;  /* section headings */
-  --text-h1:      28px;  /* page titles */
-  --text-display: 36px;  /* hero numbers */
+  /* ------------------------------------------------------------------------
+     Type scale — unchanged from v1 Wave 1.
+     ------------------------------------------------------------------------ */
+  --text-xs:      11px;
+  --text-sm:      12px;
+  --text-base:    13px;
+  --text-md:      14px;
+  --text-lg:      15px;
+  --text-h4:      18px;
+  --text-h3:      20px;
+  --text-h2:      24px;
+  --text-h1:      28px;
+  --text-display: 36px;
 
   --leading-tight: 1.2;
   --leading-snug:  1.35;
-  --leading-base:  1.55;
+  --leading-base:  1.6;   /* v2: 1.55 → 1.6 (slightly more breath per RESEARCH §6) */
 
   --tracking-tight:   -0.02em;
   --tracking-eyebrow:  0.08em;
 
-  /* Shadow scale — composable. Inset rings and focus rings stack on top of
-     elevation shadows at the call site. */
+  /* ------------------------------------------------------------------------
+     Shadow scale — unchanged from v1 Wave 1.
+     ------------------------------------------------------------------------ */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-3: 0 18px 42px rgba(0, 0, 0, 0.10), 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -81,8 +153,10 @@
   --shadow-cta-hover:         0 2px 6px rgba(196, 30, 58, 0.28);
   --shadow-cta-hover-blue:    0 6px 18px rgba(37, 99, 235, 0.14);
 
-  /* Motion — 3 durations + 2 easings.
-     JSX (Framer Motion) mirrors these via src/lib/motion.js. */
+  /* ------------------------------------------------------------------------
+     Motion — unchanged from v1 Wave 1.
+     JSX mirrors via src/lib/motion.js.
+     ------------------------------------------------------------------------ */
   --duration-fast: 120ms;
   --duration-base: 180ms;
   --duration-slow: 280ms;
@@ -90,14 +164,67 @@
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
-  /* Semantic tokens */
+  /* ------------------------------------------------------------------------
+     Layout tokens — NEW for v2.
+     Drive the upcoming desktop sidebar shell (Wave 3) and responsive
+     breakpoint logic across the app.
+     ------------------------------------------------------------------------ */
+  --sidebar-width-expanded:  260px;
+  --sidebar-width-collapsed:  64px;
+  --content-max-width:       960px;  /* per RESEARCH §A — "intentional density" */
+  --page-header-height:       32px;  /* slim, not hero */
+
+  /* Breakpoint constants. CSS can't actually consume these in @media queries
+     (CSS limitation), but they're declared here as a single source of truth
+     so JSX and inline styles can read them via getComputedStyle, and so any
+     future @container query support has the values ready to alias. */
+  --breakpoint-mobile-max:  900px;   /* below this: mobile layout */
+  --breakpoint-desktop-min: 901px;   /* at this and above: sidebar shell */
+
+  /* ------------------------------------------------------------------------
+     Semantic tokens
+     ------------------------------------------------------------------------ */
   --focus-ring-color: var(--red);
-  --text-on-brand:    #FFFFFF;
-  --border-subtle:    rgba(255, 255, 255, 0.06);
 }
 
+/* ============================================================================
+   Light-theme overrides for the top-of-file :root tokens.
+   The legacy light theme block lower in this file (around line 3467) provides
+   the older surface/text/border overrides; this block extends it with the
+   v2 additions (callout backgrounds, surface-3, border-subtle).
+   ============================================================================ */
 [data-theme="light"] {
   --border-subtle: rgba(0, 0, 0, 0.08);
+
+  /* Callout tints — same hue, slightly higher alpha on cream backgrounds
+     so the tint actually reads. Borders also slightly stronger. */
+  --callout-blue-bg:     rgba(37, 99, 235, 0.06);
+  --callout-blue-border: rgba(37, 99, 235, 0.35);
+
+  --callout-red-bg:      rgba(196, 30, 58, 0.06);
+  --callout-red-border:  rgba(196, 30, 58, 0.35);
+
+  --callout-gold-bg:     rgba(139, 105, 20, 0.08);   /* matches darkened light-theme gold */
+  --callout-gold-border: rgba(139, 105, 20, 0.40);
+
+  --callout-green-bg:    rgba(31, 107, 67, 0.08);    /* matches darkened light-theme success */
+  --callout-green-border:rgba(31, 107, 67, 0.40);
+
+  --callout-violet-bg:   rgba(139, 92, 246, 0.08);
+  --callout-violet-border:rgba(139, 92, 246, 0.35);
+
+  --callout-orange-bg:   rgba(234, 88, 12, 0.08);
+  --callout-orange-border:rgba(234, 88, 12, 0.40);
+
+  --callout-teal-bg:     rgba(20, 184, 166, 0.10);
+  --callout-teal-border: rgba(20, 184, 166, 0.40);
+
+  --callout-rose-bg:     rgba(244, 63, 94, 0.08);
+  --callout-rose-border: rgba(244, 63, 94, 0.40);
+
+  /* surface-3 not separately needed on light — falls back to surface-2.
+     Defined explicitly so consumers don't hit the dark-theme value. */
+  --surface-3: #E4DED2;
 }
 
 * { box-sizing: border-box; }
@@ -3534,6 +3661,14 @@ html[data-theme="light"] {
   --success: #1F6B43;
   /* --miss / --red stay at #C41E3A — already high-contrast on cream. */
   /* --blue stays at #2563EB — readable on cream. */
+
+  /* v2 functional palette light-theme contrast:
+     teal at #14B8A6 only clears ~3:1 on cream — darken to #0F766E (~5.5:1).
+     violet, orange, rose all clear WCAG AA non-text on cream at their dark
+     values; left unchanged for color identity continuity. Revisit if used
+     as body text in any later wave.
+     The --category-* aliases re-evaluate automatically through the cascade. */
+  --teal: #0F766E;
 }
 
 /* Translucent sticky bars — flip from dark overlay to light overlay so the
