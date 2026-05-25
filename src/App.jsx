@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login.jsx';
 import ThemeToggle from './components/ThemeToggle.jsx';
+import AppShell from './components/AppShell.jsx';
 import Questionnaire from './components/Questionnaire.jsx';
 import PartnerHub from './components/PartnerHub.jsx';
 import KpiSelection from './components/KpiSelection.jsx';
@@ -30,6 +31,7 @@ export default function App() {
   return (
     <>
       <ThemeToggle />
+      <AppShell>
       <Routes>
         <Route path="/" element={<Login />} />
       <Route path="/q/:partner" element={<Questionnaire />} />
@@ -59,6 +61,7 @@ export default function App() {
       <Route path="/admin/meeting/:id" element={<AdminMeetingSession />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </AppShell>
     </>
   );
 }
