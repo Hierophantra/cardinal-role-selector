@@ -4979,3 +4979,115 @@ select:focus,
 .sidebar--collapsed .sidebar-divider {
   margin: var(--space-2) 0;
 }
+
+/* ============================================================================
+   Tier 3 v2 Wave 4 — PageHeader, Hub dashboard grid, Continuity primitives
+   ============================================================================ */
+
+/* PageHeader — slim 24-32px contextual header replacing the dropped hero. */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: var(--page-header-height);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+.page-header__left {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.page-header__eyebrow {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.page-header__pills {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.page-header__greeting {
+  font-size: var(--text-md);
+  color: var(--muted);
+  font-weight: 500;
+  /* Subtle — preserves warmth without sacrificing dashboard real estate */
+}
+
+/* Hub dashboard grid — mobile-first single column, 2-column at >= 901px. */
+.hub-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+@media (min-width: 901px) {
+  .hub-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-5);
+  }
+  /* Each direct child takes up one cell. Tall content stays in its column. */
+  .hub-dashboard > * {
+    min-width: 0;
+  }
+}
+
+/* ============================================================================
+   Continuity badges — StreakBadge, PendingForBadge, CarriedForwardBadge
+   Small inline indicators that appear next to labels when temporal-memory
+   data is available. Always non-intrusive (small font, muted color).
+   ============================================================================ */
+.continuity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.continuity-badge--streak {
+  background: var(--callout-orange-bg);
+  color: var(--orange);
+  border: 1px solid var(--callout-orange-border);
+}
+.continuity-badge--streak svg {
+  /* Flame icon — slightly brighter than the text */
+  color: var(--orange);
+}
+
+.continuity-badge--pending-for {
+  background: var(--callout-gold-bg);
+  color: var(--gold);
+  border: 1px solid var(--callout-gold-border);
+}
+
+.continuity-badge--carried-forward {
+  background: var(--callout-violet-bg);
+  color: var(--violet);
+  border: 1px solid var(--callout-violet-border);
+  font-style: italic;
+}
+
+/* TrendArrow — tiny direction indicator used inside StatusPills (Wave 7). */
+.trend-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 3px;
+  vertical-align: middle;
+}
+.trend-arrow--up { color: var(--success); }
+.trend-arrow--down { color: var(--miss); }
+.trend-arrow--flat { color: var(--muted); }

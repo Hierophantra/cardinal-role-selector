@@ -31,6 +31,8 @@ import ThisWeekKpisSection from './ThisWeekKpisSection.jsx';
 import PersonalGrowthSection from './PersonalGrowthSection.jsx';
 import BusinessPrioritiesSection from './BusinessPrioritiesSection.jsx';
 import WeekPlanCard from './WeekPlanCard.jsx';
+import PageHeader from './PageHeader.jsx';
+import { formatWeekRange } from '../lib/week.js';
 
 export default function PartnerHub() {
   const { partner } = useParams();
@@ -292,20 +294,14 @@ export default function PartnerHub() {
     <div className="app-shell">
       <div className="container">
         <div className="screen fade-in">
-          {adminView && (
-            <div className="nav-row" style={{ marginBottom: 12 }}>
-              <Link to="/admin/hub" className="btn-ghost">
-                {'\u2190'} Back to Trace Hub
-              </Link>
-            </div>
-          )}
-          <div className="eyebrow">{copy.eyebrow}</div>
-          <div className="partner-greeting">
-            <div className="screen-header">
-              <h2>{copy.greeting(partnerName)}</h2>
-            </div>
-            {statusText && <p className="status-line">{statusText}</p>}
-          </div>
+          {/* Tier 3 v2 Wave 4: Slim page header replaces the big greeting block.
+              Sidebar handles nav (no more in-page "Back to Trace Hub" row).
+              Inline greeting preserved per cross-AI synthesis. */}
+          <PageHeader
+            eyebrow={`Week of ${formatWeekRange(currentMonday)}`}
+            greeting={copy.greeting(partnerName)}
+          />
+          {statusText && <p className="status-line">{statusText}</p>}
 
           {/* Tier 2 (post-Phase-19 follow-up): Role identity moved to a dedicated
               /role-discovery/:partner surface. Per Gemini's "banner blindness to
@@ -316,33 +312,40 @@ export default function PartnerHub() {
           {/* Async content — only render after fetches resolve */}
           {loading ? null : (
             <>
-              {/* This Week's Plan (UAT 2026-05-04 Week Plan feature) — surfaces
-                  Monday Prep's per-partner plan above KPIs so partners see the
-                  context-setter for the week before checking in. Read-only;
-                  Trace edits via the meeting flow. */}
-              <WeekPlanCard objectives={weekObjectives} />
+              {/* Tier 3 v2 Wave 4: Dashboard grid wrapper. On desktop (>= 901px)
+                  this becomes a 2-column layout with KPIs/Plan on the left and
+                  Growth/Priorities on the right. On mobile, the children stack
+                  vertically as they did before. */}
+              <div className="hub-dashboard">
+                {/* This Week's Plan (UAT 2026-05-04 Week Plan feature) — surfaces
+                    Monday Prep's per-partner plan above KPIs so partners see the
+                    context-setter for the week before checking in. Read-only;
+                    Trace edits via the meeting flow. */}
+                <WeekPlanCard objectives={weekObjectives} />
 
-              {/* This Week's KPIs (HUB-02..HUB-05) */}
-              {kpiReady && (
-                <ThisWeekKpisSection
-                  partner={partner}
-                  mandatorySelections={mandatorySelections}
-                  thisWeekCard={thisWeekCard}
-                  weeklySelection={weeklySelection}
-                  previousSelection={previousSelection}
-                  counters={counters}
-                  onIncrementCounter={handleIncrementCounter}
+                {/* This Week's KPIs (HUB-02..HUB-05) */}
+                {kpiReady && (
+                  <ThisWeekKpisSection
+                    partner={partner}
+                    mandatorySelections={mandatorySelections}
+                    thisWeekCard={thisWeekCard}
+                    weeklySelection={weeklySelection}
+                    previousSelection={previousSelection}
+                    counters={counters}
+                    scorecards={scorecards}
+                    onIncrementCounter={handleIncrementCounter}
+                  />
+                )}
+
+                {/* Personal Growth (HUB-06, HUB-07) — no `partner` prop per 15-02 M5 */}
+                <PersonalGrowthSection
+                  growthPriorities={growthPriorities}
+                  onSaveSelfChosen={handleSaveSelfChosen}
                 />
-              )}
 
-              {/* Personal Growth (HUB-06, HUB-07) — no `partner` prop per 15-02 M5 */}
-              <PersonalGrowthSection
-                growthPriorities={growthPriorities}
-                onSaveSelfChosen={handleSaveSelfChosen}
-              />
-
-              {/* Business Priorities (Phase 18 BIZ-02, D-10) — shared, identical for both partners */}
-              <BusinessPrioritiesSection priorities={businessPriorities} />
+                {/* Business Priorities (Phase 18 BIZ-02, D-10) — shared, identical for both partners */}
+                <BusinessPrioritiesSection priorities={businessPriorities} />
+              </div>
 
               {/* Workflow card grid (D-07 bottom; D-08 card roster) */}
               <div className="hub-grid">
