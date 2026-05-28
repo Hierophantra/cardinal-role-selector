@@ -103,7 +103,7 @@ function isRowSubmittable(tpl, entry) {
 // be forced to rate the overall week until the week is actually closing —
 // blocking submit on the rating prevented mid-week saves. Rating is still
 // captured and persisted via auto-save, just no longer a submit blocker.
-function getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner) {
+function getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner, weeklyLearning) {
   const gaps = [];
   for (const tpl of rows) {
     const entry = kpiResults[tpl.id] ?? {};
@@ -178,6 +178,20 @@ function getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner
     if (typeof val !== 'string' || val.trim().length === 0) {
       gaps.push({ anchor: `growth-followup-${f.key}`, label: `Growth: ${f.label}` });
     }
+  }
+  // 7. Weekly Learning — required as of 2026-05-24. Same 10-char minimum
+  // as per-KPI reflections so single-word entries don't slip through.
+  const learningTrimmed = typeof weeklyLearning === 'string' ? weeklyLearning.trim() : '';
+  if (learningTrimmed.length === 0) {
+    gaps.push({
+      anchor: 'weekly-learning-input',
+      label: 'Weekly Learning: needs an entry',
+    });
+  } else if (learningTrimmed.length < 10) {
+    gaps.push({
+      anchor: 'weekly-learning-input',
+      label: 'Weekly Learning: needs at least 10 characters',
+    });
   }
   return gaps;
 }
@@ -1705,6 +1719,7 @@ export default function Scorecard() {
               <div>
                 <label className="scorecard-reflection-label">{SCORECARD_COPY.learningLabel}</label>
                 <textarea
+                  id="weekly-learning-input"
                   className="textarea"
                   value={weeklyLearning}
                   onChange={(e) => setWeeklyLearning(e.target.value)}
@@ -1712,6 +1727,7 @@ export default function Scorecard() {
                   placeholder={SCORECARD_COPY.learningPlaceholder}
                   disabled={weekClosed}
                   rows={3}
+                  required
                 />
               </div>
 
@@ -1746,7 +1762,7 @@ export default function Scorecard() {
                 are detected (e.g., generic submitErrorDb after a network
                 failure inside performSubmit). */}
             {!weekClosed && !isSubmitted && !counterpartView ? (() => {
-              const gaps = getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner);
+              const gaps = getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner, weeklyLearning);
               if (gaps.length === 0) {
                 return submitError ? (
                   <p className="muted" style={{ color: 'var(--miss)', textAlign: 'center', marginTop: 8 }}>
@@ -1804,7 +1820,7 @@ export default function Scorecard() {
         // page form; render cost is negligible). If hot-path optimization is
         // needed later, lift gaps to a useMemo keyed on
         // (rows, kpiResults, weekRating, growthFollowup, partner).
-        const gaps = getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner);
+        const gaps = getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner, weeklyLearning);
         return (
           <div className="scorecard-sticky-bar">
             <span className="muted" style={{ fontSize: 12, fontStyle: 'italic' }}>

@@ -553,7 +553,7 @@ export const SCORECARD_COPY = {
   weeklyReflectionHeading: 'Weekly Reflection',
   biggestWinLabel: 'Biggest win (optional)',
   biggestWinPlaceholder: 'What are you proud of?',
-  learningLabel: 'Learning this week (optional)',
+  learningLabel: 'Learning this week (required)',
   learningPlaceholder: 'What did you discover or improve?',
   // UAT 2026-05-04: replaces "This can't be undone." — full edit window stays open
   // until Saturday close, so the prior copy was misleading. Phase 17 D-04 sets the
