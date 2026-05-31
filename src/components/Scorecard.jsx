@@ -27,6 +27,8 @@ import Callout from './Callout.jsx';
 import PendingForBadge from './continuity/PendingForBadge.jsx';
 import GhostedPriorContext from './continuity/GhostedPriorContext.jsx';
 import { computePendingWeekCount, priorWeekReflection } from '../lib/continuity.js';
+import { updatePartnerKpiBaseline } from '../lib/supabase.js';
+import { Pencil, Settings as SettingsIcon, Check, X as XIcon } from 'lucide-react';
 
 // Motion props shared by all views — matches KpiSelection.jsx pattern
 const motionProps = {
@@ -501,6 +503,17 @@ export default function Scorecard() {
   const [weeklySel, setWeeklySel] = useState(null);
   const [allScorecards, setAllScorecards] = useState([]);
 
+  // 2026-05-24: partner-driven KPI text edit. When the admin turns on
+  // partner_kpi_edit_enabled, each KPI row on a partner's OWN scorecard
+  // gets a pencil icon next to the baseline-action text. Partner clicks it
+  // → inline textarea opens → saves overwrite kpi_templates.baseline_action
+  // through updatePartnerKpiBaseline.
+  const [partnerKpiEditEnabled, setPartnerKpiEditEnabled] = useState(false);
+  const [editingBaselineId, setEditingBaselineId] = useState(null);
+  const [editingBaselineDraft, setEditingBaselineDraft] = useState('');
+  const [editingBaselineSaving, setEditingBaselineSaving] = useState(false);
+  const [editingBaselineError, setEditingBaselineError] = useState(null);
+
   // View state — 'editing' (input form + sticky bar) | 'submitted' (read-only)
   const [view, setView] = useState('editing');
 
@@ -623,10 +636,13 @@ export default function Scorecard() {
       // alongside the KPI grid. Fetched on mount, refreshed only on partner
       // change (matches the existing kpi_templates fetch lifecycle).
       fetchGrowthPriorities(partner).catch(() => []),
+      // 2026-05-24: partner-KPI-edit toggle. null/missing row → off.
+      fetchAdminSetting('partner_kpi_edit_enabled').then((r) => r?.value === true).catch(() => false),
     ])
-      .then(([templates, sel, jerryActive, scorecards, growth]) => {
+      .then(([templates, sel, jerryActive, scorecards, growth, partnerEdit]) => {
         setAllScorecards(scorecards);
         setGrowthPriorities(growth ?? []);
+        setPartnerKpiEditEnabled(!!partnerEdit);
 
         // Empty guard: no weekly KPI selected for current week.
         //
@@ -764,6 +780,46 @@ export default function Scorecard() {
     return cleanup;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partner]);
+
+  // ---- Partner KPI baseline-action edit handlers ----
+  // Gated by partner_kpi_edit_enabled (admin toggle). Partners can only edit
+  // baseline_action — structural changes (key_fields, type, category) remain
+  // admin-only via /admin/kpi.
+  function handleStartBaselineEdit(tpl) {
+    setEditingBaselineId(tpl.id);
+    setEditingBaselineDraft(tpl.baseline_action || '');
+    setEditingBaselineError(null);
+  }
+  function handleCancelBaselineEdit() {
+    setEditingBaselineId(null);
+    setEditingBaselineDraft('');
+    setEditingBaselineError(null);
+  }
+  async function handleSaveBaselineEdit(tpl) {
+    const trimmed = (editingBaselineDraft || '').trim();
+    if (trimmed.length < 5) {
+      setEditingBaselineError('Needs at least 5 characters.');
+      return;
+    }
+    if (trimmed === (tpl.baseline_action || '').trim()) {
+      // No change — just close the editor
+      handleCancelBaselineEdit();
+      return;
+    }
+    setEditingBaselineSaving(true);
+    setEditingBaselineError(null);
+    try {
+      const updated = await updatePartnerKpiBaseline(tpl.id, trimmed, sessionRole || 'partner');
+      // Patch the rows array so the new text shows immediately without a full refetch.
+      setRows((prev) => prev.map((r) => (r.id === tpl.id ? { ...r, baseline_action: updated.baseline_action } : r)));
+      handleCancelBaselineEdit();
+    } catch (err) {
+      console.error('handleSaveBaselineEdit failed', err);
+      setEditingBaselineError(err.message || 'Save failed. Please try again.');
+    } finally {
+      setEditingBaselineSaving(false);
+    }
+  }
 
   // Auto-save when weekRating changes (after initial mount)
   useEffect(() => {
@@ -1449,17 +1505,90 @@ export default function Scorecard() {
                 // PendingForBadge + GhostedPriorContext kept.
                 const pendingForWeeks = computePendingWeekCount(tpl.id, allScorecards);
                 const ghostedReflection = priorWeekReflection(tpl.id, allScorecards, currentWeekOf);
+                // Tier 3 v2 follow-up (2026-05-24): KPI baseline-text edit
+                // affordances.
+                //   - Partner editing OWN scorecard, gate ON, week open
+                //       → pencil icon opens inline textarea editor
+                //   - Admin viewing ANY scorecard
+                //       → "Configure" link deep-links to /admin/kpi?edit={id}
+                //         where the full template editor opens.
+                const isOwn = sessionRole === partner;
+                const partnerCanEditBaseline =
+                  isOwn && partnerKpiEditEnabled && !weekClosed && !counterpartView;
+                const adminCanConfigure = sessionRole === 'admin';
+                const isEditingThisBaseline = editingBaselineId === tpl.id;
                 return (
                   <div key={tpl.id} className={rowClass} id={`kpi-${tpl.id}`}>
-                    <div className="scorecard-baseline-label">
-                      {tpl.baseline_action}
-                      {isLivePending && (
-                        <span className="pending-badge">{SCORECARD_COPY.pendingBadge}</span>
-                      )}
-                      {isClosedPending && (
-                        <span className="pending-badge muted">{SCORECARD_COPY.pendingBadgeMuted}</span>
-                      )}
-                    </div>
+                    {isEditingThisBaseline ? (
+                      <div className="scorecard-baseline-editor">
+                        <label className="scorecard-baseline-editor__label" htmlFor={`baseline-edit-${tpl.id}`}>
+                          Edit KPI text
+                        </label>
+                        <textarea
+                          id={`baseline-edit-${tpl.id}`}
+                          className="scorecard-baseline-editor__textarea"
+                          value={editingBaselineDraft}
+                          onChange={(e) => setEditingBaselineDraft(e.target.value)}
+                          rows={3}
+                          disabled={editingBaselineSaving}
+                          autoFocus
+                        />
+                        {editingBaselineError && (
+                          <div className="scorecard-baseline-editor__error">{editingBaselineError}</div>
+                        )}
+                        <div className="scorecard-baseline-editor__actions">
+                          <button
+                            type="button"
+                            className="btn btn-ghost"
+                            onClick={handleCancelBaselineEdit}
+                            disabled={editingBaselineSaving}
+                          >
+                            <XIcon size={14} strokeWidth={1.75} aria-hidden="true" />
+                            <span style={{ marginLeft: 6 }}>Cancel</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={() => handleSaveBaselineEdit(tpl)}
+                            disabled={editingBaselineSaving}
+                          >
+                            <Check size={14} strokeWidth={1.75} aria-hidden="true" />
+                            <span style={{ marginLeft: 6 }}>{editingBaselineSaving ? 'Saving…' : 'Save'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="scorecard-baseline-label">
+                        <span className="scorecard-baseline-label__text">{tpl.baseline_action}</span>
+                        {partnerCanEditBaseline && (
+                          <button
+                            type="button"
+                            className="scorecard-baseline-edit-btn"
+                            onClick={() => handleStartBaselineEdit(tpl)}
+                            title="Edit this KPI's wording"
+                            aria-label="Edit this KPI's wording"
+                          >
+                            <Pencil size={14} strokeWidth={1.75} aria-hidden="true" />
+                          </button>
+                        )}
+                        {adminCanConfigure && (
+                          <Link
+                            to={`/admin/kpi?edit=${tpl.id}`}
+                            className="scorecard-baseline-edit-btn scorecard-baseline-edit-btn--admin"
+                            title="Configure KPI (admin)"
+                            aria-label="Configure KPI (admin)"
+                          >
+                            <SettingsIcon size={14} strokeWidth={1.75} aria-hidden="true" />
+                          </Link>
+                        )}
+                        {isLivePending && (
+                          <span className="pending-badge">{SCORECARD_COPY.pendingBadge}</span>
+                        )}
+                        {isClosedPending && (
+                          <span className="pending-badge muted">{SCORECARD_COPY.pendingBadgeMuted}</span>
+                        )}
+                      </div>
+                    )}
                     {/* Tier 3 v2 Wave 5: category + continuity badges row.
                         Only renders if at least one badge has content. */}
                     {(tpl.category || pendingForWeeks >= 2) && (

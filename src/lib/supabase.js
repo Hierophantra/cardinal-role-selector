@@ -376,6 +376,37 @@ export async function createKpiTemplate(fields) {
   return data;
 }
 
+// Partner-callable narrow update: only allows changing baseline_action.
+// Used by the "Partner KPI edit" feature when partner_kpi_edit_enabled is on.
+// Distinct from updateKpiTemplate to keep the partner-facing surface explicit
+// and audit-readable — even though both end up touching kpi_templates.
+//
+// Returns the updated row so the caller can refresh local state.
+export async function updatePartnerKpiBaseline(id, newBaselineAction, editedBy = 'partner') {
+  if (!id) throw new Error('updatePartnerKpiBaseline: id is required');
+  const trimmed = (newBaselineAction || '').trim();
+  if (trimmed.length < 5) {
+    throw new Error('Baseline action must be at least 5 characters.');
+  }
+  const { data, error } = await supabase
+    .from('kpi_templates')
+    .update({
+      baseline_action: trimmed,
+      updated_at: new Date().toISOString(),
+      // last_edited_by is informational only — column may not exist on the
+      // table yet (no migration in this pass), so we don't require it. If
+      // the column doesn't exist, Postgres ignores the unknown key... wait,
+      // it doesn't — it errors. So we deliberately DON'T write this here
+      // until a schema change adds the column. Future-extensible.
+      // last_edited_by: editedBy,
+    })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function updateKpiTemplate(id, fields) {
   const update = _prune({
     label: fields.label,

@@ -15,11 +15,14 @@ import {
   adminEditKpiLabel,
   unlockPartnerSelections,
   cascadeTemplateLabelSnapshot,
+  fetchAdminSetting,
+  upsertAdminSetting,
 } from '../../lib/supabase.js';
 import { ADMIN_KPI_COPY, PARTNER_DISPLAY, CATEGORY_LABELS } from '../../data/content.js';
 import KeyFieldsEditor, { suggestBaselineAction, validateKeyFields } from './KeyFieldsEditor.jsx';
 import PageHeader from '../PageHeader.jsx';
 import TagPill from '../TagPill.jsx';
+import Callout from '../Callout.jsx';
 
 const KPI_CATEGORIES = ['sales', 'ops', 'client', 'team', 'finance'];
 const GROWTH_TYPES = ['personal', 'business'];
@@ -44,12 +47,76 @@ export default function AdminKpi() {
             <h2>{ADMIN_KPI_COPY.heading}</h2>
           </div>
 
+          <PartnerKpiEditToggle />
+
           <KpiTemplateLibrary />
           <GrowthTemplateLibrary />
           <PartnerSelectionsEditor />
         </div>
       </div>
     </div>
+  );
+}
+
+/* ============================================================
+ * PartnerKpiEditToggle — admin gate for partner-side KPI text editing.
+ * Stored in admin_settings under key `partner_kpi_edit_enabled` (boolean).
+ * When ON, partners see a pencil icon next to each KPI's baseline_action
+ * on their own scorecard and can rewrite the text. When OFF, the affordance
+ * disappears. Admin can flip this anytime — no migration needed.
+ * ============================================================ */
+function PartnerKpiEditToggle() {
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchAdminSetting('partner_kpi_edit_enabled')
+      .then((r) => { if (!cancelled) setEnabled(r?.value === true); })
+      .catch((err) => { if (!cancelled) { console.error(err); setError('Could not read setting.'); } })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  async function handleToggle(e) {
+    const next = !!e.target.checked;
+    setSaving(true);
+    setError('');
+    try {
+      await upsertAdminSetting('partner_kpi_edit_enabled', next);
+      setEnabled(next);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Could not save the setting.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="kpi-edit-section" style={{ marginBottom: 'var(--space-5)' }}>
+      <h4 className="kpi-edit-section-heading">Partner KPI text editing</h4>
+      <p className="kpi-edit-hint" style={{ marginBottom: 'var(--space-3)' }}>
+        When enabled, Theo and Jerry each see a pencil icon next to the KPI text on their own
+        scorecards. They can rewrite the wording to better match how they actually work — the
+        new text overwrites the canonical KPI text immediately and is what partners see going
+        forward. Structural changes (categories, structured fields, required entries) stay
+        admin-only.
+      </p>
+      <label className="kpi-edit-checkbox">
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={handleToggle}
+          disabled={loading || saving}
+        />
+        <span>Allow partners to edit KPI text on their scorecards</span>
+        {saving && <span className="muted" style={{ marginLeft: 'var(--space-2)' }}>Saving…</span>}
+      </label>
+      {error && <Callout color="red" style={{ marginTop: 'var(--space-3)' }}>{error}</Callout>}
+    </section>
   );
 }
 
@@ -86,6 +153,28 @@ function KpiTemplateLibrary() {
       if (disarmTimerRef.current) clearTimeout(disarmTimerRef.current);
     };
   }, [loadTemplates]);
+
+  // 2026-05-24: Deep-link support. If the URL has `?edit={id}` (e.g. admin
+  // clicks the "Configure" cog from a KPI row on /scorecard/jerry), auto-open
+  // that template's edit form once templates have loaded. Applied once per
+  // mount; param is cleared after to prevent re-loop on back-nav.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const editIdFromUrl = searchParams.get('edit');
+  const editIdAppliedRef = useRef(false);
+  useEffect(() => {
+    if (editIdAppliedRef.current) return;
+    if (!editIdFromUrl) return;
+    if (loading || templates.length === 0) return;
+    const target = templates.find((t) => t.id === editIdFromUrl);
+    if (target) {
+      beginEdit(target);
+      const next = new URLSearchParams(searchParams);
+      next.delete('edit');
+      setSearchParams(next, { replace: true });
+    }
+    editIdAppliedRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editIdFromUrl, loading, templates]);
 
   function beginEdit(t) {
     setEditingId(t.id);

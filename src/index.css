@@ -5711,3 +5711,97 @@ select:focus,
     height: 60vh;
   }
 }
+
+/* ============================================================================
+   Tier 3 v2 follow-up (2026-05-24) — Partner KPI text edit
+   Affordances on each scorecard KPI row:
+     - Pencil icon next to baseline-action (partner, gated by admin toggle)
+     - Settings cog next to baseline-action (admin only — deep-links to /admin/kpi)
+   Inline baseline editor opens in place of the read-only baseline-label when
+   partner clicks the pencil.
+   ============================================================================ */
+
+/* Restructure the baseline-label so the text and buttons can sit on one line */
+.scorecard-baseline-label {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.scorecard-baseline-label__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.scorecard-baseline-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--duration-base) ease, color var(--duration-base) ease, border-color var(--duration-base) ease;
+  text-decoration: none;
+}
+.scorecard-baseline-edit-btn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border);
+}
+.scorecard-baseline-edit-btn--admin:hover {
+  color: var(--blue);
+  border-color: var(--callout-blue-border);
+  background: var(--callout-blue-bg);
+}
+
+/* Inline editor — replaces the baseline-label when a partner clicks the pencil. */
+.scorecard-baseline-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  background: var(--callout-blue-bg);
+  border: 1px solid var(--callout-blue-border);
+  border-radius: var(--radius-md);
+}
+.scorecard-baseline-editor__label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.scorecard-baseline-editor__textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--text-md);
+  line-height: var(--leading-base);
+  resize: vertical;
+}
+.scorecard-baseline-editor__textarea:focus {
+  outline: none;
+  border-color: var(--red);
+  box-shadow: var(--shadow-focus-ring);
+}
+.scorecard-baseline-editor__error {
+  color: var(--miss);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+.scorecard-baseline-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
