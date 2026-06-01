@@ -3280,6 +3280,41 @@ textarea { resize: vertical; min-height: 120px; }
   border: 1px solid var(--border);
   color: var(--text);
   font-family: inherit;
+  /* 2026-06-01 — color-scheme:dark tells the browser to render native widget
+     chrome (select popups, date pickers, scrollbars) in dark. Without this,
+     Chrome on Windows pops a stark white dropdown over the dark page. */
+  color-scheme: dark;
+}
+
+/* Native <option> elements only honor a narrow subset of CSS, but background
+   and color DO work on Chromium/Firefox. Forced here so the popup list
+   matches the rest of the form chrome instead of inheriting the OS default. */
+select.scorecard-structured-fieldlet__input option {
+  background: var(--surface);
+  color: var(--text);
+}
+select.scorecard-structured-fieldlet__input option:checked {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* Native date picker indicator (Chromium): invert so the small calendar
+   icon stays visible on the dark input. */
+input.scorecard-structured-fieldlet__input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  cursor: pointer;
+}
+
+/* Light-theme overrides — leave the OS chrome alone when the theme is light. */
+[data-theme="light"] .scorecard-structured-fieldlet__input {
+  color-scheme: light;
+}
+[data-theme="light"] select.scorecard-structured-fieldlet__input option {
+  background: #FFFFFF;
+  color: #0A0A0A;
+}
+[data-theme="light"] input.scorecard-structured-fieldlet__input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
 }
 
 .scorecard-structured-fieldlet__input:focus {
