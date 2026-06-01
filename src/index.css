@@ -5927,3 +5927,204 @@ select:focus,
   flex-wrap: wrap;
   gap: var(--space-2);
 }
+
+/* ============================================================================
+   Element-level admin editor — Phase 1 (2026-05-24)
+   - EditableElement outlines (hover/selected) — visible only in admin mode
+   - AdminEditorPanel side drawer
+   - NowClock size variants
+   - Page header height variants
+   - Sidebar hidden state
+   ============================================================================ */
+
+/* Hover/select chrome — only renders when the wrapper has the .editable-element
+   class, which itself only applies when admin mode is on. View-mode is
+   zero-overhead. */
+.editable-element {
+  position: relative;
+  cursor: pointer;
+}
+.editable-element::after {
+  /* dashed outline on hover, hidden by default */
+  content: '';
+  position: absolute;
+  inset: -2px;
+  pointer-events: none;
+  border-radius: var(--radius-md);
+  border: 1.5px dashed transparent;
+  transition: border-color var(--duration-base) ease, background-color var(--duration-base) ease;
+}
+.editable-element:hover::after {
+  border-color: var(--callout-blue-border);
+  background: var(--callout-blue-bg);
+}
+.editable-element--selected::after {
+  border-color: var(--blue);
+  border-style: solid;
+  background: var(--callout-blue-bg);
+}
+
+/* The admin editor side drawer — floats above the content area on the right.
+   Mobile: takes full width. Desktop: 320px fixed on the right. */
+.admin-editor-panel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100vh;
+  width: min(92vw, 360px);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-4);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  animation: adminEditorPanelSlideIn var(--duration-slow) var(--ease-out);
+}
+@keyframes adminEditorPanelSlideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+.admin-editor-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.admin-editor-panel__eyebrow {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+.admin-editor-panel__title {
+  margin: 0;
+  font-size: var(--text-h4);
+  font-weight: 600;
+}
+.admin-editor-panel__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background var(--duration-base) ease, color var(--duration-base) ease;
+}
+.admin-editor-panel__close:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.admin-editor-panel__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.admin-editor-panel__desc {
+  font-size: var(--text-sm);
+  line-height: var(--leading-base);
+  margin: 0;
+}
+.admin-editor-panel__controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.admin-editor-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+.admin-editor-control__label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.admin-editor-control input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+.admin-editor-control select {
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font: inherit;
+}
+.admin-editor-panel__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* NowClock size variants — driven by element config. Default is sm
+   (preserves the muted Tier 3 v2 look); md and lg available via editor. */
+.now-clock--size-sm {
+  font-size: var(--text-xs);
+}
+.now-clock--size-md {
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+.now-clock--size-lg {
+  font-size: var(--text-h4);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+/* Topbar slot — position the clock left/right/inline based on data-position
+   on the clock itself (set by NowClock from its element config). */
+.shell__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;  /* default = top-right */
+}
+.shell__topbar:has(.now-clock[data-position="top-left"]) {
+  justify-content: flex-start;
+}
+.shell__topbar:has(.now-clock[data-position="inline"]) {
+  /* Inline position hides the topbar slot — the clock will reappear inside
+     the page header via a later wave. Keeps the slot collapsed for now. */
+  display: none;
+}
+
+/* Page header height variants — driven by element config. */
+.page-header--height-compact {
+  min-height: 24px;
+  margin-bottom: var(--space-3);
+}
+.page-header--height-standard {
+  min-height: 32px;
+  margin-bottom: var(--space-4);
+}
+.page-header--height-roomy {
+  min-height: 48px;
+  margin-bottom: var(--space-5);
+}
+
+/* Sidebar hidden via element config — desktop only. Collapse the grid to
+   a single content column. Mobile drawer still works regardless. */
+@media (min-width: 901px) {
+  .shell--sidebar-hidden {
+    grid-template-columns: 1fr;
+    grid-template-areas: "content";
+  }
+}

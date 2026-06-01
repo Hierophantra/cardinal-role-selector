@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login.jsx';
 import ThemeToggle from './components/ThemeToggle.jsx';
 import AppShell from './components/AppShell.jsx';
+import { AdminEditorProvider } from './components/admin/AdminEditorContext.jsx';
 import Questionnaire from './components/Questionnaire.jsx';
 import PartnerHub from './components/PartnerHub.jsx';
 import KpiSelection from './components/KpiSelection.jsx';
@@ -30,7 +31,7 @@ import Contracts from './components/Contracts.jsx';
 
 export default function App() {
   return (
-    <>
+    <AdminEditorProvider>
       <ThemeToggle />
       <AppShell>
       <Routes>
@@ -64,6 +65,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </AppShell>
-    </>
+    </AdminEditorProvider>
   );
 }

@@ -13,16 +13,22 @@
 //
 // Reference: docs/tier3-v2-redesign/RESEARCH.md §4 (Hub redesign, slim page header)
 
+import { useElementConfig } from '../lib/elementConfig.js';
+import EditableElement from './admin/EditableElement.jsx';
+
 export default function PageHeader({ eyebrow, pills, greeting, className = '' }) {
+  const config = useElementConfig('page-header');
   // Don't render the empty wrapper if nothing was passed.
   if (!eyebrow && !pills && !greeting) return null;
+  if (config.visible === false) return null;
+  const heightClass = `page-header--height-${config.height || 'standard'}`;
   return (
-    <div className={`page-header ${className}`}>
+    <EditableElement id="page-header" className={`page-header ${heightClass} ${className}`}>
       <div className="page-header__left">
         {eyebrow && <span className="page-header__eyebrow">{eyebrow}</span>}
         {pills && <span className="page-header__pills">{pills}</span>}
       </div>
       {greeting && <div className="page-header__greeting">{greeting}</div>}
-    </div>
+    </EditableElement>
   );
 }

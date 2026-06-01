@@ -17,6 +17,7 @@
 
 import { useEffect, useState } from 'react';
 import { Clock } from 'lucide-react';
+import { useElementConfig } from '../lib/elementConfig.js';
 
 function formatNow(d) {
   // "Mon, 9:32 AM" — short day + 12-hour clock. toLocaleDateString +
@@ -33,8 +34,12 @@ function msUntilNextMinute() {
   return 60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
 }
 
-export default function NowClock({ variant = 'default', className = '' }) {
+export default function NowClock({ variant, className = '' }) {
   const [now, setNow] = useState(() => new Date());
+  // Element-level config: admin can change size/position/visibility live.
+  // `variant` prop overrides config (used by the meeting-shell which always
+  // wants the larger TV-readable style regardless of admin preference).
+  const config = useElementConfig('now-clock');
 
   useEffect(() => {
     let timeoutId;
@@ -42,9 +47,6 @@ export default function NowClock({ variant = 'default', className = '' }) {
 
     function tick() {
       setNow(new Date());
-      // Switch from the initial align-to-minute timeout to a steady
-      // every-60s interval. The setTimeout path runs once; the interval
-      // takes over afterwards.
       if (!intervalId) {
         intervalId = setInterval(() => setNow(new Date()), 60000);
       }
@@ -58,10 +60,25 @@ export default function NowClock({ variant = 'default', className = '' }) {
     };
   }, []);
 
+  // Hidden via admin config → render nothing (but still keep the ticking
+  // interval alive so toggling back is instant).
+  if (config.visible === false && !variant) return null;
+
+  const effectiveVariant = variant || `size-${config.size || 'sm'}`;
+  const iconSize =
+    effectiveVariant === 'meeting' ? 14
+    : effectiveVariant === 'size-lg' ? 16
+    : effectiveVariant === 'size-md' ? 14
+    : 12;
+
   const label = formatNow(now);
   return (
-    <div className={`now-clock now-clock--${variant} ${className}`} aria-label={`Current time: ${label}`}>
-      <Clock size={variant === 'meeting' ? 14 : 12} strokeWidth={1.75} aria-hidden="true" />
+    <div
+      className={`now-clock now-clock--${effectiveVariant} ${className}`}
+      data-position={variant ? undefined : config.position}
+      aria-label={`Current time: ${label}`}
+    >
+      <Clock size={iconSize} strokeWidth={1.75} aria-hidden="true" />
       <span>{label}</span>
     </div>
   );

@@ -27,7 +27,9 @@ import {
   LogOut,
   ChevronsLeft,
   ChevronsRight,
+  SlidersHorizontal,
 } from 'lucide-react';
+import { useAdminEditor } from './admin/AdminEditorContext.jsx';
 
 const COLLAPSE_KEY = 'cardinal-sidebar-collapsed';
 
@@ -143,6 +145,9 @@ export default function Sidebar({
     if (onItemClick) onItemClick();
   }
 
+  // Admin-only: toggle for the element-level editor mode.
+  const editor = useAdminEditor();
+
   return (
     <aside
       className={`sidebar ${collapsed && !mobile ? 'sidebar--collapsed' : ''} ${mobile ? 'sidebar--mobile' : ''}`}
@@ -175,8 +180,27 @@ export default function Sidebar({
         {isAdmin && <AdminNav collapsed={collapsed && !mobile} onItemClick={onItemClick} />}
       </nav>
 
-      {/* Footer — sign out */}
+      {/* Footer — admin editor toggle (admin-only) + sign out */}
       <div className="sidebar-footer">
+        {editor.isAdmin && (
+          <button
+            type="button"
+            className={`sidebar-nav-item sidebar-nav-item--button ${editor.mode === 'on' ? 'sidebar-nav-item--active' : ''}`}
+            onClick={editor.toggleMode}
+            title={
+              collapsed && !mobile
+                ? (editor.mode === 'on' ? 'Exit edit mode' : 'Edit layout')
+                : undefined
+            }
+            aria-pressed={editor.mode === 'on'}
+            aria-label={editor.mode === 'on' ? 'Exit edit mode' : 'Edit layout'}
+          >
+            <SlidersHorizontal size={18} strokeWidth={1.75} aria-hidden="true" />
+            <span className="sidebar-nav-item__label">
+              {editor.mode === 'on' ? 'Exit edit mode' : 'Edit layout'}
+            </span>
+          </button>
+        )}
         <button
           type="button"
           className="sidebar-nav-item sidebar-nav-item--button"
