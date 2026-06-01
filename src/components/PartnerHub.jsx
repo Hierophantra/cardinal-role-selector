@@ -297,6 +297,20 @@ export default function PartnerHub() {
   const greetingConfig = useElementConfig('hub-greeting', partner);
   const dashboardCardConfig = useElementConfig('hub-dashboard-card', partner);
   const workflowConfig = useElementConfig('hub-workflow-cards', partner);
+  const weekPlanConfig = useElementConfig('hub-week-plan', partner);
+  const thisWeekConfig = useElementConfig('hub-this-week-kpis', partner);
+  const growthConfig = useElementConfig('hub-personal-growth', partner);
+  const businessConfig = useElementConfig('hub-business-priorities', partner);
+
+  // Inline-style helper — sets CSS variables on the section wrapper which
+  // the inner card CSS consumes via var(--inner-bg). This is what makes
+  // the admin's background/radius edits actually reach the visible card,
+  // not just the wrapper around it.
+  const sectionVars = (cfg) => ({
+    '--inner-bg': cfg.background,
+    '--inner-radius': cfg.radius,
+    display: cfg.visible === false ? 'none' : undefined,
+  });
 
   const greetingNode = greetingConfig.visible === false ? null : (
     <EditableElement
@@ -341,17 +355,14 @@ export default function PartnerHub() {
                   Growth/Priorities on the right. On mobile, the children stack
                   vertically as they did before. */}
               <div className="hub-dashboard">
-                {/* This Week's Plan — wrapped so admin can select via editor.
-                    Background/radius controls in the registry apply via inline
-                    style on the wrapper; the inner card's own background sits
-                    above it. Full deep override is Phase 3. */}
-                <EditableElement id="hub-week-plan">
+                {/* This Week's Plan — CSS vars cascade to inner section */}
+                <EditableElement id="hub-week-plan" style={sectionVars(weekPlanConfig)}>
                   <WeekPlanCard objectives={weekObjectives} />
                 </EditableElement>
 
                 {/* This Week's KPIs */}
                 {kpiReady && (
-                  <EditableElement id="hub-this-week-kpis">
+                  <EditableElement id="hub-this-week-kpis" style={sectionVars(thisWeekConfig)}>
                     <ThisWeekKpisSection
                       partner={partner}
                       mandatorySelections={mandatorySelections}
@@ -365,7 +376,7 @@ export default function PartnerHub() {
                 )}
 
                 {/* Personal Growth */}
-                <EditableElement id="hub-personal-growth">
+                <EditableElement id="hub-personal-growth" style={sectionVars(growthConfig)}>
                   <PersonalGrowthSection
                     growthPriorities={growthPriorities}
                     onSaveSelfChosen={handleSaveSelfChosen}
@@ -373,7 +384,7 @@ export default function PartnerHub() {
                 </EditableElement>
 
                 {/* Business Priorities */}
-                <EditableElement id="hub-business-priorities">
+                <EditableElement id="hub-business-priorities" style={sectionVars(businessConfig)}>
                   <BusinessPrioritiesSection priorities={businessPriorities} />
                 </EditableElement>
               </div>

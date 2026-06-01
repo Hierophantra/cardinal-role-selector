@@ -6369,3 +6369,41 @@ body:has(.admin-editor-banner) {
   font-family: ui-monospace, monospace;
   color: var(--violet);
 }
+
+/* ============================================================================
+   Phase 3 (2026-05-24) — deep CSS plumbing for partner-hub inner sections.
+   The EditableElement wrapper for each section sets --inner-bg and
+   --inner-radius via inline style (from useElementConfig). The inner
+   section's own CSS class consumes those variables, so admin's color +
+   radius edits actually reach the visible card rather than just framing it.
+   Active in view mode too, so partners see saved overrides.
+   ============================================================================ */
+[data-editable-id="hub-week-plan"] > .week-plan-card,
+[data-editable-id="hub-week-plan"]   .week-plan-card,
+[data-editable-id="hub-this-week-kpis"] > .this-week-kpis-section,
+[data-editable-id="hub-this-week-kpis"]   .this-week-kpis-section,
+[data-editable-id="hub-personal-growth"] > .personal-growth-section,
+[data-editable-id="hub-personal-growth"]   .personal-growth-section,
+[data-editable-id="hub-business-priorities"] > .business-priorities-section,
+[data-editable-id="hub-business-priorities"]   .business-priorities-section {
+  background: var(--inner-bg, var(--surface));
+  border-radius: var(--inner-radius, var(--radius-lg));
+}
+
+/* Phase 3 — editable-element dragging state (positionable elements) */
+.editable-element--dragging {
+  cursor: grabbing !important;
+  opacity: 0.85;
+  z-index: 300;
+}
+.editable-element[data-positionable="true"]:hover::after {
+  border-style: solid;
+  border-color: var(--violet);
+}
+
+/* Sidebar brand wrapper — when admin edits app-branding, the wrap takes
+   the outline. Mid-row positioning preserved. */
+.sidebar-header__brand-wrap {
+  display: inline-flex;
+  align-items: center;
+}

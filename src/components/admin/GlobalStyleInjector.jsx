@@ -15,10 +15,17 @@ import { useElementConfig } from '../../lib/elementConfig.js';
 export default function GlobalStyleInjector() {
   const btnPrimary = useElementConfig('btn-primary');
   const appBg = useElementConfig('app-background');
+  const branding = useElementConfig('app-branding');
 
-  // Build the override rules. Only include non-default values so the
-  // injected style block stays minimal.
   const rules = [];
+
+  // White-label branding — override --red at :root so everywhere
+  // (Cardinal logo dot, brand red, btn-primary default, callouts) shifts
+  // to the chosen brand color. Components that explicitly use
+  // var(--red) all pick this up.
+  if (branding?.brandColor && branding.brandColor !== 'var(--red)') {
+    rules.push(`:root { --red: ${branding.brandColor}; --miss: ${branding.brandColor}; --focus-ring-color: ${branding.brandColor}; }`);
+  }
 
   if (btnPrimary?.background && btnPrimary.background !== 'var(--red)') {
     rules.push(`.btn-primary { background: ${btnPrimary.background} !important; }`);
@@ -28,8 +35,6 @@ export default function GlobalStyleInjector() {
     rules.push(`.btn-primary { border-radius: ${btnPrimary.radius} !important; }`);
   }
   if (appBg?.color && appBg.color !== 'var(--bg)') {
-    // Override --bg on :root so radial gradients and other consumers still
-    // resolve correctly through the cascade.
     rules.push(`:root { --bg: ${appBg.color}; }`);
   }
 

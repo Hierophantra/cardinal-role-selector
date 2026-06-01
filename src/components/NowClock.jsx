@@ -72,10 +72,19 @@ export default function NowClock({ variant, className = '' }) {
     : 12;
 
   const label = formatNow(now);
+  // Phase 3 (2026-05-24): positionable element — apply saved dragX/dragY as
+  // a CSS transform. Drag persistence happens in EditableElement; this
+  // component just reads + renders.
+  const hasOffset = (config.dragX || 0) !== 0 || (config.dragY || 0) !== 0;
+  const offsetStyle = hasOffset
+    ? { transform: `translate(${config.dragX || 0}px, ${config.dragY || 0}px)` }
+    : undefined;
+
   return (
     <div
       className={`now-clock now-clock--${effectiveVariant} ${className}`}
       data-position={variant ? undefined : config.position}
+      style={offsetStyle}
       aria-label={`Current time: ${label}`}
     >
       <Clock size={iconSize} strokeWidth={1.75} aria-hidden="true" />

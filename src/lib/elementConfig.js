@@ -61,9 +61,10 @@ export const ELEMENT_REGISTRY = {
   // ============================================================
   'now-clock': {
     label: 'Clock (top-right)',
-    description: 'The day + time indicator at the top of every screen.',
+    description: 'The day + time indicator at the top of every screen. Hold Alt and drag in edit mode to free-position (snaps to 8px grid).',
     scope: 'global',
-    defaults: { visible: true, size: 'sm', position: 'top-right' },
+    positionable: true,
+    defaults: { visible: true, size: 'sm', position: 'top-right', dragX: 0, dragY: 0 },
     controls: [
       { key: 'visible', label: 'Visible', type: 'toggle' },
       { key: 'size', label: 'Size', type: 'select', options: [
@@ -76,6 +77,8 @@ export const ELEMENT_REGISTRY = {
         { value: 'top-left',  label: 'Top left' },
         { value: 'inline',    label: 'Inline (with page header)' },
       ]},
+      { key: 'dragX', label: 'Fine-tune X offset', type: 'range', min: -400, max: 400, step: 8 },
+      { key: 'dragY', label: 'Fine-tune Y offset', type: 'range', min: -200, max: 200, step: 8 },
     ],
   },
 
@@ -457,6 +460,28 @@ export const ELEMENT_REGISTRY = {
         { value: 'var(--radius-lg)', label: 'Large (default)' },
         { value: 'var(--radius-xl)', label: 'XL' },
       ]},
+    ],
+  },
+
+  // ============================================================
+  // WHITE-LABEL / BRANDING — Phase 3
+  // Single element that controls the brand wordmark + logo + primary
+  // brand color across the entire app. Sidebar brand + Login wordmark
+  // read from this; GlobalStyleInjector applies the brand color over --red.
+  // ============================================================
+  'app-branding': {
+    label: 'Brand identity (logo + name + color)',
+    description: "Replace the app wordmark, logo image URL, and brand red. Applies everywhere — sidebar, login page, primary buttons.",
+    scope: 'global',
+    defaults: {
+      name: 'Cardinal',
+      logoUrl: '/logo.png',
+      brandColor: 'var(--red)',
+    },
+    controls: [
+      { key: 'name', label: 'App name (wordmark)', type: 'text', placeholder: 'Cardinal' },
+      { key: 'logoUrl', label: 'Logo URL (PNG or SVG, public)', type: 'text', placeholder: '/logo.png or https://...' },
+      { key: 'brandColor', label: 'Primary brand color', type: 'color' },
     ],
   },
 

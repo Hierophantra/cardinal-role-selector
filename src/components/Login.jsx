@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useElementConfig } from '../lib/elementConfig.js';
 
 export default function Login() {
   const [code, setCode] = useState('');
@@ -35,10 +36,15 @@ export default function Login() {
     }
   }
 
+  // White-label branding (Phase 3) — login wordmark + logo
+  const branding = useElementConfig('app-branding');
+  const brandName = branding?.name || 'Cardinal';
+  const brandLogo = branding?.logoUrl || '/logo.png';
+
   return (
     <div className="login-wrap">
       <form className="login-card login-card--light fade-in" onSubmit={submit}>
-        <img src="/logo.png" alt="Cardinal Roofing & Renovations" />
+        <img src={brandLogo} alt={brandName} />
         <h1>Role Definition Tool</h1>
         <div className="subtitle">Cardinal Roofing &amp; Renovations</div>
         <label htmlFor="access">Enter your access code</label>

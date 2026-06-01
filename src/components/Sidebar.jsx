@@ -30,6 +30,8 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { useAdminEditor } from './admin/AdminEditorContext.jsx';
+import { useElementConfig } from '../lib/elementConfig.js';
+import EditableElement from './admin/EditableElement.jsx';
 
 const COLLAPSE_KEY = 'cardinal-sidebar-collapsed';
 
@@ -153,18 +155,26 @@ export default function Sidebar({
 
   // Admin-only: toggle for the element-level editor mode.
   const editor = useAdminEditor();
+  // White-label branding (Phase 3) — sidebar brand text + logo
+  const branding = useElementConfig('app-branding');
+  const brandName = branding?.name || 'Cardinal';
+  const brandLogo = branding?.logoUrl || '/logo.png';
 
   return (
     <aside
       className={`sidebar ${collapsed && !mobile ? 'sidebar--collapsed' : ''} ${mobile ? 'sidebar--mobile' : ''}`}
       aria-label="Primary"
     >
-      {/* Header — logo + collapse toggle (desktop only) */}
+      {/* Header — logo + collapse toggle (desktop only).
+          The brand block is wrapped in EditableElement so admin can click
+          it in edit mode and adjust app-branding (name, logo URL, color). */}
       <div className="sidebar-header">
-        <Link to={isAdmin ? '/admin/hub' : `/hub/${sessionRole || ''}`} className="sidebar-brand" onClick={onItemClick}>
-          <img src="/logo.png" alt="Cardinal" />
-          <span className="sidebar-brand__text">Cardinal</span>
-        </Link>
+        <EditableElement id="app-branding" as="div" className="sidebar-header__brand-wrap">
+          <Link to={isAdmin ? '/admin/hub' : `/hub/${sessionRole || ''}`} className="sidebar-brand" onClick={onItemClick}>
+            <img src={brandLogo} alt={brandName} />
+            <span className="sidebar-brand__text">{brandName}</span>
+          </Link>
+        </EditableElement>
         {!mobile && onToggleCollapse && (
           <button
             type="button"
