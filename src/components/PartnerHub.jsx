@@ -359,7 +359,7 @@ export default function PartnerHub() {
 
   return (
     <div className="app-shell">
-      <div className="container">
+      <div className="container container--hub">
         <div className="screen fade-in">
           {/* Tier 3 v2 Wave 4: Slim page header replaces the big greeting block.
               Sidebar handles nav (no more in-page "Back to Trace Hub" row).
@@ -420,11 +420,12 @@ export default function PartnerHub() {
                 <EditableElement id="hub-business-priorities" style={sectionVars(businessConfig)}>
                   <BusinessPrioritiesSection priorities={businessPriorities} />
                 </EditableElement>
-
-                {/* 2026-06-01: Reaching-out-for-support protocol. Same shape on
-                    both partner hubs with the counterpart's name interpolated. */}
-                <SupportProtocolCallout partner={partner} />
               </div>
+
+              {/* 2026-06-01: Reaching-out-for-support protocol. Full-width
+                  row below the dashboard so it doesn't squeeze into a
+                  half-column. Same shape on both partner hubs. */}
+              <SupportProtocolCallout partner={partner} />
 
               {/* Workflow card grid (D-07 bottom; D-08 card roster).
                   Tier 3 v2 follow-up: editable as 'hub-workflow-cards'.

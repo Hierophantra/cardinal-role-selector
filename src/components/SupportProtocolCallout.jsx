@@ -36,8 +36,8 @@ export default function SupportProtocolCallout({ partner }) {
         </li>
         <li>
           <strong>If the question is about information, document it in Acculynx.</strong> Send the
-          task to {counterpart} with a clear deadline. Acculynx is where information lives — not
-          texts, not memory.
+          task to {counterpart} with a clear deadline. Acculynx is where information lives. Not
+          texts. Not memory.
         </li>
       </ol>
       <p className="support-protocol-callout__footer">

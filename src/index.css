@@ -338,6 +338,20 @@ textarea { resize: vertical; min-height: 120px; }
 
 .container.wide { max-width: 1100px; }
 
+/* 2026-06-01 — Partner hub container. Wider than .container and .container.wide
+   so the dashboard cards actually breathe on a desktop (was reading like a
+   mobile column at 760px). Generous side padding on big screens. */
+.container--hub {
+  max-width: 1400px;
+  padding: var(--space-8) var(--space-7) 96px;
+}
+@media (min-width: 1280px) {
+  .container--hub {
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+}
+
 /* ---------- login ---------- */
 .login-wrap {
   min-height: 100vh;
@@ -5055,22 +5069,64 @@ select:focus,
   /* Subtle — preserves warmth without sacrificing dashboard real estate */
 }
 
-/* Hub dashboard grid — mobile-first single column, 2-column at >= 901px. */
+/* Hub dashboard grid — mobile-first single column, 2-column at >= 901px,
+   stays 2-col but with generous gap and padding at wider sizes so cards
+   read as a designed layout rather than a stack of phone tiles. */
 .hub-dashboard {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-7);
 }
 @media (min-width: 901px) {
   .hub-dashboard {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-5);
+    gap: var(--space-6);
   }
-  /* Each direct child takes up one cell. Tall content stays in its column. */
   .hub-dashboard > * {
     min-width: 0;
+  }
+}
+@media (min-width: 1280px) {
+  .hub-dashboard {
+    gap: var(--space-7);
+  }
+}
+
+/* Hub-wide rows that sit outside the 2-col dashboard grid (eg. the support
+   protocol callout). They span the full container width and get a healthy
+   top margin so they don't crowd the dashboard above. */
+.hub-dashboard + .support-protocol-callout,
+.hub-dashboard + .hub-grid,
+.hub-grid + .support-protocol-callout {
+  margin-top: var(--space-6);
+}
+@media (min-width: 1280px) {
+  .hub-dashboard + .support-protocol-callout,
+  .hub-dashboard + .hub-grid {
+    margin-top: var(--space-7);
+  }
+}
+
+/* Workflow card grid at the bottom — was implicitly 2-col on the existing
+   .hub-grid; nudge to 3-col on wide screens and add gap so the cards don't
+   feel cramped against each other. */
+.container--hub .hub-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+}
+@media (min-width: 901px) {
+  .container--hub .hub-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-6);
+  }
+}
+@media (min-width: 1280px) {
+  .container--hub .hub-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-7);
   }
 }
 

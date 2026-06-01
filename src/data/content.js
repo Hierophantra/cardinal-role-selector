@@ -558,7 +558,7 @@ export const SCORECARD_COPY = {
   // UAT 2026-05-04: replaces "This can't be undone." — full edit window stays open
   // until Saturday close, so the prior copy was misleading. Phase 17 D-04 sets the
   // hard cutoff at Saturday 23:59 local.
-  stickyNote: 'Submit anytime — edits stay open until Saturday at 11:59 PM. Cards auto-submit Friday at 9 AM.',
+  stickyNote: 'Submit anytime. Edits stay open until Saturday at 11:59 PM. Cards auto-submit Friday at 9 AM.',
   submitErrorIncomplete: 'Rate each KPI as Met or Not Met before submitting.',
   // UAT 2026-05-04: every row needs a reflection. Per-KPI prompts (migration 015) demand evidence.
   submitErrorReflectionRequired:

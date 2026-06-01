@@ -27,7 +27,7 @@ export default function AdminEditorBanner() {
       <div className="admin-editor-banner__inner">
         <Pencil size={12} strokeWidth={2} aria-hidden="true" />
         <span>
-          <strong>Edit mode</strong> — {scopeLabel(viewingPartner)}
+          <strong>Edit mode</strong> · {scopeLabel(viewingPartner)}
         </span>
         <button
           type="button"

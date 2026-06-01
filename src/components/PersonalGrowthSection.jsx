@@ -7,14 +7,14 @@
 
 import React, { useState } from 'react';
 
+// Weekdays only — both partners' commitments are work-rhythm rules (leave the
+// office by 7:30 PM, out of the house by 7:30 AM) so weekends are off-table.
 const ALL_DAYS = [
   { value: 'Mon', label: 'Mon' },
   { value: 'Tue', label: 'Tue' },
   { value: 'Wed', label: 'Wed' },
   { value: 'Thu', label: 'Thu' },
   { value: 'Fri', label: 'Fri' },
-  { value: 'Sat', label: 'Sat' },
-  { value: 'Sun', label: 'Sun' },
 ];
 
 const REQUIRED_DAYS_BY_PARTNER = {
@@ -122,7 +122,7 @@ export default function PersonalGrowthSection({
         <div className="growth-day-picker growth-day-picker--locked">
           <div className="growth-day-picker__locked-line">
             <strong>Locked for this week:</strong>{' '}
-            {ordered.length > 0 ? ordered.join(' · ') : '—'}
+            {ordered.length > 0 ? ordered.join(' · ') : '(none)'}
           </div>
           <div className="growth-day-picker__locked-hint">
             Resets next Monday. To change before then, ask Trace.
