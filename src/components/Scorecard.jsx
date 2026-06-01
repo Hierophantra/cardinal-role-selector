@@ -2792,7 +2792,7 @@ function StructuredFieldInput({
 
   if (disabled) {
     if (field.type === 'yes_no') {
-      const label = value === 'yes' ? 'Yes' : value === 'no' ? 'No' : '—';
+      const label = value === 'yes' ? 'Yes' : value === 'no' ? 'No' : '(empty)';
       return (
         <div className="scorecard-structured-fieldlet">
           <span className="scorecard-structured-fieldlet__label">{field.label}</span>
@@ -2800,8 +2800,21 @@ function StructuredFieldInput({
         </div>
       );
     }
-    const display = value === '' || value === null || value === undefined ? '—' : String(value);
-    const prefix = field.type === 'currency' && display !== '—' ? '$' : '';
+    // 2026-06-01: single-select multi_choice in disabled mode — surface the
+    // option LABEL not the raw value.
+    if (field.type === 'multi_choice' && field.single_select) {
+      const opts = Array.isArray(field.options) ? field.options : [];
+      const match = opts.find((o) => o.value === value);
+      const display = match?.label ?? value ?? '(empty)';
+      return (
+        <div className="scorecard-structured-fieldlet">
+          <span className="scorecard-structured-fieldlet__label">{field.label}</span>
+          <span className="scorecard-structured-fieldlet__readonly">{display}</span>
+        </div>
+      );
+    }
+    const display = value === '' || value === null || value === undefined ? '(empty)' : String(value);
+    const prefix = field.type === 'currency' && display !== '(empty)' ? '$' : '';
     return (
       <div className="scorecard-structured-fieldlet">
         <span className="scorecard-structured-fieldlet__label">{field.label}</span>
@@ -2876,6 +2889,49 @@ function StructuredFieldInput({
             onBlur={onBlur}
           />
         </div>
+      </div>
+    );
+  }
+
+  // 2026-06-01: native date picker. Browser-native calendar dropdown.
+  if (field.type === 'date') {
+    return (
+      <div className="scorecard-structured-fieldlet">
+        <span className="scorecard-structured-fieldlet__label">{field.label}</span>
+        <input
+          id={inputId}
+          type="date"
+          className="scorecard-structured-fieldlet__input"
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+        />
+      </div>
+    );
+  }
+
+  // 2026-06-01: single-select multi_choice inside a row context renders as a
+  // native dropdown. (Top-level multi_choice fields with per_selection_fields
+  // still go through StructuredFieldsBlock's checkbox/radio path.) Single
+  // select inside rows was previously falling through to the default text
+  // input, which broke category pickers in Theo's network + BD KPIs.
+  if (field.type === 'multi_choice' && field.single_select) {
+    const options = Array.isArray(field.options) ? field.options : [];
+    return (
+      <div className="scorecard-structured-fieldlet">
+        <span className="scorecard-structured-fieldlet__label">{field.label}</span>
+        <select
+          id={inputId}
+          className="scorecard-structured-fieldlet__input"
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+        >
+          <option value="">{field.placeholder ?? 'Select…'}</option>
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label ?? opt.value}</option>
+          ))}
+        </select>
       </div>
     );
   }

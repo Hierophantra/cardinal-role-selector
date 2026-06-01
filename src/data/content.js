@@ -1028,10 +1028,10 @@ export const BUSINESS_GROWTH_STOP_MAPPING = {
 // scorecards.growth_followup JSONB column added in migration 012. Adding a
 // third field or a third partner becomes a one-place edit.
 export const GROWTH_FOLLOWUP_FIELDS = {
-  theo: [
-    { key: 'days', label: 'What days?', placeholder: 'e.g. Tues + Thurs', kind: 'text' },
-    { key: 'time', label: 'What time?', placeholder: 'e.g. 5:30 pm', kind: 'text' },
-  ],
+  // 2026-06-01: Theo's growth consideration moved to the hub day-picker.
+  // Empty array = the scorecard's growth-consideration form section does
+  // not render for him.
+  theo: [],
   jerry: [
     { key: 'who', label: 'With whom?', placeholder: 'e.g. crew lead about Friday delays', kind: 'text' },
     { key: 'why_difficult', label: 'Why was it difficult?', placeholder: 'What made the conversation hard?', kind: 'textarea' },
