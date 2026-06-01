@@ -1038,6 +1038,17 @@ export const GROWTH_FOLLOWUP_FIELDS = {
   ],
 };
 
+// 2026-06-01: explicit title for the scorecard's GROWTH CONSIDERATION block,
+// decoupled from the growth_priorities rows. Jerry's mandatory growth on the
+// hub is now the weekday-out-by-7:30 day-picker; his weekly scorecard
+// consideration is the difficult-conversation reflection (who + why_difficult).
+// Without this override the consideration form would echo the day-picker text,
+// which is wrong. Partners absent from this map fall back to their mandatory
+// growth_priorities description (legacy behavior).
+export const GROWTH_FOLLOWUP_TITLE = {
+  jerry: 'Initiate one uncomfortable conversation each week. Lean into it; pick something you have been avoiding.',
+};
+
 // UAT C1: weekly-mandatory-growth follow-up copy block on Scorecard.jsx.
 // 2026-04-29 reframe: the mandatory growth piece is a "consideration" — a
 // reflection lens for the week, not a required form. Eyebrow / hint copy

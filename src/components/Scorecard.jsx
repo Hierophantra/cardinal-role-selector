@@ -15,6 +15,7 @@ import {
   PARTNER_DISPLAY,
   SCORECARD_COPY,
   GROWTH_FOLLOWUP_FIELDS,
+  GROWTH_FOLLOWUP_TITLE,
   GROWTH_FOLLOWUP_COPY,
   effectivePartnerScope,
 } from '../data/content.js';
@@ -2063,13 +2064,20 @@ function MandatoryGrowthFollowupForm({
   const fields = GROWTH_FOLLOWUP_FIELDS[partner];
   if (!fields || fields.length === 0) return null; // 'test' partner or unknown
 
+  // 2026-06-01: prefer the explicit per-partner consideration title. Jerry's
+  // scorecard consideration is the difficult-conversation reflection; pulling
+  // from the mandatory growth_priorities row would surface the hub day-picker
+  // text instead. Partners without an explicit title fall back to their
+  // mandatory growth description (legacy behavior).
+  const explicitTitle = GROWTH_FOLLOWUP_TITLE[partner];
   const mandatory = (growthPriorities ?? []).find(
     (g) =>
       g.type === 'personal' &&
       // Mandatory subtype labels vary across seeds; treat any non-self-chosen personal as mandatory.
       g.subtype !== 'self_personal'
   );
-  const mandatoryDescription = mandatory?.description || mandatory?.custom_text || '';
+  const considerationTitle =
+    explicitTitle || mandatory?.description || mandatory?.custom_text || '';
 
   function setField(key, value) {
     setGrowthFollowup((prev) => ({ ...(prev ?? {}), [key]: value }));
@@ -2080,8 +2088,8 @@ function MandatoryGrowthFollowupForm({
       <div className="scorecard-growth-callout__eyebrow">
         {GROWTH_FOLLOWUP_COPY.considerationEyebrow}
       </div>
-      {mandatoryDescription ? (
-        <div className="scorecard-growth-callout__title">{mandatoryDescription}</div>
+      {considerationTitle ? (
+        <div className="scorecard-growth-callout__title">{considerationTitle}</div>
       ) : (
         <div className="scorecard-growth-callout__title scorecard-growth-callout__title--empty">
           {GROWTH_FOLLOWUP_COPY.emptyMandatory}
@@ -2091,7 +2099,7 @@ function MandatoryGrowthFollowupForm({
         {GROWTH_FOLLOWUP_COPY.considerationHint}
       </div>
 
-      {mandatoryDescription && (
+      {considerationTitle && (
         <div className="scorecard-growth-callout__fields">
           {fields.map((f) => {
             const value = (growthFollowup ?? {})[f.key] ?? '';
@@ -2108,7 +2116,7 @@ function MandatoryGrowthFollowupForm({
                   {labelText}
                 </label>
                 {disabled ? (
-                  <p className="scorecard-growth-callout__readonly">{value || '—'}</p>
+                  <p className="scorecard-growth-callout__readonly">{value || '(empty)'}</p>
                 ) : f.kind === 'textarea' ? (
                   <textarea
                     id={`growth-followup-${f.key}`}
