@@ -79,6 +79,18 @@ export default function AdminHub() {
   const theoSummary = summarizeDraft(theoDraft);
   const jerrySummary = summarizeDraft(jerryDraft);
 
+  // IMPORTANT: useElementConfig hooks MUST be called before any early-return
+  // so React's rules-of-hooks invariant holds (same hook call order every
+  // render). They were below `if (loading) return null;` previously, which
+  // caused a blank-screen bug on the admin hub.
+  const headingCfg = useElementConfig('admin-hub-heading');
+  const statusCfg = useElementConfig('admin-hub-status-banner');
+  const draftCfg = useElementConfig('admin-hub-draft-progress');
+  const meetingCfg = useElementConfig('admin-hub-meeting-card');
+  const partnersCfg = useElementConfig('admin-hub-partners-section');
+  const accountCfg = useElementConfig('admin-hub-accountability-section');
+  const eyebrowCfg = useElementConfig('admin-hub-eyebrow');
+
   if (loading) return null;
 
   const copy = HUB_COPY.admin;
@@ -111,15 +123,6 @@ export default function AdminHub() {
       statusLines.push({ text: copy.status.noWeeklyKpisLocked, style: 'muted' });
     }
   }
-
-  // Element configs (global scope — admin hub doesn't have a partner context).
-  const headingCfg = useElementConfig('admin-hub-heading');
-  const statusCfg = useElementConfig('admin-hub-status-banner');
-  const draftCfg = useElementConfig('admin-hub-draft-progress');
-  const meetingCfg = useElementConfig('admin-hub-meeting-card');
-  const partnersCfg = useElementConfig('admin-hub-partners-section');
-  const accountCfg = useElementConfig('admin-hub-accountability-section');
-  const eyebrowCfg = useElementConfig('admin-hub-eyebrow');
 
   return (
     <div className="app-shell">
