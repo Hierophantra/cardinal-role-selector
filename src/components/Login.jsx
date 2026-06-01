@@ -60,7 +60,16 @@ export default function Login() {
         {error && <div className="error">{error}</div>}
         <button
           className="btn btn-primary"
-          style={{ width: '100%', marginTop: 20, justifyContent: 'center' }}
+          style={{
+            width: '100%',
+            marginTop: 24,
+            justifyContent: 'center',
+            padding: '16px 24px',
+            fontSize: 'var(--text-lg)',
+            fontWeight: 700,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+          }}
         >
           Enter
         </button>

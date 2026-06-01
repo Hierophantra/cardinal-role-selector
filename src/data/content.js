@@ -558,7 +558,7 @@ export const SCORECARD_COPY = {
   // UAT 2026-05-04: replaces "This can't be undone." — full edit window stays open
   // until Saturday close, so the prior copy was misleading. Phase 17 D-04 sets the
   // hard cutoff at Saturday 23:59 local.
-  stickyNote: 'All changes editable until Saturday at 11:59 PM.',
+  stickyNote: 'Submit anytime — edits stay open until Saturday at 11:59 PM. Cards auto-submit Friday at 9 AM.',
   submitErrorIncomplete: 'Rate each KPI as Met or Not Met before submitting.',
   // UAT 2026-05-04: every row needs a reflection. Per-KPI prompts (migration 015) demand evidence.
   submitErrorReflectionRequired:
@@ -610,14 +610,19 @@ export const SCORECARD_COPY = {
   // is still open. Once weekClosed flips to true, weekClosedBanner takes over.
   editableUntilSaturday: 'Editable until Saturday at 11:59 PM',
   submittedOnPrefix: 'Submitted on ',
-  // UAT C5 — submit confirmation modal copy
+  // Auto-submit / late-edit status copy
+  autoSubmittedNotice: 'Auto-submitted Friday 9:00 AM (no manual submit recorded).',
+  updatedAfterFridayBadge: 'Updated after Friday',
+  updatedAfterFridayHint: 'You can keep editing until Saturday 11:59 PM. Any changes after Friday 9 AM are flagged for Trace.',
+  // Submit confirmation modal copy — simplified per partner feedback (allow submit anytime, edits stay open).
   submitConfirmEyebrow: 'CONFIRM SUBMISSION',
   submitConfirmHeading: 'Submit your scorecard for this week?',
   submitConfirmBody:
-    'You can re-open Pending rows until Saturday close, but Yes/No rows will lock immediately.',
+    'Verify that the information you want entered is complete. You can still log in and edit until Saturday at 11:59 PM. Cards auto-submit Friday at 9 AM. Changes after Friday show up flagged for Trace.',
   submitConfirmCta: 'Yes, submit',
   submitConfirmCancelCta: 'Not yet',
   submitConfirmSubmittingCta: 'Submitting…',
+  submitConfirmGapsHint: (n) => `${n} ${n === 1 ? 'item is' : 'items are'} still blank. You can submit anyway and come back to them before Saturday.`,
   // UAT C6 — completion message rotation. Picked at random on submit.
   completionMessages: [
     'Scorecard submitted. Nice work!',

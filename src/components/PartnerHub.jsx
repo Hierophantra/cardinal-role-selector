@@ -11,6 +11,8 @@ import {
   fetchBusinessPriorities,
   fetchWeekPlanForWeek,
   fetchWeeklyObjectivesForPartner,
+  fetchWeeklyGrowthCommitment,
+  upsertWeeklyGrowthCommitment,
   upsertGrowthPriority,
   incrementKpiCounter,
 } from '../lib/supabase.js';
@@ -32,6 +34,7 @@ import PersonalGrowthSection from './PersonalGrowthSection.jsx';
 import BusinessPrioritiesSection from './BusinessPrioritiesSection.jsx';
 import WeekPlanCard from './WeekPlanCard.jsx';
 import PageHeader from './PageHeader.jsx';
+import SupportProtocolCallout from './SupportProtocolCallout.jsx';
 import { formatWeekRange } from '../lib/week.js';
 import EditableElement from './admin/EditableElement.jsx';
 import { useElementConfig } from '../lib/elementConfig.js';
@@ -60,6 +63,7 @@ export default function PartnerHub() {
   const [previousSelection, setPreviousSelection] = useState(null);
   const [growthPriorities, setGrowthPriorities] = useState([]);
   const [businessPriorities, setBusinessPriorities] = useState(null);
+  const [weeklyCommitment, setWeeklyCommitment] = useState(null);
   // UAT 2026-05-18 (Week Objectives): holds this partner's objective cards
   // for the current week (null = still loading, [] = loaded but empty).
   const [weekObjectives, setWeekObjectives] = useState(null);
@@ -95,8 +99,11 @@ export default function PartnerHub() {
       // accountability objectives for the current week. .catch swallows to []
       // so a transient failure on this card doesn't block the rest of the hub.
       fetchWeeklyObjectivesForPartner(partner, currentMonday).catch(() => []),
+      // 2026-06-01: this week's mandatory day-pick commitment. May be null
+      // (partner hasn't picked yet).
+      fetchWeeklyGrowthCommitment(partner, currentMonday).catch(() => null),
     ])
-      .then(([sub, sels, cards, subs, thisWeek, prevWeek, growth, bizPriorities, objectives]) => {
+      .then(([sub, sels, cards, subs, thisWeek, prevWeek, growth, bizPriorities, objectives, commitment]) => {
         setSubmission(sub);
         setKpiSelections(sels);
         setScorecards(cards);
@@ -106,6 +113,7 @@ export default function PartnerHub() {
         setGrowthPriorities(growth);
         setBusinessPriorities(bizPriorities);
         setWeekObjectives(objectives);
+        setWeeklyCommitment(commitment);
       })
       .catch((err) => {
         console.error(err);
@@ -231,6 +239,21 @@ export default function PartnerHub() {
     }
   }
 
+  // 2026-06-01: persist the partner's weekly day pick. The required_count
+  // (2 for Theo, 3 for Jerry) is carried into the table so admin reports
+  // don't need to look it up.
+  async function handleConfirmWeeklyDays(days) {
+    const requiredCountByPartner = { theo: 2, jerry: 3, test: 2 };
+    const required_count = requiredCountByPartner[partner] ?? 2;
+    const saved = await upsertWeeklyGrowthCommitment({
+      partner,
+      week_of: currentMonday,
+      days,
+      required_count,
+    });
+    setWeeklyCommitment(saved);
+  }
+
   const partnerName = PARTNER_DISPLAY[partner] ?? partner;
   const copy = HUB_COPY.partner;
 
@@ -303,12 +326,18 @@ export default function PartnerHub() {
   const businessConfig = useElementConfig('hub-business-priorities', partner);
 
   // Inline-style helper — sets CSS variables on the section wrapper which
-  // the inner card CSS consumes via var(--inner-bg). This is what makes
-  // the admin's background/radius edits actually reach the visible card,
-  // not just the wrapper around it.
+  // the inner card CSS consumes via var(--inner-*). Earlier wave only piped
+  // background + radius; 2026-06-01 expanded to padding, border (color +
+  // width), and heading (color + size) so admin can tune the full card
+  // chrome from the editor panel.
   const sectionVars = (cfg) => ({
     '--inner-bg': cfg.background,
     '--inner-radius': cfg.radius,
+    '--inner-padding': cfg.padding,
+    '--inner-border-color': cfg.borderColor,
+    '--inner-border-width': cfg.borderWidth != null ? `${cfg.borderWidth}px` : undefined,
+    '--inner-heading-color': cfg.headingColor,
+    '--inner-heading-size': cfg.headingSize,
     display: cfg.visible === false ? 'none' : undefined,
   });
 
@@ -378,8 +407,12 @@ export default function PartnerHub() {
                 {/* Personal Growth */}
                 <EditableElement id="hub-personal-growth" style={sectionVars(growthConfig)}>
                   <PersonalGrowthSection
+                    partner={partner}
                     growthPriorities={growthPriorities}
                     onSaveSelfChosen={handleSaveSelfChosen}
+                    weeklyCommitment={weeklyCommitment}
+                    onConfirmWeeklyDays={handleConfirmWeeklyDays}
+                    isReadOnly={adminView}
                   />
                 </EditableElement>
 
@@ -387,6 +420,10 @@ export default function PartnerHub() {
                 <EditableElement id="hub-business-priorities" style={sectionVars(businessConfig)}>
                   <BusinessPrioritiesSection priorities={businessPriorities} />
                 </EditableElement>
+
+                {/* 2026-06-01: Reaching-out-for-support protocol. Same shape on
+                    both partner hubs with the counterpart's name interpolated. */}
+                <SupportProtocolCallout partner={partner} />
               </div>
 
               {/* Workflow card grid (D-07 bottom; D-08 card roster).

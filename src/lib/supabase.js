@@ -106,6 +106,48 @@ export async function upsertGrowthPriority(record) {
   return data;
 }
 
+// 2026-06-01 — weekly_growth_commitments: partner picks N days at the start of
+// the week (Mon mornings) and locks them in. Theo picks 2 days he'll leave the
+// office by 7:30 PM; Jerry picks 3 days he'll be out of the house by 7 AM.
+// Resets weekly by virtue of keying on (partner, week_of).
+export async function fetchWeeklyGrowthCommitment(partner, weekOf) {
+  const { data, error } = await supabase
+    .from('weekly_growth_commitments')
+    .select('*')
+    .eq('partner', partner)
+    .eq('week_of', weekOf)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertWeeklyGrowthCommitment({ partner, week_of, days, required_count }) {
+  const { data, error } = await supabase
+    .from('weekly_growth_commitments')
+    .upsert({
+      partner,
+      week_of,
+      days,
+      required_count,
+      confirmed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function clearWeeklyGrowthCommitment(partner, weekOf) {
+  const { error } = await supabase
+    .from('weekly_growth_commitments')
+    .delete()
+    .eq('partner', partner)
+    .eq('week_of', weekOf);
+  if (error) throw error;
+  return true;
+}
+
 export async function fetchScorecard(partner, weekOf) {
   const { data, error } = await supabase
     .from('scorecards')

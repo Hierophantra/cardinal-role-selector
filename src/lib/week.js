@@ -71,6 +71,32 @@ export function effectiveResult(rawResult, weekOf, now = new Date()) {
 }
 
 /**
+ * Returns the local-time Friday 09:00 of the week starting at mondayStr — the
+ * auto-submit cutoff. Past this time, a partner's scorecard is treated as
+ * "submitted" for display purposes even if they haven't tapped Submit. Edits
+ * still flow until Saturday 23:59 (isWeekClosed) but anything written after
+ * this cutoff is flagged with "Updated after Friday" so admin sees the slip.
+ * @param {string} mondayStr e.g. '2026-04-06'
+ * @returns {Date}
+ */
+export function getFridayAutoSubmitOf(mondayStr) {
+  const [y, m, d] = mondayStr.split('-').map(Number);
+  // Monday is d, Friday is d+4. 09:00:00 local.
+  return new Date(y, m - 1, d + 4, 9, 0, 0, 0);
+}
+
+/**
+ * Returns true iff `now` is strictly after Friday 09:00 of mondayStr's week.
+ * Treat any later activity (write or read) as "after the Friday line."
+ * @param {string} mondayStr
+ * @param {Date} [now=new Date()]
+ * @returns {boolean}
+ */
+export function isAfterFridayAutoSubmit(mondayStr, now = new Date()) {
+  return now > getFridayAutoSubmitOf(mondayStr);
+}
+
+/**
  * Formats a week range as 'Mon X – Sat Y' (6 days). Phase 17 D-03: shrunk from Mon–Sun.
  * @param {string} mondayStr e.g. '2026-04-06'
  * @returns {string} e.g. 'Apr 6 – Apr 11'

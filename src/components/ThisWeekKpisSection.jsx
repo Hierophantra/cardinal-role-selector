@@ -2,8 +2,13 @@
 // Presentation-only. Hub (Wave 3) supplies all data via props.
 // See .planning/phases/15-role-identity-hub-redesign/15-UI-SPEC.md.
 // Phase 16 extension: inline +1 counter pill per countable KPI row + locked weekly-choice card.
+//
+// 2026-06-01: the section now collapses (collapsed by default) so the hub
+// leads with Personal Growth + Business Priorities and partners drill into
+// KPIs intentionally. Toggle state persists per partner via localStorage so
+// admins / partners don't fight the collapse every page load.
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { WEEKLY_KPI_COPY } from '../data/content.js';
 import { effectiveResult, isWeekClosed } from '../lib/week.js';
@@ -29,20 +34,15 @@ export function statusModifierClass(rawResult, weekOf) {
   if (rawResult === 'yes') return 'kpi-status-dot--met';
   if (rawResult === 'no') return 'kpi-status-dot--missed';
   if (rawResult === 'pending') {
-    // Use effectiveResult to detect post-close coercion: pending + closed → 'no' →
-    // this row will already render with the missed dot via the rawResult==='no' branch
-    // when callers pre-coerce. For uncoerced raw 'pending', still distinguish by week:
     if (weekOf && isWeekClosed(weekOf)) return 'kpi-status-dot--pending';
     return 'kpi-status-dot--pending-active';
   }
   return 'kpi-status-dot--pending';
 }
 
-// Internal sanity reference to keep effectiveResult import live for future call-sites
-// (Phase 17 D-02 audit footprint). statusModifierClass branches above already cover
-// the live-vs-closed distinction; effectiveResult is exported by week.js for parity
-// with other consumers in this audit (PartnerHub, seasonStats).
 void effectiveResult;
+
+const COLLAPSE_KEY = (partner) => `cardinal:thisWeekKpis:collapsed:${partner}`;
 
 export default function ThisWeekKpisSection({
   partner,
@@ -53,77 +53,123 @@ export default function ThisWeekKpisSection({
   counters = {},
   onIncrementCounter,
 }) {
-  // IN-06: weeklyChoiceLocked prop removed. D-03 always shows the locked
-  // label when hasSelection is true. Phase 17 introduces a Pending-Saturday
-  // state; if a separate locked-vs-pending distinction is needed then,
-  // re-add a prop with concrete semantics rather than an eslint-disable.
-  // A weekly_kpi_selections row can exist with kpi_template_id=NULL when the counter
-  // auto-create path (incrementKpiCounter) seeded it before the partner picked a KPI.
-  // Treat only rows with a non-null template as a real selection (D-19 / D-21).
+  // 2026-06-01: collapsed by default. localStorage holds the preference per
+  // partner so it survives reloads but doesn't bleed across roles.
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      const v = window.localStorage.getItem(COLLAPSE_KEY(partner));
+      // Default = collapsed. Only honor an explicit "open" preference.
+      return v === 'open' ? false : true;
+    } catch {
+      return true;
+    }
+  });
+
+  function toggle() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(COLLAPSE_KEY(partner), next ? 'collapsed' : 'open');
+      } catch {}
+      return next;
+    });
+  }
+
   const hasSelection = Boolean(weeklySelection?.kpi_template_id);
   const hasPrevious = Boolean(previousSelection);
 
+  // Compact head-line counters surfaced in the collapsed header so partners
+  // see "Yes / Pending / No" at a glance without expanding.
+  const counts = mandatorySelections.reduce((acc, k) => {
+    const r = thisWeekCard?.kpi_results?.[k.template_id]?.result ?? null;
+    if (r === 'yes') acc.yes += 1;
+    else if (r === 'no') acc.no += 1;
+    else if (r === 'pending') acc.pending += 1;
+    else acc.unanswered += 1;
+    return acc;
+  }, { yes: 0, no: 0, pending: 0, unanswered: 0 });
+  const totalRows = mandatorySelections.length + (hasSelection ? 1 : 0);
+
   return (
     <section className="this-week-kpis-section hub-section">
-      <h3>This Week's KPIs</h3>
+      <button
+        type="button"
+        className="hub-section-toggle this-week-kpis-toggle"
+        onClick={toggle}
+        aria-expanded={!collapsed}
+      >
+        <div className="this-week-kpis-toggle__title">
+          <h3>This Week's KPIs</h3>
+          <div className="this-week-kpis-toggle__summary">
+            <span className="kpi-summary-chip kpi-summary-chip--met">{counts.yes} met</span>
+            {counts.pending > 0 && (
+              <span className="kpi-summary-chip kpi-summary-chip--pending">{counts.pending} pending</span>
+            )}
+            {counts.no > 0 && (
+              <span className="kpi-summary-chip kpi-summary-chip--missed">{counts.no} missed</span>
+            )}
+            <span className="kpi-summary-chip kpi-summary-chip--muted">
+              {counts.unanswered} of {totalRows} not yet
+            </span>
+          </div>
+        </div>
+        <span className="hub-section-chevron" aria-hidden="true">
+          {collapsed ? '▸' : '▾'}
+        </span>
+      </button>
 
-      {/* Mandatory KPI list with status dots (HUB-02) + inline +1 counter pill (COUNT-01).
-          Tier 3 v2 Wave 4: each row carries a category TagPill for visual identity.
-          Streak badge removed per partner feedback (2026-05-24 follow-up). */}
-      <ul className="kpi-week-list">
-        {mandatorySelections.map((k) => {
-          // kpi_results is keyed by kpi_templates.id (v2.0 Scorecard write shape) — read by k.template_id
-          const result = thisWeekCard?.kpi_results?.[k.template_id]?.result ?? null;
-          const isCountable = Boolean(k.kpi_templates?.countable);
-          const count = counters?.[k.template_id] ?? 0;
-          const category = k.kpi_templates?.category;
-          return (
-            <li key={k.id} className="kpi-week-row">
-              <span
-                className={`kpi-status-dot ${statusModifierClass(result, thisWeekCard?.week_of)}`}
-                aria-hidden="true"
-              />
-              <span className="kpi-week-label">{k.label_snapshot}</span>
-              {category && <TagPill category={category} size="sm" />}
-              {isCountable && onIncrementCounter && (
-                <div className={`kpi-counter${count > 0 ? ' has-count' : ''}`}>
-                  <span className="kpi-counter-number">{count}</span>
-                  <button
-                    type="button"
-                    className="kpi-counter-btn"
-                    onClick={() => onIncrementCounter(k.template_id)}
-                    aria-label={`Increment ${k.label_snapshot || 'counter'}`}
-                  >+1</button>
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      <div className={`hub-collapsible${collapsed ? '' : ' expanded'}`}>
+        <ul className="kpi-week-list">
+          {mandatorySelections.map((k) => {
+            const result = thisWeekCard?.kpi_results?.[k.template_id]?.result ?? null;
+            const isCountable = Boolean(k.kpi_templates?.countable);
+            const count = counters?.[k.template_id] ?? 0;
+            const category = k.kpi_templates?.category;
+            return (
+              <li key={k.id} className="kpi-week-row">
+                <span
+                  className={`kpi-status-dot ${statusModifierClass(result, thisWeekCard?.week_of)}`}
+                  aria-hidden="true"
+                />
+                <span className="kpi-week-label">{k.label_snapshot}</span>
+                {category && <TagPill category={category} size="sm" />}
+                {isCountable && onIncrementCounter && (
+                  <div className={`kpi-counter${count > 0 ? ' has-count' : ''}`}>
+                    <span className="kpi-counter-number">{count}</span>
+                    <button
+                      type="button"
+                      className="kpi-counter-btn"
+                      onClick={() => onIncrementCounter(k.template_id)}
+                      aria-label={`Increment ${k.label_snapshot || 'counter'}`}
+                    >+1</button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
 
-      {/* Last-week hint (HUB-05) — always visible when a previous selection exists, per D-13 */}
-      {hasPrevious && (
-        <p className="weekly-choice-hint">
-          Last week you picked: {previousSelection.label_snapshot}
-        </p>
-      )}
-
-      {/* Weekly-choice amber card (HUB-03, HUB-04, D-12) + post-commit locked state (D-03) */}
-      <div className="weekly-choice-card">
-        {hasSelection ? (
-          <>
-            <h4>{WEEKLY_KPI_COPY.hubLockedHeadingTemplate(weeklySelection.label_snapshot)}</h4>
-            <span className="weekly-choice-locked-label">{WEEKLY_KPI_COPY.hubLockedLabel}</span>
-            {/* D-03: no Change link; selection locks at confirm per D-01 */}
-          </>
-        ) : (
-          <>
-            <h4>Choose your KPI for this week</h4>
-            <Link to={`/weekly-kpi/${partner}`} className="weekly-choice-cta">
-              Choose this week's KPI
-            </Link>
-          </>
+        {hasPrevious && (
+          <p className="weekly-choice-hint">
+            Last week you picked: {previousSelection.label_snapshot}
+          </p>
         )}
+
+        <div className="weekly-choice-card">
+          {hasSelection ? (
+            <>
+              <h4>{WEEKLY_KPI_COPY.hubLockedHeadingTemplate(weeklySelection.label_snapshot)}</h4>
+              <span className="weekly-choice-locked-label">{WEEKLY_KPI_COPY.hubLockedLabel}</span>
+            </>
+          ) : (
+            <>
+              <h4>Choose your KPI for this week</h4>
+              <Link to={`/weekly-kpi/${partner}`} className="weekly-choice-cta">
+                Choose this week's KPI
+              </Link>
+            </>
+          )}
+        </div>
       </div>
     </section>
   );

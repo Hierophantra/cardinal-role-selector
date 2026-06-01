@@ -17,7 +17,7 @@
 // Reference: Cardinal nervous-system doctrine.
 
 import { useEffect, useState } from 'react';
-import { X as XIcon, RotateCcw, Undo2, Redo2 } from 'lucide-react';
+import { X as XIcon, RotateCcw, Undo2, Redo2, LogOut } from 'lucide-react';
 import { useAdminEditor } from './AdminEditorContext.jsx';
 import {
   getElementSpec,
@@ -32,7 +32,7 @@ import Callout from '../Callout.jsx';
 
 export default function AdminEditorPanel() {
   const {
-    mode, selectedId, deselect,
+    mode, selectedId, deselect, exitMode,
     viewingPartner, saveScope, setSaveScope,
     recordPreSave, undo, redo, canUndo, canRedo,
   } = useAdminEditor();
@@ -185,22 +185,34 @@ export default function AdminEditorPanel() {
       <div className="admin-editor-panel__footer">
         <button
           type="button"
-          className="btn btn-ghost"
-          onClick={handleReset}
+          className="btn btn-ghost admin-editor-panel__exit"
+          onClick={exitMode}
           disabled={saving}
-          title="Drop overrides for this scope and revert to default."
+          title="Close the editor and return to normal navigation."
         >
-          <RotateCcw size={14} strokeWidth={1.75} aria-hidden="true" />
-          <span style={{ marginLeft: 'var(--space-2)' }}>Reset</span>
+          <LogOut size={14} strokeWidth={1.75} aria-hidden="true" />
+          <span style={{ marginLeft: 'var(--space-2)' }}>Exit edit mode</span>
         </button>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={handleSave}
-          disabled={saving}
-        >
-          {saving ? 'Saving…' : 'Save'}
-        </button>
+        <div style={{ display: 'flex', gap: 'var(--space-2)', marginLeft: 'auto' }}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={handleReset}
+            disabled={saving}
+            title="Drop overrides for this scope and revert to default."
+          >
+            <RotateCcw size={14} strokeWidth={1.75} aria-hidden="true" />
+            <span style={{ marginLeft: 'var(--space-2)' }}>Reset</span>
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
       </div>
     </aside>
   );

@@ -55,6 +55,46 @@ const TEXT_SIZE_OPTIONS = [
   { value: 'var(--text-h1)',  label: 'H1 (28px)' },
 ];
 
+// Padding presets for hub-section card chrome.
+const PADDING_OPTIONS = [
+  { value: '12px 16px', label: 'Compact (12 / 16)' },
+  { value: '16px 20px', label: 'Snug (16 / 20)' },
+  { value: '20px 24px', label: 'Comfortable (20 / 24) - default' },
+  { value: '24px 28px', label: 'Roomy (24 / 28)' },
+  { value: '28px 36px', label: 'Spacious (28 / 36)' },
+];
+
+// Shared full chrome control list for the four hub inner sections — keeps the
+// editor panel identical across hub-week-plan, hub-this-week-kpis,
+// hub-personal-growth, and hub-business-priorities so admin gets the same
+// affordances on every section.
+const HUB_SECTION_CONTROLS = [
+  { key: 'visible', label: 'Visible', type: 'toggle' },
+  { key: 'background', label: 'Background', type: 'color' },
+  { key: 'radius', label: 'Corner radius', type: 'select', options: [
+    { value: 'var(--radius-sm)',  label: 'Small (8px)' },
+    { value: 'var(--radius-md)',  label: 'Medium (10px)' },
+    { value: 'var(--radius-lg)',  label: 'Large (14px) - default' },
+    { value: 'var(--radius-xl)',  label: 'XL (20px)' },
+    { value: 'var(--radius-2xl)', label: '2XL (28px)' },
+  ]},
+  { key: 'padding', label: 'Inner padding', type: 'select', options: PADDING_OPTIONS },
+  { key: 'borderWidth', label: 'Border thickness', type: 'range', min: 0, max: 3, step: 1, unit: 'px' },
+  { key: 'borderColor', label: 'Border color', type: 'color' },
+  { key: 'headingColor', label: 'Heading color', type: 'color' },
+  { key: 'headingSize', label: 'Heading size', type: 'select', options: TEXT_SIZE_OPTIONS },
+];
+const HUB_SECTION_DEFAULTS = {
+  visible: true,
+  background: 'var(--surface)',
+  radius: 'var(--radius-lg)',
+  padding: '20px 24px',
+  borderWidth: 1,
+  borderColor: 'var(--border-subtle)',
+  headingColor: 'var(--text)',
+  headingSize: 'var(--text-h3)',
+};
+
 export const ELEMENT_REGISTRY = {
   // ============================================================
   // GLOBAL ELEMENTS (apply across the app for all viewers)
@@ -414,53 +454,26 @@ export const ELEMENT_REGISTRY = {
   // ============================================================
   'hub-personal-growth': {
     label: 'Personal Growth section (Hub)',
-    description: 'The Personal Growth card on the partner hub.',
+    description: 'The Personal Growth card on the partner hub. Background, padding, border, and heading all tunable.',
     scope: 'partner-aware',
-    defaults: { visible: true, background: 'var(--surface)', radius: 'var(--radius-lg)' },
-    controls: [
-      { key: 'visible', label: 'Visible', type: 'toggle' },
-      { key: 'background', label: 'Background', type: 'color' },
-      { key: 'radius', label: 'Corner radius', type: 'select', options: [
-        { value: 'var(--radius-sm)', label: 'Small' },
-        { value: 'var(--radius-md)', label: 'Medium' },
-        { value: 'var(--radius-lg)', label: 'Large (default)' },
-        { value: 'var(--radius-xl)', label: 'XL' },
-      ]},
-    ],
+    defaults: { ...HUB_SECTION_DEFAULTS },
+    controls: HUB_SECTION_CONTROLS,
   },
 
   'hub-business-priorities': {
     label: 'Business Priorities section (Hub)',
-    description: 'The Business Priorities card on the partner hub.',
+    description: 'The Business Priorities card on the partner hub. Background, padding, border, and heading all tunable.',
     scope: 'partner-aware',
-    defaults: { visible: true, background: 'var(--surface)', radius: 'var(--radius-lg)' },
-    controls: [
-      { key: 'visible', label: 'Visible', type: 'toggle' },
-      { key: 'background', label: 'Background', type: 'color' },
-      { key: 'radius', label: 'Corner radius', type: 'select', options: [
-        { value: 'var(--radius-sm)', label: 'Small' },
-        { value: 'var(--radius-md)', label: 'Medium' },
-        { value: 'var(--radius-lg)', label: 'Large (default)' },
-        { value: 'var(--radius-xl)', label: 'XL' },
-      ]},
-    ],
+    defaults: { ...HUB_SECTION_DEFAULTS },
+    controls: HUB_SECTION_CONTROLS,
   },
 
   'hub-this-week-kpis': {
     label: "This Week's KPIs section (Hub)",
-    description: "The KPI list card on the partner hub.",
+    description: "The KPI list card on the partner hub. Background, padding, border, and heading all tunable.",
     scope: 'partner-aware',
-    defaults: { visible: true, background: 'var(--surface)', radius: 'var(--radius-lg)' },
-    controls: [
-      { key: 'visible', label: 'Visible', type: 'toggle' },
-      { key: 'background', label: 'Background', type: 'color' },
-      { key: 'radius', label: 'Corner radius', type: 'select', options: [
-        { value: 'var(--radius-sm)', label: 'Small' },
-        { value: 'var(--radius-md)', label: 'Medium' },
-        { value: 'var(--radius-lg)', label: 'Large (default)' },
-        { value: 'var(--radius-xl)', label: 'XL' },
-      ]},
-    ],
+    defaults: { ...HUB_SECTION_DEFAULTS },
+    controls: HUB_SECTION_CONTROLS,
   },
 
   // ============================================================
@@ -487,19 +500,10 @@ export const ELEMENT_REGISTRY = {
 
   'hub-week-plan': {
     label: 'Week Plan card (Hub)',
-    description: 'The week plan / objectives card at the top of the partner hub dashboard.',
+    description: 'The week plan / objectives card at the top of the partner hub dashboard. Background, padding, border, and heading all tunable.',
     scope: 'partner-aware',
-    defaults: { visible: true, background: 'var(--surface)', radius: 'var(--radius-lg)' },
-    controls: [
-      { key: 'visible', label: 'Visible', type: 'toggle' },
-      { key: 'background', label: 'Background', type: 'color' },
-      { key: 'radius', label: 'Corner radius', type: 'select', options: [
-        { value: 'var(--radius-sm)', label: 'Small' },
-        { value: 'var(--radius-md)', label: 'Medium' },
-        { value: 'var(--radius-lg)', label: 'Large (default)' },
-        { value: 'var(--radius-xl)', label: 'XL' },
-      ]},
-    ],
+    defaults: { ...HUB_SECTION_DEFAULTS },
+    controls: HUB_SECTION_CONTROLS,
   },
 };
 

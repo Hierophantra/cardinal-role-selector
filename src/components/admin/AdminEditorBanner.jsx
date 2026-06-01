@@ -25,17 +25,16 @@ export default function AdminEditorBanner() {
   return (
     <div className="admin-editor-banner" role="status" aria-live="polite" data-no-edit>
       <div className="admin-editor-banner__inner">
-        <Pencil size={14} strokeWidth={2} aria-hidden="true" />
+        <Pencil size={12} strokeWidth={2} aria-hidden="true" />
         <span>
-          <strong>Edit mode.</strong> You're editing <strong>{scopeLabel(viewingPartner)}</strong>.
-          Click any element to adjust its settings. Press <kbd>Esc</kbd> to exit.
+          <strong>Edit mode</strong> — {scopeLabel(viewingPartner)}
         </span>
         <button
           type="button"
           className="admin-editor-banner__exit"
           onClick={exitMode}
         >
-          Exit edit mode
+          Exit
         </button>
       </div>
     </div>

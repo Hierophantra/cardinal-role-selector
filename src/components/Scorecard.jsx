@@ -9,7 +9,7 @@ import {
   fetchGrowthPriorities,
   upsertScorecard,
 } from '../lib/supabase.js';
-import { getMondayOf, isWeekClosed, formatWeekRange, effectiveResult } from '../lib/week.js';
+import { getMondayOf, isWeekClosed, formatWeekRange, effectiveResult, getFridayAutoSubmitOf, isAfterFridayAutoSubmit } from '../lib/week.js';
 import {
   VALID_PARTNERS,
   PARTNER_DISPLAY,
@@ -543,6 +543,9 @@ export default function Scorecard() {
   const [submitError, setSubmitError] = useState(null);
   // UAT C5: confirmation modal before persistDraft+submit fires.
   const [confirmingSubmit, setConfirmingSubmit] = useState(false);
+  // 2026-06-01 — tracks the real DB submitted_at timestamp so we can
+  // distinguish manual vs Friday-9-AM-auto submit in the UI.
+  const [manualSubmittedAt, setManualSubmittedAt] = useState(null);
   // UAT C6: completion message picked once on submit success and held in
   // state so the post-submit view shows a stable string until the partner
   // navigates away (re-pick on next mount only).
@@ -575,6 +578,11 @@ export default function Scorecard() {
   // ---- Derived values (before early returns) ----
 
   const weekClosed = useMemo(() => isWeekClosed(currentWeekOf), [currentWeekOf]);
+  // 2026-06-01 — auto-submit at Friday 09:00. After that time, the scorecard
+  // is treated as effectively submitted for display, but edits keep flowing
+  // until Saturday 23:59 (weekClosed). Edits after this line are flagged.
+  const fridayAutoTime = useMemo(() => getFridayAutoSubmitOf(currentWeekOf), [currentWeekOf]);
+  const isPastFriday = useMemo(() => isAfterFridayAutoSubmit(currentWeekOf), [currentWeekOf]);
 
   // Tier 2 (post-Phase-19): counterpart-view mode. When sessionRole is one
   // partner but the URL :partner is the other, we're a partner viewing their
@@ -743,6 +751,7 @@ export default function Scorecard() {
 
         if (thisWeekRow?.submitted_at) {
           setView('submitted');
+          setManualSubmittedAt(thisWeekRow.submitted_at);
           setCommittedAt(thisWeekRow.committed_at ?? thisWeekRow.submitted_at);
           setTasksCompleted(thisWeekRow.tasks_completed ?? '');
           setTasksCarriedOver(thisWeekRow.tasks_carried_over ?? '');
@@ -1037,97 +1046,30 @@ export default function Scorecard() {
     persistDraft(kpiResults);
   }
 
-  // UAT C5: validate + open confirmation modal. The actual persist happens in
-  // performSubmit (called from the confirm modal's primary CTA). This split
-  // keeps validation errors visible without blocking the modal flow on success.
+  // 2026-06-01 spec change (partner feedback): the "information still needed"
+  // gate is gone — partners can submit anytime and continue editing until
+  // Saturday 23:59 (cards also auto-submit at Friday 09:00). handleSubmit
+  // performs only the bare-minimum defensive checks before opening the
+  // confirmation modal, which surfaces an INFORMATIONAL "X items still blank"
+  // hint instead of blocking. The confirm modal's primary CTA calls
+  // performSubmit to persist.
   function handleSubmit() {
     if (submitting) return;
-    // WR-02: Force-blur the active element so any pending textarea onBlur
-    // (which calls persistField → persistDraft) commits before we read
-    // weeklyWin / weeklyLearning / tasks_* from React closure for the
-    // submit payload. On mobile, tapping the Submit button does NOT fire
-    // a blur on the previously-focused field, so without this we would
-    // submit stale free-text values.
+    // WR-02: Force-blur so any pending textarea onBlur commits before
+    // reading state for the submit payload.
     if (typeof document !== 'undefined' && document.activeElement && typeof document.activeElement.blur === 'function') {
       document.activeElement.blur();
     }
-    // WR-04: Clear stale draft-save errors at the start of submit so an
-    // earlier persistDraft failure that the user has since recovered from
-    // doesn't reappear when admin reopens the week.
     setSubmitError(null);
     setSaveError(null);
-    // Phase 19 follow-up: REFINE-15 week-rating gate REMOVED. Partners
-    // shouldn't be required to rate the overall week mid-week; the rating
-    // is still captured and auto-saved, just no longer a submit blocker.
-    // Defensive: rows must exist before submit. Array.some() on [] returns
-    // false, so without this guard an empty-rows state would pass the
-    // incomplete check and write a submitted row with kpi_results={}.
+    // Defensive: rows must exist (template fetch must have resolved).
     if (rows.length === 0) {
       setSubmitError(SCORECARD_COPY.submitErrorIncomplete);
       return;
     }
-    const incomplete = rows.some((tpl) => {
-      const r = kpiResults[tpl.id]?.result;
-      return r !== 'yes' && r !== 'no' && r !== 'pending';
-    });
-    if (incomplete) {
-      setSubmitError(SCORECARD_COPY.submitErrorIncomplete);
-      return;
-    }
-    // Phase 17 D-06 / KPI-02: every Pending row needs a non-empty 'what + by when' commitment.
-    const pendingMissingText = rows.some((tpl) => {
-      const entry = kpiResults[tpl.id];
-      if (entry?.result !== 'pending') return false;
-      return (entry.pending_text ?? '').trim().length === 0;
-    });
-    if (pendingMissingText) {
-      setSubmitError(SCORECARD_COPY.submitErrorPendingTextRequired);
-      return;
-    }
-    // Mandatory reflection on every row (UAT 2026-05-04). Per-KPI prompts demand
-    // evidence; submit blocks if any row's reflection is empty/whitespace-only.
-    // Fires only at handleSubmit time — persistDraft / persistField auto-save
-    // paths remain unguarded so partial drafts (and post-submit Saturday-close
-    // edits) continue to save without re-validation.
-    const reflectionMissing = rows.some((tpl) => {
-      const entry = kpiResults[tpl.id];
-      return !(entry?.reflection ?? '').trim();
-    });
-    if (reflectionMissing) {
-      setSubmitError(SCORECARD_COPY.submitErrorReflectionRequired);
-      return;
-    }
-    // UAT 2026-05-04 (later same day): growth consideration is REQUIRED.
-    // If the partner has no GROWTH_FOLLOWUP_FIELDS defined for them (e.g.,
-    // 'test'), skip this check. Otherwise every defined field needs non-empty
-    // trim text — partners with nothing yet write that explicitly.
-    // Auto-save / persistField paths remain unguarded (matches reflection).
-    const fields = GROWTH_FOLLOWUP_FIELDS[partner] ?? [];
-    if (fields.length > 0) {
-      const growthMissing = fields.some((f) => !(growthFollowup?.[f.key] ?? '').trim());
-      if (growthMissing) {
-        setSubmitError(SCORECARD_COPY.submitErrorGrowthRequired);
-        return;
-      }
-    }
-    // Wave 1 (migration 020): structured fields submit gate. Each KPI with
-    // key_fields !== null must have its structured fields populated per the
-    // schema's required rules. If count is 0, the partner must still populate
-    // the existing reflection textarea (variance text mandatory when count=0
-    // even though normally optional). Templates with key_fields=NULL skip
-    // this entirely — they keep the existing reflection-only path.
-    const structuredFieldsMissing = rows.some((tpl) => {
-      if (!tpl.key_fields) return false;
-      const sd = kpiResults[tpl.id]?.structured_data ?? {};
-      const reflection = kpiResults[tpl.id]?.reflection ?? '';
-      return validateStructuredFields(tpl.key_fields, sd, reflection);
-    });
-    if (structuredFieldsMissing) {
-      setSubmitError(SCORECARD_COPY.submitErrorStructuredRequired);
-      return;
-    }
-    // Validation passed -- open the confirmation modal. The user must click
-    // Confirm to actually persist (UAT C5).
+    // No further gating — partner has been told the rules in the sticky note
+    // ("Submit anytime — edits stay open until Saturday at 11:59 PM"). The
+    // modal asks them to verify and surfaces the missing-count.
     setConfirmingSubmit(true);
   }
 
@@ -1156,6 +1098,7 @@ export default function Scorecard() {
         growth_followup: growthFollowup ?? {},
       });
       setView('submitted');
+      setManualSubmittedAt(nowIso);
       // UAT C6: pick a completion message at random for the post-submit state.
       // Stable for this view -- the partner only sees one variant per submission.
       const messages = SCORECARD_COPY.completionMessages ?? [];
@@ -1365,7 +1308,24 @@ export default function Scorecard() {
     const entry = kpiResults[tpl.id];
     return acc + (isRowAnswered(tpl, entry) ? 1 : 0);
   }, 0);
-  const isSubmitted = view === 'submitted';
+  // 2026-06-01 — isSubmitted folds in the Friday-09:00 auto-submit. After
+  // that time, the scorecard is treated as submitted in the UI even if the
+  // partner never tapped Submit. Edits continue until Saturday 23:59 but
+  // anything written after fridayAutoTime gets a "Updated after Friday"
+  // flag for Trace.
+  const isAutoSubmitted = !manualSubmittedAt && isPastFriday;
+  const isSubmitted = view === 'submitted' || isAutoSubmitted;
+  // Detect late edits: any kpi_result whose updated_at is after Friday 09:00.
+  const lateEditCount = useMemo(() => {
+    if (!isPastFriday) return 0;
+    let n = 0;
+    for (const id in kpiResults) {
+      const u = kpiResults[id]?.updated_at;
+      if (u && new Date(u) > fridayAutoTime) n += 1;
+    }
+    return n;
+  }, [isPastFriday, kpiResults, fridayAutoTime]);
+  const hasLateEdits = lateEditCount > 0;
 
   // ---- Render ----
   // Tier 3 v2 Wave 5: scorecard-with-rail layout. Desktop (>= 901px) renders
@@ -1423,15 +1383,15 @@ export default function Scorecard() {
             {isSubmitted && (
               <div className="scorecard-commit-gate" style={{ marginBottom: 16 }}>
                 <p className="muted" style={{ margin: 0 }}>
-                  {/* UAT C6: rotated completion message picked once on submit;
-                      falls back to the canonical submittedNotice on remount. */}
-                  {completionMessage ?? SCORECARD_COPY.submittedNotice}
-                  {committedAt && (
+                  {isAutoSubmitted
+                    ? SCORECARD_COPY.autoSubmittedNotice
+                    : (completionMessage ?? SCORECARD_COPY.submittedNotice)}
+                  {manualSubmittedAt && (
                     <>
                       {' '}
                       <span style={{ opacity: 0.85 }}>
                         {SCORECARD_COPY.submittedOnPrefix}
-                        {new Date(committedAt).toLocaleString(undefined, {
+                        {new Date(manualSubmittedAt).toLocaleString(undefined, {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',
@@ -1442,10 +1402,25 @@ export default function Scorecard() {
                     </>
                   )}
                 </p>
+                {hasLateEdits && (
+                  <p
+                    className="muted"
+                    style={{
+                      margin: '6px 0 0',
+                      fontSize: 12,
+                      color: 'var(--gold, #f4c44d)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {SCORECARD_COPY.updatedAfterFridayBadge} · {lateEditCount} {lateEditCount === 1 ? 'change' : 'changes'}
+                  </p>
+                )}
                 <p className="muted" style={{ margin: '6px 0 0', fontSize: 12, fontStyle: 'italic' }}>
                   {weekClosed
                     ? SCORECARD_COPY.weekClosedBanner(formatWeekRange(currentWeekOf))
-                    : SCORECARD_COPY.editableUntilSaturday}
+                    : (isAutoSubmitted
+                        ? SCORECARD_COPY.updatedAfterFridayHint
+                        : SCORECARD_COPY.editableUntilSaturday)}
                 </p>
               </div>
             )}
@@ -1672,6 +1647,33 @@ export default function Scorecard() {
                       )}
                     </div>
 
+                    {/* 2026-06-01 \u2014 when the partner had typed a Pending follow-through
+                        note and then flipped the result to Yes/No, the text stays in
+                        state (and persists if you switch back to Pending). Show a
+                        muted preview so they can SEE it's preserved rather than fearing
+                        it was wiped. */}
+                    {showEditablePicker
+                      && entry.result !== 'pending'
+                      && (entry.pending_text ?? '').trim() !== '' && (
+                        <div
+                          style={{
+                            marginTop: 8,
+                            padding: '8px 10px',
+                            background: 'rgba(255,196,77,0.06)',
+                            border: '1px dashed rgba(255,196,77,0.32)',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            color: 'var(--muted)',
+                          }}
+                        >
+                          <strong style={{ color: 'var(--gold, #f4c44d)' }}>Pending note kept:</strong>{' '}
+                          {entry.pending_text}
+                          <div style={{ marginTop: 4, fontStyle: 'italic', opacity: 0.8 }}>
+                            Switching back to Pending will restore the text in the editor.
+                          </div>
+                        </div>
+                      )}
+
                     {tpl.countable && (
                       <div className="scorecard-count-field" style={{ marginTop: 12 }}>
                         <label className="scorecard-reflection-label">{SCORECARD_COPY.countLabel}</label>
@@ -1885,52 +1887,14 @@ export default function Scorecard() {
             {saveError && (
               <p className="muted" style={{ color: 'var(--red)', textAlign: 'center', marginTop: 8 }}>{saveError}</p>
             )}
-            {/* Phase 19 D-04: inline submit checklist. Replaces the prior
-                single-line submitError paragraph when validation gaps exist.
-                Falls back to the legacy submitError <p> only when no gaps
-                are detected (e.g., generic submitErrorDb after a network
-                failure inside performSubmit). */}
-            {!weekClosed && !isSubmitted && !counterpartView ? (() => {
-              const gaps = getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner, weeklyLearning);
-              if (gaps.length === 0) {
-                return submitError ? (
-                  <p className="muted" style={{ color: 'var(--miss)', textAlign: 'center', marginTop: 8 }}>
-                    {submitError}
-                  </p>
-                ) : null;
-              }
-              return (
-                <div className="scorecard-submit-checklist" id="scorecard-submit-checklist" aria-live="polite">
-                  <p className="scorecard-submit-checklist-eyebrow">
-                    {SCORECARD_COPY.submitChecklistEyebrow}
-                  </p>
-                  <ul>
-                    {gaps.map((gap) => (
-                      <li key={gap.anchor}>
-                        <button
-                          type="button"
-                          className="scorecard-submit-checklist-item"
-                          onClick={() => {
-                            const el = document.getElementById(gap.anchor);
-                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          }}
-                        >
-                          {gap.label}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="scorecard-submit-checklist-reassurance">
-                    {SCORECARD_COPY.submitChecklistReassurance}
-                  </p>
-                </div>
-              );
-            })() : (
-              submitError && (
-                <p className="muted" style={{ color: 'var(--miss)', textAlign: 'center', marginTop: 8 }}>
-                  {submitError}
-                </p>
-              )
+            {/* 2026-06-01: blocking "Information still needed" checklist removed
+                per partner feedback. Gaps now surface inside the submit
+                confirmation modal as an informational hint, not as a gate.
+                Only DB / catastrophic submitError is rendered inline. */}
+            {submitError && (
+              <p className="muted" style={{ color: 'var(--miss)', textAlign: 'center', marginTop: 8 }}>
+                {submitError}
+              </p>
             )}
 
             {renderHistory()}
@@ -1938,110 +1902,104 @@ export default function Scorecard() {
         </AnimatePresence>
       </div>
 
-      {/* UAT 2026-04-27 (extended D-16): sticky submit bar shows ONLY in pre-submit
-          editing mode while the week is open. Once submitted, all fields stay editable
-          but auto-save handles every change silently — no "Resubmit" CTA so the partner
-          isn't tempted into thinking the auto-saved edits aren't already persisted.
-          After Saturday close the bar disappears regardless of submit state. */}
-      {!weekClosed && !isSubmitted && !counterpartView && (() => {
-        // Phase 19 D-04: derive gaps once for the sticky-bar disabled binding.
-        // Note: computed here AND in the inline checklist render above (single-
-        // page form; render cost is negligible). If hot-path optimization is
-        // needed later, lift gaps to a useMemo keyed on
-        // (rows, kpiResults, weekRating, growthFollowup, partner).
+      {/* Sticky submit bar — visible during the editing window. Submit is
+          never disabled by missing-field gates anymore (2026-06-01 change):
+          partner can submit anytime, then continue editing until Saturday
+          23:59 if they want. Cards also auto-submit at Friday 09:00. */}
+      {!weekClosed && !isSubmitted && !counterpartView && (
+        <div className="scorecard-sticky-bar">
+          <span className="muted" style={{ fontSize: 12, fontStyle: 'italic' }}>
+            {SCORECARD_COPY.stickyNote}
+          </span>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
+            {SCORECARD_COPY.submitCta}
+          </button>
+        </div>
+      )}
+
+      {/* Submit confirmation overlay — primary CTA persists. Gaps are surfaced
+          as an INFORMATIONAL hint (not a gate). Partner can submit anyway and
+          edit until Saturday 23:59. */}
+      {confirmingSubmit && (() => {
         const gaps = getValidationGaps(rows, kpiResults, weekRating, growthFollowup, partner, weeklyLearning);
         return (
-          <div className="scorecard-sticky-bar">
-            <span className="muted" style={{ fontSize: 12, fontStyle: 'italic' }}>
-              {SCORECARD_COPY.stickyNote}
-            </span>
-            {/* Phase 19 follow-up: inline blocked-reason pill next to the
-                disabled Submit. Clicking it scrolls the checklist into view so
-                partners aren't left guessing why the button is grayed out. */}
-            {gaps.length > 0 && (
-              <button
-                type="button"
-                className="scorecard-sticky-bar__blocked"
-                onClick={() => {
-                  const el = document.getElementById('scorecard-submit-checklist');
-                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }}
-                title="Click to jump to the checklist"
-              >
-                {SCORECARD_COPY.submitChecklistBadge(gaps.length)}
-              </button>
-            )}
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={handleSubmit}
-              disabled={submitting || gaps.length > 0}
-              title={gaps.length > 0 ? SCORECARD_COPY.submitChecklistEyebrow : undefined}
+          <div
+            className="scorecard-submit-confirm-overlay"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.55)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 24,
+              zIndex: 1000,
+            }}
+            onClick={cancelSubmitConfirm}
+          >
+            <div
+              className="scorecard-submit-confirm-card"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                maxWidth: 520,
+                width: '100%',
+                padding: '24px 24px 20px',
+                borderRadius: 14,
+                background: 'var(--card, #1a1a1a)',
+                border: '1px solid var(--border, rgba(255,255,255,0.12))',
+              }}
             >
-              {SCORECARD_COPY.submitCta}
-            </button>
+              <div className="eyebrow" style={{ marginBottom: 8 }}>
+                {SCORECARD_COPY.submitConfirmEyebrow}
+              </div>
+              <h3 style={{ margin: '0 0 12px', fontSize: 20, lineHeight: 1.3 }}>
+                {SCORECARD_COPY.submitConfirmHeading}
+              </h3>
+              <p className="muted" style={{ margin: 0, lineHeight: 1.55 }}>
+                {SCORECARD_COPY.submitConfirmBody}
+              </p>
+              {gaps.length > 0 && (
+                <div
+                  style={{
+                    marginTop: 16,
+                    padding: '12px 14px',
+                    borderRadius: 10,
+                    background: 'rgba(255,196,77,0.08)',
+                    border: '1px solid rgba(255,196,77,0.32)',
+                  }}
+                >
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--gold, #f4c44d)' }}>
+                    {SCORECARD_COPY.submitConfirmGapsHint(gaps.length)}
+                  </p>
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={cancelSubmitConfirm}
+                  disabled={submitting}
+                >
+                  {SCORECARD_COPY.submitConfirmCancelCta}
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={performSubmit}
+                  disabled={submitting}
+                >
+                  {submitting ? SCORECARD_COPY.submitConfirmSubmittingCta : SCORECARD_COPY.submitConfirmCta}
+                </button>
+              </div>
+            </div>
           </div>
         );
       })()}
-
-      {/* UAT C5: submit confirmation overlay — rendered above the sticky bar. */}
-      {confirmingSubmit && (
-        <div
-          className="scorecard-submit-confirm-overlay"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.55)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 24,
-            zIndex: 1000,
-          }}
-          onClick={cancelSubmitConfirm}
-        >
-          <div
-            className="scorecard-submit-confirm-card"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: 480,
-              width: '100%',
-              padding: '24px 24px 20px',
-              borderRadius: 14,
-              background: 'var(--card, #1a1a1a)',
-              border: '1px solid var(--border, rgba(255,255,255,0.12))',
-            }}
-          >
-            <div className="eyebrow" style={{ marginBottom: 8 }}>
-              {SCORECARD_COPY.submitConfirmEyebrow}
-            </div>
-            <h3 style={{ margin: '0 0 12px', fontSize: 20, lineHeight: 1.3 }}>
-              {SCORECARD_COPY.submitConfirmHeading}
-            </h3>
-            <p className="muted" style={{ margin: 0, lineHeight: 1.55 }}>
-              {SCORECARD_COPY.submitConfirmBody}
-            </p>
-            <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={cancelSubmitConfirm}
-                disabled={submitting}
-              >
-                {SCORECARD_COPY.submitConfirmCancelCta}
-              </button>
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={performSubmit}
-                disabled={submitting}
-              >
-                {submitting ? SCORECARD_COPY.submitConfirmSubmittingCta : SCORECARD_COPY.submitConfirmCta}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
