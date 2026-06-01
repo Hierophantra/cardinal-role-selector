@@ -34,6 +34,7 @@ import {
 } from '../../data/content.js';
 import StructuredFieldsReadOnly from '../StructuredFieldsReadOnly.jsx';
 import { STOP_TRANSITION } from '../../lib/motion.js';
+import NowClock from '../NowClock.jsx';
 
 // Stop arrays are now imported from content.js (FRIDAY_STOPS, MONDAY_STOPS).
 // The active stop array is derived from meeting.meeting_type inside the component.
@@ -623,9 +624,10 @@ export default function AdminMeetingSession() {
         </div>
         <div
           className="muted"
-          style={{ fontSize: 14, fontWeight: 600, letterSpacing: '0.02em' }}
+          style={{ fontSize: 14, fontWeight: 600, letterSpacing: '0.02em', display: 'inline-flex', alignItems: 'center', gap: 'var(--space-3)' }}
         >
-          {weekLabel}
+          <span>{weekLabel}</span>
+          <NowClock variant="meeting" />
         </div>
         <button
           type="button"

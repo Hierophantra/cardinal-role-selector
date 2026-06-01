@@ -9,24 +9,26 @@ import {
   createGrowthPriorityTemplate,
   updateGrowthPriorityTemplate,
   deleteGrowthPriorityTemplate,
-  fetchKpiSelections,
-  fetchGrowthPriorities,
-  adminSwapKpiTemplate,
-  adminEditKpiLabel,
-  unlockPartnerSelections,
   cascadeTemplateLabelSnapshot,
   fetchAdminSetting,
   upsertAdminSetting,
+  saveKpiDraft,
+  publishKpiDraft,
+  discardKpiDraft,
+  resetKpiBaselineAction,
+  fetchKpiTemplateHistory,
 } from '../../lib/supabase.js';
-import { ADMIN_KPI_COPY, PARTNER_DISPLAY, CATEGORY_LABELS } from '../../data/content.js';
-import KeyFieldsEditor, { suggestBaselineAction, validateKeyFields } from './KeyFieldsEditor.jsx';
+import { ADMIN_KPI_COPY, CATEGORY_LABELS } from '../../data/content.js';
+// 2026-05-24: dropped suggestBaselineAction usage — the "Suggested from
+// structured fields" UI was confusing partners and admin per direct feedback.
+import KeyFieldsEditor, { validateKeyFields } from './KeyFieldsEditor.jsx';
 import PageHeader from '../PageHeader.jsx';
 import TagPill from '../TagPill.jsx';
 import Callout from '../Callout.jsx';
+import { History as HistoryIcon, RotateCcw } from 'lucide-react';
 
 const KPI_CATEGORIES = ['sales', 'ops', 'client', 'team', 'finance'];
 const GROWTH_TYPES = ['personal', 'business'];
-const MANAGED = ['theo', 'jerry'];
 const ARM_DISARM_MS = 3000;
 const SCOPE_DISPLAY = { shared: 'Shared', theo: 'Theo', jerry: 'Jerry', both: 'Both' };
 const PARTNER_SCOPE_OPTIONS = ['shared', 'both', 'theo', 'jerry'];
@@ -51,7 +53,10 @@ export default function AdminKpi() {
 
           <KpiTemplateLibrary />
           <GrowthTemplateLibrary />
-          <PartnerSelectionsEditor />
+          {/* 2026-05-24: PartnerSelectionsEditor removed. The legacy per-partner
+              KPI assignment surface was vestigial — the mandatory flag + weekly
+              choice composition (see Scorecard.jsx Pattern 5) drives what
+              partners see now. Removed per user "old KPI systems" cleanup. */}
         </div>
       </div>
     </div>
@@ -178,17 +183,20 @@ function KpiTemplateLibrary() {
 
   function beginEdit(t) {
     setEditingId(t.id);
+    // 2026-05-24: when a pending draft exists, hydrate the editor from the
+    // draft (so admin picks up where they left off). Live state is untouched
+    // by partners until "Publish" is clicked.
+    const pending = t.pending_changes || {};
     setEditDraft({
-      label: t.label ?? '',
-      category: t.category ?? KPI_CATEGORIES[0],
-      description: t.description ?? '',
-      measure: t.measure ?? '',
-      baseline_action: t.baseline_action ?? '',
-      partner_scope: t.partner_scope ?? 'shared',
-      mandatory: t.mandatory ?? false,
-      countable: t.countable ?? false,
-      reflection_prompt: t.reflection_prompt ?? '',
-      key_fields: t.key_fields ?? null,
+      label: pending.label ?? t.label ?? '',
+      category: pending.category ?? t.category ?? KPI_CATEGORIES[0],
+      description: pending.description ?? t.description ?? '',
+      baseline_action: pending.baseline_action ?? t.baseline_action ?? '',
+      partner_scope: pending.partner_scope ?? t.partner_scope ?? 'shared',
+      mandatory: pending.mandatory ?? t.mandatory ?? false,
+      countable: pending.countable ?? t.countable ?? false,
+      reflection_prompt: pending.reflection_prompt ?? t.reflection_prompt ?? '',
+      key_fields: pending.key_fields ?? t.key_fields ?? null,
     });
     setError('');
   }
@@ -221,32 +229,37 @@ function KpiTemplateLibrary() {
     return null;
   }
 
-  async function handleSave() {
+  // 2026-05-24: handleSave split into Save-Draft + Publish so admin can
+  // stage changes without partners seeing them. New templates go live
+  // immediately (no draft state for a row that doesn't exist yet).
+
+  function buildPayload(draft) {
+    // measure removed 2026-05-24 — column doesn't exist on kpi_templates.
+    return {
+      label: draft.label.trim(),
+      category: draft.category,
+      description: draft.description?.trim() || null,
+      baseline_action: draft.baseline_action?.trim() || null,
+      partner_scope: draft.partner_scope,
+      mandatory: !!draft.mandatory,
+      countable: !!draft.countable,
+      reflection_prompt: draft.reflection_prompt?.trim() || null,
+      key_fields: draft.key_fields,
+    };
+  }
+
+  async function handlePublish() {
     const err = validate(editDraft);
-    if (err) {
-      setError(err);
-      return;
-    }
+    if (err) { setError(err); return; }
     setSaving(true);
     setError('');
     try {
-      const payload = {
-        label: editDraft.label.trim(),
-        category: editDraft.category,
-        description: editDraft.description?.trim() || null,
-        measure: editDraft.measure?.trim() || null,
-        baseline_action: editDraft.baseline_action?.trim() || null,
-        partner_scope: editDraft.partner_scope,
-        mandatory: !!editDraft.mandatory,
-        countable: !!editDraft.countable,
-        reflection_prompt: editDraft.reflection_prompt?.trim() || null,
-        key_fields: editDraft.key_fields,
-      };
+      const payload = buildPayload(editDraft);
       if (editingId === 'new') {
-        await createKpiTemplate(payload);
+        await createKpiTemplate(payload, 'admin');
       } else {
-        await updateKpiTemplate(editingId, payload);
-        // Cascade label_snapshot to kpi_selections (D-05)
+        // Apply directly to main columns + clear any pending_changes.
+        await publishKpiDraft(editingId, 'admin', payload);
         try {
           await cascadeTemplateLabelSnapshot(editingId, payload.label);
         } catch (cascadeErr) {
@@ -255,19 +268,73 @@ function KpiTemplateLibrary() {
           await loadTemplates();
           cancelEdit();
           setSaving(false);
-          return; // Template saved but cascade failed — show specific error, don't show success flash
+          return;
         }
       }
       await loadTemplates();
       cancelEdit();
-      showFlash(ADMIN_KPI_COPY.savedFlash);
+      showFlash('Published — partners see this now.');
     } catch (err2) {
       console.error(err2);
-      // Surface the actual Supabase / Postgres error inline so the admin
-      // can act on it (e.g. "null value in column X violates not-null
-      // constraint") instead of the generic "Couldn't save" catch-all.
       const detail = err2?.message || err2?.hint || err2?.details || '';
       setError(detail ? `${ADMIN_KPI_COPY.errors.saveFail} — ${detail}` : ADMIN_KPI_COPY.errors.saveFail);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSaveDraft() {
+    const err = validate(editDraft);
+    if (err) { setError(err); return; }
+    if (editingId === 'new') {
+      // No row yet to draft against — treat as immediate publish.
+      return handlePublish();
+    }
+    setSaving(true);
+    setError('');
+    try {
+      await saveKpiDraft(editingId, buildPayload(editDraft), 'admin');
+      await loadTemplates();
+      cancelEdit();
+      showFlash('Draft saved — not yet visible to partners.');
+    } catch (err2) {
+      console.error(err2);
+      const detail = err2?.message || err2?.hint || err2?.details || '';
+      setError(detail ? `Couldn't save draft — ${detail}` : 'Couldn\'t save draft.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDiscardDraft(templateId) {
+    if (!templateId || templateId === 'new') return;
+    setSaving(true);
+    setError('');
+    try {
+      await discardKpiDraft(templateId, 'admin');
+      await loadTemplates();
+      cancelEdit();
+      showFlash('Draft discarded.');
+    } catch (err2) {
+      console.error(err2);
+      setError(err2?.message || 'Could not discard draft.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleResetBaseline() {
+    if (!editingId || editingId === 'new') return;
+    setSaving(true);
+    setError('');
+    try {
+      const updated = await resetKpiBaselineAction(editingId, 'admin');
+      // Update the editor's in-memory draft so the textarea reflects the reset.
+      setEditDraft((prev) => ({ ...prev, baseline_action: updated.baseline_action }));
+      showFlash('Reset to default.');
+    } catch (err2) {
+      console.error(err2);
+      setError(err2?.message || 'Reset failed.');
     } finally {
       setSaving(false);
     }
@@ -334,9 +401,14 @@ function KpiTemplateLibrary() {
               >
                 {isEditing ? (
                   <EditForm
+                    template={t}
+                    isNew={editingId === 'new'}
                     draft={editDraft}
                     setDraft={setEditDraft}
-                    onSave={handleSave}
+                    onPublish={handlePublish}
+                    onSaveDraft={handleSaveDraft}
+                    onDiscardDraft={() => handleDiscardDraft(t.id)}
+                    onResetBaseline={handleResetBaseline}
                     onCancel={cancelEdit}
                     saving={saving}
                     error={error}
@@ -354,6 +426,11 @@ function KpiTemplateLibrary() {
                       <span className="kpi-mandatory-badge">
                         {t.mandatory ? 'Mandatory' : 'Choice'}
                       </span>
+                      {t.pending_changes && (
+                        <span className="kpi-pending-pill" title="Admin has staged unpublished changes for this KPI.">
+                          Unpublished draft
+                        </span>
+                      )}
                     </div>
                     {t.description && (
                       <p className="kpi-card-description">{t.description}</p>
@@ -425,9 +502,14 @@ function KpiTemplateLibrary() {
           {editingId === 'new' ? (
             <div className="kpi-card kpi-template-editor-card editing">
               <EditForm
+                template={null}
+                isNew={true}
                 draft={editDraft}
                 setDraft={setEditDraft}
-                onSave={handleSave}
+                onPublish={handlePublish}
+                onSaveDraft={handleSaveDraft}
+                onDiscardDraft={() => {}}
+                onResetBaseline={() => {}}
                 onCancel={cancelEdit}
                 saving={saving}
                 error={error}
@@ -465,7 +547,6 @@ function makeBlankDraft() {
     label: '',
     category: KPI_CATEGORIES[0],
     description: '',
-    measure: '',
     baseline_action: '',
     partner_scope: 'shared',
     mandatory: false,
@@ -475,12 +556,37 @@ function makeBlankDraft() {
   };
 }
 
-function EditForm({ draft, setDraft, onSave, onCancel, saving, error }) {
-  const baselineSuggestion = suggestBaselineAction(draft.key_fields);
-  const canSuggest = !!baselineSuggestion && baselineSuggestion !== (draft.baseline_action || '').trim();
+function EditForm({
+  template,
+  isNew,
+  draft,
+  setDraft,
+  onPublish,
+  onSaveDraft,
+  onDiscardDraft,
+  onResetBaseline,
+  onCancel,
+  saving,
+  error,
+}) {
+  // 2026-05-24: removed "Suggested from structured fields" callout — partner
+  // feedback flagged it as confusing. Admin types the baseline directly.
+
+  const hasDraft = !!(template && template.pending_changes);
+  const canReset = !isNew
+    && template
+    && template.baseline_action_default
+    && template.baseline_action_default !== (draft.baseline_action || '').trim();
 
   return (
     <div className="kpi-edit-form">
+      {hasDraft && (
+        <Callout color="gold">
+          <strong>Unpublished draft loaded.</strong> Changes from your last "Save Draft" are
+          shown below. Publish to make them visible to partners, or Discard to revert.
+        </Callout>
+      )}
+
       {/* --- BASICS --- */}
       <section className="kpi-edit-section">
         <h4 className="kpi-edit-section-heading">Basics</h4>
@@ -496,24 +602,23 @@ function EditForm({ draft, setDraft, onSave, onCancel, saving, error }) {
         <label className="kpi-edit-label">Baseline action (what partners actually see at the top of the card)</label>
         <textarea
           className="input"
-          placeholder="e.g. Minimum 10 outreach actions per week: calls, meetings, follow-ups with referral partners or prospects."
+          placeholder="e.g. Minimum 5 outreach actions per week: calls, meetings, follow-ups with referral partners or prospects."
           value={draft.baseline_action}
           onChange={(e) => setDraft({ ...draft, baseline_action: e.target.value })}
           rows={3}
         />
-        {canSuggest && (
-          <div className="kpi-magic-suggest">
-            <div className="kpi-magic-suggest__text">
-              <strong>Suggested from structured fields:</strong> {baselineSuggestion}
-            </div>
-            <button
-              type="button"
-              className="btn-ghost"
-              onClick={() => setDraft({ ...draft, baseline_action: baselineSuggestion })}
-            >
-              Apply suggestion
-            </button>
-          </div>
+        {canReset && (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={onResetBaseline}
+            disabled={saving}
+            style={{ marginTop: 'var(--space-2)' }}
+            title="Replace the baseline text with the original wording saved at create time."
+          >
+            <RotateCcw size={14} strokeWidth={1.75} aria-hidden="true" />
+            <span style={{ marginLeft: 'var(--space-2)' }}>Reset to default</span>
+          </button>
         )}
 
         <div className="kpi-edit-grid">
@@ -595,28 +700,130 @@ function EditForm({ draft, setDraft, onSave, onCancel, saving, error }) {
           onChange={(e) => setDraft({ ...draft, description: e.target.value })}
           rows={2}
         />
-
-        <label className="kpi-edit-label">Measure (legacy / internal — how the KPI was originally tracked)</label>
-        <textarea
-          className="input"
-          value={draft.measure}
-          onChange={(e) => setDraft({ ...draft, measure: e.target.value })}
-          rows={2}
-        />
+        {/* 2026-05-24: measure field removed (column doesn't exist on kpi_templates;
+            was the root of the "Couldn't save template" bug). */}
       </section>
+
+      {/* --- HISTORY --- */}
+      {!isNew && template && <KpiHistoryPanel templateId={template.id} />}
 
       {error && (
         <p className="muted kpi-edit-error">{error}</p>
       )}
-      <div className="kpi-template-editor-actions">
+      <div className="kpi-template-editor-actions kpi-template-editor-actions--multi">
         <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={saving}>
-          {ADMIN_KPI_COPY.discardBtn}
+          Cancel
         </button>
-        <button type="button" className="btn btn-primary" onClick={onSave} disabled={saving}>
-          {ADMIN_KPI_COPY.saveBtn}
+        {hasDraft && !isNew && (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={onDiscardDraft}
+            disabled={saving}
+            style={{ color: 'var(--miss)' }}
+          >
+            Discard draft
+          </button>
+        )}
+        {!isNew && (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={onSaveDraft}
+            disabled={saving}
+            title="Save changes but don't make them visible to partners yet."
+          >
+            Save draft
+          </button>
+        )}
+        <button type="button" className="btn btn-primary" onClick={onPublish} disabled={saving}>
+          {isNew ? 'Create KPI' : 'Publish'}
         </button>
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// KpiHistoryPanel — collapsible audit-trail view for a single template.
+// Fetches kpi_template_edits on demand (first expand).
+// ---------------------------------------------------------------------------
+function KpiHistoryPanel({ templateId }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [rows, setRows] = useState([]);
+  const [err, setErr] = useState(null);
+  const fetchedRef = useRef(false);
+
+  async function handleToggle() {
+    const willOpen = !open;
+    setOpen(willOpen);
+    if (willOpen && !fetchedRef.current) {
+      fetchedRef.current = true;
+      setLoading(true);
+      setErr(null);
+      try {
+        const data = await fetchKpiTemplateHistory(templateId, 25);
+        setRows(data);
+      } catch (e) {
+        console.error(e);
+        setErr(e?.message || 'Could not load history.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  }
+
+  return (
+    <section className="kpi-edit-section">
+      <button
+        type="button"
+        className="btn btn-ghost kpi-history-toggle"
+        onClick={handleToggle}
+        aria-expanded={open}
+      >
+        <HistoryIcon size={14} strokeWidth={1.75} aria-hidden="true" />
+        <span style={{ marginLeft: 'var(--space-2)' }}>
+          {open ? 'Hide history' : 'Show edit history'}
+        </span>
+      </button>
+      {open && (
+        <div className="kpi-history-panel">
+          {loading && <p className="muted">Loading…</p>}
+          {err && <Callout color="red">{err}</Callout>}
+          {!loading && !err && rows.length === 0 && (
+            <p className="muted">No edits recorded yet.</p>
+          )}
+          {!loading && !err && rows.length > 0 && (
+            <ul className="kpi-history-list">
+              {rows.map((r) => {
+                const when = r.edited_at ? new Date(r.edited_at).toLocaleString() : '';
+                const fields = (r.changed_fields || []).join(', ') || '—';
+                const baselineBefore = r.before_state?.baseline_action ?? null;
+                const baselineAfter = r.after_state?.baseline_action ?? null;
+                const baselineDiffers = baselineBefore !== baselineAfter;
+                return (
+                  <li key={r.id} className="kpi-history-item">
+                    <div className="kpi-history-item__meta">
+                      <strong>{r.edited_by || 'unknown'}</strong> · {when}
+                    </div>
+                    <div className="kpi-history-item__fields">
+                      <span className="muted">Changed:</span> {fields}
+                    </div>
+                    {baselineDiffers && (
+                      <div className="kpi-history-item__diff">
+                        <div><span className="muted">Was:</span> {baselineBefore || '(empty)'}</div>
+                        <div><span className="muted">Now:</span> {baselineAfter || '(empty)'}</div>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -925,341 +1132,6 @@ function GrowthEditForm({ draft, setDraft, onSave, onCancel, saving, error }) {
         </button>
         <button type="button" className="btn btn-primary" onClick={onSave} disabled={saving}>
           {ADMIN_KPI_COPY.saveBtn}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
- * PartnerSelectionsEditor — cross-partner 2-column editor
- * ============================================================ */
-function PartnerSelectionsEditor() {
-  const [searchParams] = useSearchParams();
-  const focusedPartner = searchParams.get('partner');
-
-  const [templates, setTemplates] = useState([]);
-  const [partnerData, setPartnerData] = useState({
-    theo: { kpis: [], growth: [] },
-    jerry: { kpis: [], growth: [] },
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [editingSlotId, setEditingSlotId] = useState(null);
-  const [editingDraft, setEditingDraft] = useState({ mode: 'label', label: '', templateId: '' });
-  const [unlockPending, setUnlockPending] = useState({ theo: false, jerry: false });
-  const [saving, setSaving] = useState(false);
-  const [flash, setFlash] = useState('');
-  const unlockTimerRef = useRef(null);
-
-  const loadState = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [tpls, theoKpis, jerryKpis, theoGrowth, jerryGrowth] = await Promise.all([
-        fetchKpiTemplates(),
-        fetchKpiSelections('theo'),
-        fetchKpiSelections('jerry'),
-        fetchGrowthPriorities('theo'),
-        fetchGrowthPriorities('jerry'),
-      ]);
-      setTemplates(tpls ?? []);
-      setPartnerData({
-        theo: { kpis: theoKpis ?? [], growth: theoGrowth ?? [] },
-        jerry: { kpis: jerryKpis ?? [], growth: jerryGrowth ?? [] },
-      });
-    } catch (err) {
-      console.error(err);
-      setError('Failed to load partner selections.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadState();
-    return () => {
-      if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current);
-    };
-  }, [loadState]);
-
-  function beginEditSlot(sel) {
-    setEditingSlotId(sel.id);
-    setEditingDraft({
-      mode: 'label',
-      label: sel.label_snapshot ?? '',
-      templateId: sel.template_id ?? '',
-    });
-  }
-
-  function cancelSlot() {
-    setEditingSlotId(null);
-    setEditingDraft({ mode: 'label', label: '', templateId: '' });
-  }
-
-  async function saveSlot(sel) {
-    setSaving(true);
-    try {
-      if (editingDraft.mode === 'label') {
-        await adminEditKpiLabel(sel.id, editingDraft.label.trim());
-      } else {
-        const tpl = templates.find((t) => t.id === editingDraft.templateId);
-        if (!tpl) {
-          setError('Pick a template to swap to.');
-          setSaving(false);
-          return;
-        }
-        await adminSwapKpiTemplate(sel.id, tpl);
-      }
-      await loadState();
-      cancelSlot();
-      showFlash('Saved');
-    } catch (err) {
-      console.error(err);
-      setError(ADMIN_KPI_COPY.errors.saveFail);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function armUnlock(partner) {
-    setUnlockPending((prev) => ({ ...prev, [partner]: true }));
-    if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current);
-    unlockTimerRef.current = setTimeout(() => {
-      setUnlockPending({ theo: false, jerry: false });
-    }, ARM_DISARM_MS);
-  }
-
-  async function confirmUnlock(partner) {
-    setSaving(true);
-    setError('');
-    try {
-      await unlockPartnerSelections(partner);
-      await loadState();
-      setUnlockPending((prev) => ({ ...prev, [partner]: false }));
-      showFlash(`Unlocked ${PARTNER_DISPLAY[partner]}`);
-    } catch (err) {
-      console.error(err);
-      setError(ADMIN_KPI_COPY.errors.unlockFail);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function showFlash(text) {
-    setFlash(text);
-    setTimeout(() => setFlash(''), 1500);
-  }
-
-  return (
-    <section style={{ marginBottom: 48 }}>
-      <div className="eyebrow" style={{ marginBottom: 8 }}>
-        {ADMIN_KPI_COPY.selectionsSectionHeading.toUpperCase()}
-      </div>
-      <h3 style={{ marginTop: 0, marginBottom: 16 }}>
-        {ADMIN_KPI_COPY.selectionsSectionHeading}
-      </h3>
-
-      {loading ? (
-        <p className="muted">Loading...</p>
-      ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 24,
-          }}
-          className="admin-selections-grid"
-        >
-          {MANAGED.map((p) => {
-            const { kpis } = partnerData[p];
-            const partnerName = PARTNER_DISPLAY[p];
-            const firstLock = kpis[0]?.locked_until;
-            const isLocked = firstLock && new Date(firstLock).getTime() > Date.now();
-            const armed = unlockPending[p];
-            const isFocused = focusedPartner === p;
-            return (
-              <div
-                key={p}
-                style={{
-                  background: 'var(--surface)',
-                  border: `1px solid ${isFocused ? 'var(--red)' : 'var(--border)'}`,
-                  borderRadius: 16,
-                  padding: 24,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 16,
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: 12,
-                  }}
-                >
-                  <h4 style={{ margin: 0 }}>{partnerName}</h4>
-                  <span
-                    className="kpi-category-tag"
-                    style={{
-                      color: isLocked ? 'var(--gold)' : 'var(--muted)',
-                      background: isLocked ? 'rgba(212,168,67,0.10)' : 'var(--surface-2)',
-                    }}
-                  >
-                    {isLocked
-                      ? `Locked until ${new Date(firstLock).toLocaleDateString()}`
-                      : 'Not locked'}
-                  </span>
-                </div>
-
-                {isLocked && (
-                  <div>
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      style={
-                        armed
-                          ? {
-                              background: 'rgba(196,30,58,0.14)',
-                              borderColor: 'var(--red)',
-                              color: 'var(--text)',
-                            }
-                          : undefined
-                      }
-                      onClick={() => (armed ? confirmUnlock(p) : armUnlock(p))}
-                      disabled={saving}
-                    >
-                      {armed ? ADMIN_KPI_COPY.unlockConfirmBtn : ADMIN_KPI_COPY.unlockBtn}
-                    </button>
-                    {armed && (
-                      <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-                        {ADMIN_KPI_COPY.unlockWarning(partnerName)}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {kpis.length === 0 ? (
-                  <p className="muted">{ADMIN_KPI_COPY.emptySelections(partnerName)}</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {kpis.map((sel) => {
-                      const isEditing = editingSlotId === sel.id;
-                      return (
-                        <div
-                          key={sel.id}
-                          className="kpi-card"
-                          style={{ padding: 16 }}
-                        >
-                          {isEditing ? (
-                            <SlotEditor
-                              sel={sel}
-                              draft={editingDraft}
-                              setDraft={setEditingDraft}
-                              templates={templates}
-                              onSave={() => saveSlot(sel)}
-                              onCancel={cancelSlot}
-                              saving={saving}
-                            />
-                          ) : (
-                            <>
-                              <p className="kpi-card-label" style={{ margin: 0 }}>
-                                {sel.label_snapshot}
-                              </p>
-                              {sel.category_snapshot && (
-                                <span className="kpi-category-tag">
-                                  {sel.category_snapshot}
-                                </span>
-                              )}
-                              <div className="kpi-template-editor-actions">
-                                <button
-                                  type="button"
-                                  className="btn btn-ghost"
-                                  onClick={() => beginEditSlot(sel)}
-                                  disabled={saving || editingSlotId !== null}
-                                >
-                                  {ADMIN_KPI_COPY.editSlotBtn}
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {error && (
-        <p className="muted" style={{ color: 'var(--miss)', marginTop: 12 }}>
-          {error}
-        </p>
-      )}
-      {flash && (
-        <p className="muted" style={{ color: 'var(--gold)', marginTop: 12 }}>
-          {flash}
-        </p>
-      )}
-    </section>
-  );
-}
-
-function SlotEditor({ draft, setDraft, templates, onSave, onCancel, saving }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button
-          type="button"
-          className={`btn ${draft.mode === 'label' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => setDraft({ ...draft, mode: 'label' })}
-          disabled={saving}
-        >
-          Edit Label
-        </button>
-        <button
-          type="button"
-          className={`btn ${draft.mode === 'swap' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => setDraft({ ...draft, mode: 'swap' })}
-          disabled={saving}
-        >
-          Swap Template
-        </button>
-      </div>
-
-      {draft.mode === 'label' ? (
-        <input
-          type="text"
-          className="input"
-          placeholder="Label snapshot"
-          value={draft.label}
-          onChange={(e) => setDraft({ ...draft, label: e.target.value })}
-        />
-      ) : (
-        <select
-          className="input"
-          value={draft.templateId}
-          onChange={(e) => setDraft({ ...draft, templateId: e.target.value })}
-        >
-          <option value="">Select a template...</option>
-          {templates.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.label} ({t.category})
-            </option>
-          ))}
-        </select>
-      )}
-
-      <div className="kpi-template-editor-actions">
-        <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={saving}>
-          {ADMIN_KPI_COPY.discardBtn}
-        </button>
-        <button type="button" className="btn btn-primary" onClick={onSave} disabled={saving}>
-          {ADMIN_KPI_COPY.saveSlotBtn}
         </button>
       </div>
     </div>

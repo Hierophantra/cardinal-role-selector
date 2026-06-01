@@ -352,20 +352,27 @@ function _prune(obj) {
   return out;
 }
 
-export async function createKpiTemplate(fields) {
+export async function createKpiTemplate(fields, editedBy = 'admin') {
+  // 2026-05-24: `measure` removed — column doesn't exist on kpi_templates
+  // (it lives on growth_priority_templates only). Also snapshot the
+  // initial baseline as baseline_action_default so "Reset to default"
+  // has a starting point on freshly-created templates.
+  const baseline = fields.baseline_action;
   const insert = _prune({
     label: fields.label,
     category: fields.category,
     description: fields.description,
-    measure: fields.measure,
     partner_scope: fields.partner_scope,
     mandatory: fields.mandatory,
     countable: fields.countable,
     conditional: fields.conditional,
-    baseline_action: fields.baseline_action,
+    baseline_action: baseline,
+    baseline_action_default: baseline,
     reflection_prompt: fields.reflection_prompt,
     growth_clause: fields.growth_clause,
     key_fields: fields.key_fields,
+    last_edited_by: editedBy,
+    last_edited_at: new Date().toISOString(),
   });
   const { data, error } = await supabase
     .from('kpi_templates')
@@ -379,9 +386,8 @@ export async function createKpiTemplate(fields) {
 // Partner-callable narrow update: only allows changing baseline_action.
 // Used by the "Partner KPI edit" feature when partner_kpi_edit_enabled is on.
 // Distinct from updateKpiTemplate to keep the partner-facing surface explicit
-// and audit-readable — even though both end up touching kpi_templates.
-//
-// Returns the updated row so the caller can refresh local state.
+// and audit-readable. Migration 2026-05-24 added last_edited_by/at so this
+// now writes attribution (was a stub before).
 export async function updatePartnerKpiBaseline(id, newBaselineAction, editedBy = 'partner') {
   if (!id) throw new Error('updatePartnerKpiBaseline: id is required');
   const trimmed = (newBaselineAction || '').trim();
@@ -393,12 +399,8 @@ export async function updatePartnerKpiBaseline(id, newBaselineAction, editedBy =
     .update({
       baseline_action: trimmed,
       updated_at: new Date().toISOString(),
-      // last_edited_by is informational only — column may not exist on the
-      // table yet (no migration in this pass), so we don't require it. If
-      // the column doesn't exist, Postgres ignores the unknown key... wait,
-      // it doesn't — it errors. So we deliberately DON'T write this here
-      // until a schema change adds the column. Future-extensible.
-      // last_edited_by: editedBy,
+      last_edited_by: editedBy,
+      last_edited_at: new Date().toISOString(),
     })
     .eq('id', id)
     .select()
@@ -407,12 +409,14 @@ export async function updatePartnerKpiBaseline(id, newBaselineAction, editedBy =
   return data;
 }
 
-export async function updateKpiTemplate(id, fields) {
+export async function updateKpiTemplate(id, fields, editedBy = 'admin') {
+  // 2026-05-24: `measure` removed (column doesn't exist on this table).
+  // last_edited_by/at populated on every update so the audit trigger has
+  // accurate attribution.
   const update = _prune({
     label: fields.label,
     category: fields.category,
     description: fields.description,
-    measure: fields.measure,
     partner_scope: fields.partner_scope,
     mandatory: fields.mandatory,
     countable: fields.countable,
@@ -422,6 +426,8 @@ export async function updateKpiTemplate(id, fields) {
     growth_clause: fields.growth_clause,
     key_fields: fields.key_fields,
     updated_at: new Date().toISOString(),
+    last_edited_by: editedBy,
+    last_edited_at: new Date().toISOString(),
   });
   const { data, error } = await supabase
     .from('kpi_templates')
@@ -431,6 +437,131 @@ export async function updateKpiTemplate(id, fields) {
     .single();
   if (error) throw error;
   return data;
+}
+
+// ===========================================================================
+// Tier 3 v2 follow-up: KPI template draft / publish / reset / history.
+// Live state lives in the main columns; admin edits can be staged via the
+// pending_changes JSONB column without partners seeing them until publish.
+// baseline_action_default holds the original wording so partner rewrites
+// can be reverted. kpi_template_edits captures every change via DB trigger.
+// ===========================================================================
+
+export async function saveKpiDraft(id, draft, editedBy = 'admin') {
+  if (!id) throw new Error('saveKpiDraft: id is required');
+  const blob = (!draft || Object.keys(draft).length === 0) ? null : draft;
+  const { data, error } = await supabase
+    .from('kpi_templates')
+    .update({
+      pending_changes: blob,
+      last_edited_by: editedBy,
+      last_edited_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function publishKpiDraft(id, editedBy = 'admin', applyOverride = null) {
+  if (!id) throw new Error('publishKpiDraft: id is required');
+  let toApply = applyOverride;
+  if (!toApply) {
+    const { data: row, error: fetchErr } = await supabase
+      .from('kpi_templates')
+      .select('pending_changes')
+      .eq('id', id)
+      .maybeSingle();
+    if (fetchErr) throw fetchErr;
+    toApply = row?.pending_changes;
+  }
+  if (!toApply || Object.keys(toApply).length === 0) return null;
+
+  // Whitelist what we'll apply — never let arbitrary keys land via the blob.
+  const allowed = _prune({
+    label: toApply.label,
+    category: toApply.category,
+    description: toApply.description,
+    partner_scope: toApply.partner_scope,
+    mandatory: toApply.mandatory,
+    countable: toApply.countable,
+    conditional: toApply.conditional,
+    baseline_action: toApply.baseline_action,
+    reflection_prompt: toApply.reflection_prompt,
+    growth_clause: toApply.growth_clause,
+    key_fields: toApply.key_fields,
+  });
+  const { data, error } = await supabase
+    .from('kpi_templates')
+    .update({
+      ...allowed,
+      pending_changes: null,
+      updated_at: new Date().toISOString(),
+      last_edited_by: editedBy,
+      last_edited_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function discardKpiDraft(id, editedBy = 'admin') {
+  if (!id) throw new Error('discardKpiDraft: id is required');
+  const { data, error } = await supabase
+    .from('kpi_templates')
+    .update({
+      pending_changes: null,
+      last_edited_by: editedBy,
+      last_edited_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function resetKpiBaselineAction(id, editedBy = 'admin') {
+  if (!id) throw new Error('resetKpiBaselineAction: id is required');
+  const { data: row, error: fetchErr } = await supabase
+    .from('kpi_templates')
+    .select('baseline_action_default')
+    .eq('id', id)
+    .maybeSingle();
+  if (fetchErr) throw fetchErr;
+  if (!row || !row.baseline_action_default) {
+    throw new Error('No default baseline saved for this KPI yet.');
+  }
+  const { data, error } = await supabase
+    .from('kpi_templates')
+    .update({
+      baseline_action: row.baseline_action_default,
+      last_edited_by: editedBy,
+      last_edited_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchKpiTemplateHistory(templateId, limit = 25) {
+  if (!templateId) throw new Error('fetchKpiTemplateHistory: templateId is required');
+  const { data, error } = await supabase
+    .from('kpi_template_edits')
+    .select('id, template_id, edited_by, edited_at, changed_fields, before_state, after_state')
+    .eq('template_id', templateId)
+    .order('edited_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function deleteKpiTemplate(id) {

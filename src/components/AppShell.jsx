@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import Sidebar, { useSidebarCollapsed } from './Sidebar.jsx';
+import NowClock from './NowClock.jsx';
 
 // Routes that should NOT show the sidebar shell — render children plain.
 // Login is the entry point; the questionnaire is a guided flow that should
@@ -144,6 +145,13 @@ export default function AppShell({ children }) {
       {/* Main content area — existing pages render their own .app-shell /
           .container chrome inside this slot. */}
       <main className="shell__content" role="main">
+        {/* 2026-05-24: always-visible day + time, top-right of the content
+            area. Out of the way; partners and admin can glance at it from
+            any screen. Meeting routes get their own NowClock inside the
+            meeting-shell-header since they bypass AppShell. */}
+        <div className="shell__topbar">
+          <NowClock />
+        </div>
         {children}
       </main>
     </div>
