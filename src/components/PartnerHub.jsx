@@ -33,6 +33,8 @@ import BusinessPrioritiesSection from './BusinessPrioritiesSection.jsx';
 import WeekPlanCard from './WeekPlanCard.jsx';
 import PageHeader from './PageHeader.jsx';
 import { formatWeekRange } from '../lib/week.js';
+import EditableElement from './admin/EditableElement.jsx';
+import { useElementConfig } from '../lib/elementConfig.js';
 
 export default function PartnerHub() {
   const { partner } = useParams();
@@ -290,6 +292,28 @@ export default function PartnerHub() {
           ? copy.status.roleCompleteNoKpis
           : copy.status.roleNotComplete);
 
+  // Element configs — partner-aware. When admin edits while viewing /hub/theo,
+  // saves default to theo-only; same for jerry.
+  const greetingConfig = useElementConfig('hub-greeting', partner);
+  const dashboardCardConfig = useElementConfig('hub-dashboard-card', partner);
+  const workflowConfig = useElementConfig('hub-workflow-cards', partner);
+
+  const greetingNode = greetingConfig.visible === false ? null : (
+    <EditableElement
+      id="hub-greeting"
+      as="span"
+      className="hub-greeting-editable"
+      style={{
+        color: greetingConfig.textColor,
+        fontSize: greetingConfig.size,
+      }}
+    >
+      {(greetingConfig.override && greetingConfig.override.trim())
+        ? greetingConfig.override
+        : copy.greeting(partnerName)}
+    </EditableElement>
+  );
+
   return (
     <div className="app-shell">
       <div className="container">
@@ -299,7 +323,7 @@ export default function PartnerHub() {
               Inline greeting preserved per cross-AI synthesis. */}
           <PageHeader
             eyebrow={`Week of ${formatWeekRange(currentMonday)}`}
-            greeting={copy.greeting(partnerName)}
+            greeting={greetingNode}
           />
           {statusText && <p className="status-line">{statusText}</p>}
 
@@ -346,8 +370,19 @@ export default function PartnerHub() {
                 <BusinessPrioritiesSection priorities={businessPriorities} />
               </div>
 
-              {/* Workflow card grid (D-07 bottom; D-08 card roster) */}
-              <div className="hub-grid">
+              {/* Workflow card grid (D-07 bottom; D-08 card roster).
+                  Tier 3 v2 follow-up: editable as 'hub-workflow-cards'.
+                  Apply card background + radius via CSS custom properties
+                  scoped to this grid so all child .hub-card descendants
+                  inherit the overrides. */}
+              <EditableElement
+                id="hub-workflow-cards"
+                className="hub-grid"
+                style={{
+                  '--hub-card-bg': workflowConfig.cardBackground,
+                  '--hub-card-radius': workflowConfig.cardRadius,
+                }}
+              >
                 {/* Season Overview (kept, D-08) */}
                 {kpiReady && (
                   <Link to={`/progress/${partner}`} className="hub-card">
@@ -448,7 +483,7 @@ export default function PartnerHub() {
                   <p>Who you are at Cardinal, what you focus on, what your day looks like. Open the role questionnaire comparison from here.</p>
                   <span className="hub-card-cta">Open Role Discovery {'→'}</span>
                 </Link>
-              </div>
+              </EditableElement>
             </>
           )}
         </div>

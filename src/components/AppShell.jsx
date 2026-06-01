@@ -20,7 +20,8 @@ import Sidebar, { useSidebarCollapsed } from './Sidebar.jsx';
 import NowClock from './NowClock.jsx';
 import { useElementConfig } from '../lib/elementConfig.js';
 import EditableElement from './admin/EditableElement.jsx';
-import AdminEditorPanel from './admin/AdminEditorPanel.jsx';
+// AdminEditorPanel + Banner moved to App.jsx root so they cover meeting
+// routes too. Don't render them here.
 
 // Routes that should NOT show the sidebar shell — render children plain.
 // Login is the entry point; the questionnaire is a guided flow that should
@@ -190,11 +191,6 @@ function ShellInner({ sessionRole, collapsed, setCollapsed, drawerOpen, setDrawe
         </div>
         {children}
       </EditableElement>
-
-      {/* Admin element-editor side drawer — renders only when admin mode is
-          on and an element is selected. Lives at the shell level so it
-          floats above every page. */}
-      <AdminEditorPanel />
     </div>
   );
 }

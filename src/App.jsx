@@ -3,6 +3,9 @@ import Login from './components/Login.jsx';
 import ThemeToggle from './components/ThemeToggle.jsx';
 import AppShell from './components/AppShell.jsx';
 import { AdminEditorProvider } from './components/admin/AdminEditorContext.jsx';
+import AdminEditorBanner from './components/admin/AdminEditorBanner.jsx';
+import AdminEditorPanel from './components/admin/AdminEditorPanel.jsx';
+import GlobalStyleInjector from './components/admin/GlobalStyleInjector.jsx';
 import Questionnaire from './components/Questionnaire.jsx';
 import PartnerHub from './components/PartnerHub.jsx';
 import KpiSelection from './components/KpiSelection.jsx';
@@ -32,6 +35,11 @@ import Contracts from './components/Contracts.jsx';
 export default function App() {
   return (
     <AdminEditorProvider>
+      {/* Editor banner + panel live at the app root so they appear on EVERY
+          screen including the meeting routes (which bypass AppShell). */}
+      <AdminEditorBanner />
+      <AdminEditorPanel />
+      <GlobalStyleInjector />
       <ThemeToggle />
       <AppShell>
       <Routes>

@@ -6128,3 +6128,197 @@ select:focus,
     grid-template-areas: "content";
   }
 }
+
+/* ============================================================================
+   Tier 3 v2 follow-up (2026-05-24, Phase 2)
+   Element-editor scaffolding: banner, panel improvements, hub-grid CSS
+   custom-property hooks, new control styles.
+   ============================================================================ */
+
+/* Edit-mode banner — visible at the top of viewport when admin editor is on. */
+.admin-editor-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 250;
+  background: linear-gradient(90deg, var(--violet), var(--blue));
+  color: #fff;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+.admin-editor-banner__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.admin-editor-banner__inner svg {
+  flex-shrink: 0;
+}
+.admin-editor-banner__inner strong {
+  font-weight: 700;
+}
+.admin-editor-banner__inner kbd {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-xs);
+  padding: 1px 6px;
+  font-family: inherit;
+  font-size: var(--text-xs);
+}
+.admin-editor-banner__exit {
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: var(--radius-pill);
+  padding: 4px var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--duration-base) ease;
+}
+.admin-editor-banner__exit:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* When the banner is on, push the page content down so it doesn't sit
+   under the banner. The banner is ~36px tall. */
+body:has(.admin-editor-banner) {
+  padding-top: 36px;
+}
+
+/* Editor panel header — undo/redo icon buttons next to close */
+.admin-editor-panel__header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.admin-editor-panel__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background var(--duration-base) ease, color var(--duration-base) ease;
+}
+.admin-editor-panel__icon-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.admin-editor-panel__icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Scope selector */
+.admin-editor-scope {
+  padding: var(--space-3);
+  background: var(--callout-blue-bg);
+  border: 1px solid var(--callout-blue-border);
+  border-radius: var(--radius-md);
+}
+.admin-editor-scope__label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--space-2);
+}
+.admin-editor-scope__options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.admin-editor-scope__option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+/* Control variations */
+.admin-editor-control--row {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+.admin-editor-control textarea {
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+.admin-editor-control input[type="range"] {
+  width: 100%;
+}
+.admin-editor-control__advanced-toggle {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  text-align: left;
+  padding: var(--space-1) 0 0;
+  text-decoration: underline;
+}
+.admin-editor-color-hex {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.admin-editor-color-hex input[type="color"] {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+}
+.admin-editor-color-hex input[type="text"] {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font: inherit;
+}
+
+/* Hub workflow card overrides — when admin sets cardBackground / cardRadius
+   via the editor, those flow through CSS custom properties on the .hub-grid
+   wrapper to every .hub-card descendant. Falls back to the existing token
+   defaults if no override is set. */
+.hub-grid .hub-card {
+  background: var(--hub-card-bg, var(--surface));
+  border-radius: var(--hub-card-radius, var(--radius-lg));
+}
+
+/* Hub greeting editable span — inherits page-header__greeting style by
+   default; admin-set color/size override via inline style on the span. */
+.hub-greeting-editable {
+  /* All sizing/color comes from inline style set by the editor config */
+}
+
+/* In edit mode, NO underlines under links (so click-suppressed links don't
+   look hover-active). Plus cursor cue. */
+.editable-element {
+  cursor: crosshair;
+}
+.editable-element * {
+  cursor: crosshair !important;
+}

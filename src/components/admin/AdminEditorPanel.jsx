@@ -1,25 +1,23 @@
-// AdminEditorPanel — side drawer that opens when admin selects an element.
+// AdminEditorPanel — Phase 2.
 //
-// Reads the registry entry for the selected id, renders one control per
-// declared { key, type } pair, holds an in-memory draft, and applies
-// changes via applyConfigUpdate. Live preview — the cache notifies all
-// consumers immediately so the change is visible without a refresh.
-//
-// Controls supported in Phase 1:
+// Side drawer that opens when an editable element is selected. Renders
+// one control per spec.controls entry. Supports five control types:
 //   - toggle  (boolean)
-//   - select  (one-of from spec.options)
+//   - select  (one-of from options)
+//   - text    (textarea — content override)
+//   - color   (design-token dropdown + optional hex)
+//   - range   (numeric slider w/ min/max/step)
 //
-// Adding a new control type:
-//   1. Add a 'type' branch in renderControl() below
-//   2. Add the type to elementConfig.js doc-block
+// Phase 2 additions:
+//   - Per-partner save scope. When the admin is on /hub/theo, default scope
+//     is "Theo only" with radio to switch to "global / both partners".
+//   - Undo / redo buttons in the panel header (Ctrl+Z still works globally).
+//   - Saving records a pre-save snapshot via recordPreSave for undo.
 //
-// Buttons:
-//   - Save     applies the draft via applyConfigUpdate (live immediately)
-//   - Reset    drops to defaults (deletes the override entry)
-//   - Close    deselects without saving
+// Reference: Cardinal nervous-system doctrine.
 
 import { useEffect, useState } from 'react';
-import { X as XIcon, RotateCcw } from 'lucide-react';
+import { X as XIcon, RotateCcw, Undo2, Redo2 } from 'lucide-react';
 import { useAdminEditor } from './AdminEditorContext.jsx';
 import {
   getElementSpec,
@@ -28,17 +26,23 @@ import {
   resetElementToDefaults,
   subscribeElementConfigs,
   fetchAllElementConfigs,
+  getColorTokenOptions,
 } from '../../lib/elementConfig.js';
 import Callout from '../Callout.jsx';
 
 export default function AdminEditorPanel() {
-  const { mode, selectedId, deselect } = useAdminEditor();
+  const {
+    mode, selectedId, deselect,
+    viewingPartner, saveScope, setSaveScope,
+    recordPreSave, undo, redo, canUndo, canRedo,
+  } = useAdminEditor();
+
   const [allConfigs, setAllConfigs] = useState({});
   const [draft, setDraft] = useState({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  // Subscribe to global cache. Re-syncs the panel whenever someone saves.
+  // Subscribe to global cache.
   useEffect(() => {
     let cancelled = false;
     fetchAllElementConfigs().then((c) => { if (!cancelled) setAllConfigs(c); });
@@ -46,18 +50,17 @@ export default function AdminEditorPanel() {
     return () => { cancelled = true; unsub(); };
   }, []);
 
-  // Whenever the selected element changes, hydrate the draft from its
-  // current merged state.
+  // Rehydrate draft when selection or scope changes. The merged value
+  // depends on saveScope — when admin is editing Theo only, we want the
+  // textarea pre-populated with what Theo currently sees (partner override
+  // merged on top of global).
   useEffect(() => {
-    if (!selectedId) {
-      setDraft({});
-      setError(null);
-      return;
-    }
-    const merged = mergeWithDefaults(selectedId, allConfigs[selectedId]);
+    if (!selectedId) { setDraft({}); setError(null); return; }
+    const partnerCtx = (saveScope === 'global') ? null : saveScope;
+    const merged = mergeWithDefaults(selectedId, allConfigs, partnerCtx);
     setDraft(merged);
     setError(null);
-  }, [selectedId, allConfigs]);
+  }, [selectedId, allConfigs, saveScope]);
 
   if (mode !== 'on' || !selectedId) return null;
 
@@ -65,7 +68,12 @@ export default function AdminEditorPanel() {
   if (!spec) {
     return (
       <aside className="admin-editor-panel" role="complementary">
-        <PanelHeader title="Unknown element" onClose={deselect} />
+        <PanelHeader
+          title="Unknown element"
+          onClose={deselect}
+          onUndo={undo} onRedo={redo}
+          canUndo={canUndo} canRedo={canRedo}
+        />
         <div className="admin-editor-panel__body">
           <Callout color="red">
             No registry entry for <code>{selectedId}</code>. Add it to
@@ -76,6 +84,8 @@ export default function AdminEditorPanel() {
     );
   }
 
+  const canPartnerScope = spec.scope === 'partner-aware';
+
   function patchDraft(key, value) {
     setDraft((prev) => ({ ...prev, [key]: value }));
   }
@@ -84,12 +94,14 @@ export default function AdminEditorPanel() {
     setSaving(true);
     setError(null);
     try {
-      // Compute only the keys that differ from spec.defaults — minimal blob.
       const patch = {};
       for (const ctl of spec.controls) {
         patch[ctl.key] = draft[ctl.key];
       }
-      await applyConfigUpdate(selectedId, patch);
+      // Record snapshot BEFORE the update lands so undo restores cleanly.
+      recordPreSave();
+      const scope = (canPartnerScope && saveScope !== 'global') ? saveScope : 'global';
+      await applyConfigUpdate(selectedId, patch, { scope });
     } catch (err) {
       console.error(err);
       setError(err?.message || 'Save failed. Please try again.');
@@ -102,10 +114,12 @@ export default function AdminEditorPanel() {
     setSaving(true);
     setError(null);
     try {
-      await resetElementToDefaults(selectedId);
+      recordPreSave();
+      const scope = (canPartnerScope && saveScope !== 'global') ? saveScope : 'global';
+      await resetElementToDefaults(selectedId, { scope });
     } catch (err) {
       console.error(err);
-      setError(err?.message || 'Reset failed. Please try again.');
+      setError(err?.message || 'Reset failed.');
     } finally {
       setSaving(false);
     }
@@ -113,11 +127,48 @@ export default function AdminEditorPanel() {
 
   return (
     <aside className="admin-editor-panel" role="complementary" aria-label="Element editor">
-      <PanelHeader title={spec.label} onClose={deselect} />
+      <PanelHeader
+        title={spec.label}
+        onClose={deselect}
+        onUndo={undo} onRedo={redo}
+        canUndo={canUndo} canRedo={canRedo}
+      />
       <div className="admin-editor-panel__body">
         {spec.description && (
           <p className="admin-editor-panel__desc muted">{spec.description}</p>
         )}
+
+        {/* Per-partner scope selector — only for partner-aware elements. */}
+        {canPartnerScope && (
+          <div className="admin-editor-scope">
+            <div className="admin-editor-scope__label">Apply this change to:</div>
+            <div className="admin-editor-scope__options">
+              {viewingPartner && (
+                <label className="admin-editor-scope__option">
+                  <input
+                    type="radio"
+                    name="save-scope"
+                    value={viewingPartner}
+                    checked={saveScope === viewingPartner}
+                    onChange={() => setSaveScope(viewingPartner)}
+                  />
+                  <span>{partnerLabel(viewingPartner)} only</span>
+                </label>
+              )}
+              <label className="admin-editor-scope__option">
+                <input
+                  type="radio"
+                  name="save-scope"
+                  value="global"
+                  checked={saveScope === 'global'}
+                  onChange={() => setSaveScope('global')}
+                />
+                <span>Both partners (global)</span>
+              </label>
+            </div>
+          </div>
+        )}
+
         <div className="admin-editor-panel__controls">
           {spec.controls.map((ctl) => (
             <ControlRow
@@ -137,10 +188,10 @@ export default function AdminEditorPanel() {
           className="btn btn-ghost"
           onClick={handleReset}
           disabled={saving}
-          title="Drop overrides and revert to default values."
+          title="Drop overrides for this scope and revert to default."
         >
           <RotateCcw size={14} strokeWidth={1.75} aria-hidden="true" />
-          <span style={{ marginLeft: 'var(--space-2)' }}>Reset to default</span>
+          <span style={{ marginLeft: 'var(--space-2)' }}>Reset</span>
         </button>
         <button
           type="button"
@@ -155,21 +206,50 @@ export default function AdminEditorPanel() {
   );
 }
 
-function PanelHeader({ title, onClose }) {
+function partnerLabel(slug) {
+  if (slug === 'theo')  return 'Theo';
+  if (slug === 'jerry') return 'Jerry';
+  if (slug === 'test')  return 'Test profile';
+  return slug;
+}
+
+function PanelHeader({ title, onClose, onUndo, onRedo, canUndo, canRedo }) {
   return (
     <div className="admin-editor-panel__header">
       <div>
         <span className="admin-editor-panel__eyebrow">Editing element</span>
         <h3 className="admin-editor-panel__title">{title}</h3>
       </div>
-      <button
-        type="button"
-        className="admin-editor-panel__close"
-        onClick={onClose}
-        aria-label="Close editor"
-      >
-        <XIcon size={18} strokeWidth={1.75} aria-hidden="true" />
-      </button>
+      <div className="admin-editor-panel__header-actions">
+        <button
+          type="button"
+          className="admin-editor-panel__icon-btn"
+          onClick={onUndo}
+          disabled={!canUndo}
+          title="Undo (Ctrl+Z)"
+          aria-label="Undo"
+        >
+          <Undo2 size={16} strokeWidth={1.75} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className="admin-editor-panel__icon-btn"
+          onClick={onRedo}
+          disabled={!canRedo}
+          title="Redo (Ctrl+Shift+Z)"
+          aria-label="Redo"
+        >
+          <Redo2 size={16} strokeWidth={1.75} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className="admin-editor-panel__close"
+          onClick={onClose}
+          aria-label="Close editor"
+        >
+          <XIcon size={18} strokeWidth={1.75} aria-hidden="true" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -177,7 +257,7 @@ function PanelHeader({ title, onClose }) {
 function ControlRow({ ctl, value, onChange, disabled }) {
   if (ctl.type === 'toggle') {
     return (
-      <label className="admin-editor-control">
+      <label className="admin-editor-control admin-editor-control--row">
         <span className="admin-editor-control__label">{ctl.label}</span>
         <input
           type="checkbox"
@@ -196,9 +276,6 @@ function ControlRow({ ctl, value, onChange, disabled }) {
           value={value ?? ''}
           onChange={(e) => {
             const raw = e.target.value;
-            // Coerce back to number if the underlying option used numbers
-            // (e.g. expandedWidth: 260 vs '260'). Looks ugly but JSON round-
-            // trips treat numeric option values as strings in <select>.
             const found = ctl.options?.find((o) => String(o.value) === raw);
             onChange(found ? found.value : raw);
           }}
@@ -211,5 +288,95 @@ function ControlRow({ ctl, value, onChange, disabled }) {
       </label>
     );
   }
+  if (ctl.type === 'text') {
+    return (
+      <label className="admin-editor-control">
+        <span className="admin-editor-control__label">{ctl.label}</span>
+        <textarea
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={ctl.placeholder || ''}
+          rows={3}
+          disabled={disabled}
+        />
+      </label>
+    );
+  }
+  if (ctl.type === 'color') {
+    return <ColorControl ctl={ctl} value={value} onChange={onChange} disabled={disabled} />;
+  }
+  if (ctl.type === 'range') {
+    return (
+      <label className="admin-editor-control">
+        <span className="admin-editor-control__label">
+          {ctl.label}: <strong>{value ?? ctl.min}</strong>{ctl.unit ?? 'px'}
+        </span>
+        <input
+          type="range"
+          min={ctl.min ?? 0}
+          max={ctl.max ?? 100}
+          step={ctl.step ?? 1}
+          value={Number(value ?? ctl.min ?? 0)}
+          onChange={(e) => onChange(Number(e.target.value))}
+          disabled={disabled}
+        />
+      </label>
+    );
+  }
   return null;
+}
+
+// Color control — token dropdown + advanced toggle to a hex input.
+// Default mode uses the design-token palette (--red, --blue, etc.) so admin
+// stays inside the coherent system. Advanced toggle reveals a free-form hex
+// input for cases where a specific brand color is genuinely needed.
+function ColorControl({ ctl, value, onChange, disabled }) {
+  const options = getColorTokenOptions();
+  const isToken = typeof value === 'string' && value.startsWith('var(--');
+  const [advanced, setAdvanced] = useState(!isToken && !!value);
+
+  return (
+    <div className="admin-editor-control">
+      <span className="admin-editor-control__label">{ctl.label}</span>
+      {!advanced ? (
+        <select
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      ) : (
+        <div className="admin-editor-color-hex">
+          <input
+            type="color"
+            value={isHex(value) ? value : '#000000'}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={disabled}
+          />
+          <input
+            type="text"
+            value={value ?? ''}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="#C41E3A or var(--red)"
+            disabled={disabled}
+          />
+        </div>
+      )}
+      <button
+        type="button"
+        className="admin-editor-control__advanced-toggle"
+        onClick={() => setAdvanced((a) => !a)}
+        disabled={disabled}
+      >
+        {advanced ? 'Use design tokens' : 'Advanced: pick custom color'}
+      </button>
+    </div>
+  );
+}
+
+function isHex(v) {
+  return typeof v === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(v.trim());
 }
