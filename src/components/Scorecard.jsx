@@ -584,6 +584,24 @@ export default function Scorecard() {
   const fridayAutoTime = useMemo(() => getFridayAutoSubmitOf(currentWeekOf), [currentWeekOf]);
   const isPastFriday = useMemo(() => isAfterFridayAutoSubmit(currentWeekOf), [currentWeekOf]);
 
+  // 2026-06-01 — count of kpi_results entries with updated_at > Friday 09:00.
+  // Drives the "Updated after Friday · N changes" badge admin and partner see.
+  // Lives here (BEFORE the loading/loadError/noSelection early returns) to
+  // satisfy Rules of Hooks: previously placed below the returns, the prior
+  // setup conditionally skipped this useMemo on the loading=true render and
+  // raised it on the next render, producing a blank Scorecard. The scalar
+  // consumers (isAutoSubmitted, isSubmitted, hasLateEdits) stay below the
+  // returns — only the hook needs to be unconditional.
+  const lateEditCount = useMemo(() => {
+    if (!isPastFriday) return 0;
+    let n = 0;
+    for (const id in kpiResults) {
+      const u = kpiResults[id]?.updated_at;
+      if (u && new Date(u) > fridayAutoTime) n += 1;
+    }
+    return n;
+  }, [isPastFriday, kpiResults, fridayAutoTime]);
+
   // Tier 2 (post-Phase-19): counterpart-view mode. When sessionRole is one
   // partner but the URL :partner is the other, we're a partner viewing their
   // counterpart's scorecard. Force every editing surface read-only and hide
@@ -1313,18 +1331,10 @@ export default function Scorecard() {
   // partner never tapped Submit. Edits continue until Saturday 23:59 but
   // anything written after fridayAutoTime gets a "Updated after Friday"
   // flag for Trace.
+  // (lateEditCount useMemo lives above the early-return block to satisfy
+  //  the Rules of Hooks; these scalars consume it.)
   const isAutoSubmitted = !manualSubmittedAt && isPastFriday;
   const isSubmitted = view === 'submitted' || isAutoSubmitted;
-  // Detect late edits: any kpi_result whose updated_at is after Friday 09:00.
-  const lateEditCount = useMemo(() => {
-    if (!isPastFriday) return 0;
-    let n = 0;
-    for (const id in kpiResults) {
-      const u = kpiResults[id]?.updated_at;
-      if (u && new Date(u) > fridayAutoTime) n += 1;
-    }
-    return n;
-  }, [isPastFriday, kpiResults, fridayAutoTime]);
   const hasLateEdits = lateEditCount > 0;
 
   // ---- Render ----
