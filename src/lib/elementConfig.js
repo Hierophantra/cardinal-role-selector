@@ -274,6 +274,208 @@ export const ELEMENT_REGISTRY = {
       { key: 'color', label: 'Background color', type: 'color' },
     ],
   },
+
+  // ============================================================
+  // ADMIN HUB elements (admin-only screen)
+  // ============================================================
+  'admin-hub-heading': {
+    label: 'Admin hub heading ("Cardinal Accountability")',
+    description: 'The h2 at the top of the admin hub.',
+    scope: 'global',
+    defaults: {
+      visible: true,
+      textColor: 'var(--text)',
+      size: 'var(--text-h2)',
+      override: '',
+    },
+    controls: [
+      { key: 'visible', label: 'Visible', type: 'toggle' },
+      { key: 'override', label: 'Custom text (blank = default)', type: 'text', placeholder: 'Cardinal Accountability' },
+      { key: 'size', label: 'Font size', type: 'select', options: TEXT_SIZE_OPTIONS },
+      { key: 'textColor', label: 'Color', type: 'color' },
+    ],
+  },
+
+  'admin-hub-status-banner': {
+    label: 'Admin hub system status box',
+    description: 'The gold-bordered status summary at the top of the admin hub.',
+    scope: 'global',
+    defaults: {
+      visible: true,
+      background: 'var(--callout-gold-bg)',
+      borderColor: 'var(--gold)',
+    },
+    controls: [
+      { key: 'visible', label: 'Visible', type: 'toggle' },
+      { key: 'background', label: 'Background', type: 'color' },
+      { key: 'borderColor', label: 'Border color', type: 'color' },
+    ],
+  },
+
+  'admin-hub-draft-progress': {
+    label: 'Admin hub draft-progress card',
+    description: 'Per-partner KPI touched counts + last activity.',
+    scope: 'global',
+    defaults: {
+      visible: true,
+      background: 'var(--surface)',
+      radius: 'var(--radius-lg)',
+    },
+    controls: [
+      { key: 'visible', label: 'Visible', type: 'toggle' },
+      { key: 'background', label: 'Background', type: 'color' },
+      { key: 'radius', label: 'Corner radius', type: 'select', options: [
+        { value: 'var(--radius-sm)', label: 'Small' },
+        { value: 'var(--radius-md)', label: 'Medium' },
+        { value: 'var(--radius-lg)', label: 'Large (default)' },
+        { value: 'var(--radius-xl)', label: 'XL' },
+        { value: 'var(--radius-2xl)', label: '2XL' },
+      ]},
+    ],
+  },
+
+  'admin-hub-meeting-card': {
+    label: 'Admin hub Meeting Mode hero card',
+    description: 'The red-accent hero card that launches Meeting Mode.',
+    scope: 'global',
+    defaults: {
+      visible: true,
+      background: 'var(--surface)',
+      accentColor: 'var(--red)',
+      radius: 'var(--radius-lg)',
+    },
+    controls: [
+      { key: 'visible', label: 'Visible', type: 'toggle' },
+      { key: 'background', label: 'Background', type: 'color' },
+      { key: 'accentColor', label: 'Accent color', type: 'color' },
+      { key: 'radius', label: 'Corner radius', type: 'select', options: [
+        { value: 'var(--radius-sm)', label: 'Small' },
+        { value: 'var(--radius-md)', label: 'Medium' },
+        { value: 'var(--radius-lg)', label: 'Large (default)' },
+        { value: 'var(--radius-xl)', label: 'XL' },
+        { value: 'var(--radius-2xl)', label: '2XL' },
+      ]},
+    ],
+  },
+
+  'admin-hub-partners-section': {
+    label: 'Admin hub Partners section',
+    description: 'The "Partners" eyebrow + the 4 partner-related cards below it.',
+    scope: 'global',
+    defaults: {
+      visible: true,
+      cardBackground: 'var(--surface)',
+      cardRadius: 'var(--radius-lg)',
+      eyebrowColor: 'var(--red)',
+    },
+    controls: [
+      { key: 'visible', label: 'Visible', type: 'toggle' },
+      { key: 'cardBackground', label: 'Card background', type: 'color' },
+      { key: 'eyebrowColor', label: 'Section eyebrow color', type: 'color' },
+      { key: 'cardRadius', label: 'Card radius', type: 'select', options: [
+        { value: 'var(--radius-sm)', label: 'Small' },
+        { value: 'var(--radius-md)', label: 'Medium' },
+        { value: 'var(--radius-lg)', label: 'Large (default)' },
+        { value: 'var(--radius-xl)', label: 'XL' },
+        { value: 'var(--radius-2xl)', label: '2XL' },
+      ]},
+    ],
+  },
+
+  'admin-hub-accountability-section': {
+    label: 'Admin hub Accountability section',
+    description: 'The "Accountability" eyebrow + KPI Management / Scorecard Oversight cards.',
+    scope: 'global',
+    defaults: {
+      visible: true,
+      cardBackground: 'var(--surface)',
+      cardRadius: 'var(--radius-lg)',
+      eyebrowColor: 'var(--red)',
+    },
+    controls: [
+      { key: 'visible', label: 'Visible', type: 'toggle' },
+      { key: 'cardBackground', label: 'Card background', type: 'color' },
+      { key: 'eyebrowColor', label: 'Section eyebrow color', type: 'color' },
+      { key: 'cardRadius', label: 'Card radius', type: 'select', options: [
+        { value: 'var(--radius-sm)', label: 'Small' },
+        { value: 'var(--radius-md)', label: 'Medium' },
+        { value: 'var(--radius-lg)', label: 'Large (default)' },
+        { value: 'var(--radius-xl)', label: 'XL' },
+        { value: 'var(--radius-2xl)', label: '2XL' },
+      ]},
+    ],
+  },
+
+  // ============================================================
+  // PARTNER HUB additional elements
+  // ============================================================
+  'hub-personal-growth': {
+    label: 'Personal Growth section (Hub)',
+    description: 'The Personal Growth card on the partner hub.',
+    scope: 'partner-aware',
+    defaults: { visible: true, background: 'var(--surface)', radius: 'var(--radius-lg)' },
+    controls: [
+      { key: 'visible', label: 'Visible', type: 'toggle' },
+      { key: 'background', label: 'Background', type: 'color' },
+      { key: 'radius', label: 'Corner radius', type: 'select', options: [
+        { value: 'var(--radius-sm)', label: 'Small' },
+        { value: 'var(--radius-md)', label: 'Medium' },
+        { value: 'var(--radius-lg)', label: 'Large (default)' },
+        { value: 'var(--radius-xl)', label: 'XL' },
+      ]},
+    ],
+  },
+
+  'hub-business-priorities': {
+    label: 'Business Priorities section (Hub)',
+    description: 'The Business Priorities card on the partner hub.',
+    scope: 'partner-aware',
+    defaults: { visible: true, background: 'var(--surface)', radius: 'var(--radius-lg)' },
+    controls: [
+      { key: 'visible', label: 'Visible', type: 'toggle' },
+      { key: 'background', label: 'Background', type: 'color' },
+      { key: 'radius', label: 'Corner radius', type: 'select', options: [
+        { value: 'var(--radius-sm)', label: 'Small' },
+        { value: 'var(--radius-md)', label: 'Medium' },
+        { value: 'var(--radius-lg)', label: 'Large (default)' },
+        { value: 'var(--radius-xl)', label: 'XL' },
+      ]},
+    ],
+  },
+
+  'hub-this-week-kpis': {
+    label: "This Week's KPIs section (Hub)",
+    description: "The KPI list card on the partner hub.",
+    scope: 'partner-aware',
+    defaults: { visible: true, background: 'var(--surface)', radius: 'var(--radius-lg)' },
+    controls: [
+      { key: 'visible', label: 'Visible', type: 'toggle' },
+      { key: 'background', label: 'Background', type: 'color' },
+      { key: 'radius', label: 'Corner radius', type: 'select', options: [
+        { value: 'var(--radius-sm)', label: 'Small' },
+        { value: 'var(--radius-md)', label: 'Medium' },
+        { value: 'var(--radius-lg)', label: 'Large (default)' },
+        { value: 'var(--radius-xl)', label: 'XL' },
+      ]},
+    ],
+  },
+
+  'hub-week-plan': {
+    label: 'Week Plan card (Hub)',
+    description: 'The week plan / objectives card at the top of the partner hub dashboard.',
+    scope: 'partner-aware',
+    defaults: { visible: true, background: 'var(--surface)', radius: 'var(--radius-lg)' },
+    controls: [
+      { key: 'visible', label: 'Visible', type: 'toggle' },
+      { key: 'background', label: 'Background', type: 'color' },
+      { key: 'radius', label: 'Corner radius', type: 'select', options: [
+        { value: 'var(--radius-sm)', label: 'Small' },
+        { value: 'var(--radius-md)', label: 'Medium' },
+        { value: 'var(--radius-lg)', label: 'Large (default)' },
+        { value: 'var(--radius-xl)', label: 'XL' },
+      ]},
+    ],
+  },
 };
 
 export function listElements() {

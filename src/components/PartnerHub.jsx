@@ -341,33 +341,41 @@ export default function PartnerHub() {
                   Growth/Priorities on the right. On mobile, the children stack
                   vertically as they did before. */}
               <div className="hub-dashboard">
-                {/* This Week's Plan (UAT 2026-05-04 Week Plan feature) — surfaces
-                    Monday Prep's per-partner plan above KPIs so partners see the
-                    context-setter for the week before checking in. Read-only;
-                    Trace edits via the meeting flow. */}
-                <WeekPlanCard objectives={weekObjectives} />
+                {/* This Week's Plan — wrapped so admin can select via editor.
+                    Background/radius controls in the registry apply via inline
+                    style on the wrapper; the inner card's own background sits
+                    above it. Full deep override is Phase 3. */}
+                <EditableElement id="hub-week-plan">
+                  <WeekPlanCard objectives={weekObjectives} />
+                </EditableElement>
 
-                {/* This Week's KPIs (HUB-02..HUB-05) */}
+                {/* This Week's KPIs */}
                 {kpiReady && (
-                  <ThisWeekKpisSection
-                    partner={partner}
-                    mandatorySelections={mandatorySelections}
-                    thisWeekCard={thisWeekCard}
-                    weeklySelection={weeklySelection}
-                    previousSelection={previousSelection}
-                    counters={counters}
-                    onIncrementCounter={handleIncrementCounter}
-                  />
+                  <EditableElement id="hub-this-week-kpis">
+                    <ThisWeekKpisSection
+                      partner={partner}
+                      mandatorySelections={mandatorySelections}
+                      thisWeekCard={thisWeekCard}
+                      weeklySelection={weeklySelection}
+                      previousSelection={previousSelection}
+                      counters={counters}
+                      onIncrementCounter={handleIncrementCounter}
+                    />
+                  </EditableElement>
                 )}
 
-                {/* Personal Growth (HUB-06, HUB-07) — no `partner` prop per 15-02 M5 */}
-                <PersonalGrowthSection
-                  growthPriorities={growthPriorities}
-                  onSaveSelfChosen={handleSaveSelfChosen}
-                />
+                {/* Personal Growth */}
+                <EditableElement id="hub-personal-growth">
+                  <PersonalGrowthSection
+                    growthPriorities={growthPriorities}
+                    onSaveSelfChosen={handleSaveSelfChosen}
+                  />
+                </EditableElement>
 
-                {/* Business Priorities (Phase 18 BIZ-02, D-10) — shared, identical for both partners */}
-                <BusinessPrioritiesSection priorities={businessPriorities} />
+                {/* Business Priorities */}
+                <EditableElement id="hub-business-priorities">
+                  <BusinessPrioritiesSection priorities={businessPriorities} />
+                </EditableElement>
               </div>
 
               {/* Workflow card grid (D-07 bottom; D-08 card roster).

@@ -31,6 +31,7 @@ import PartnerProgress from './components/PartnerProgress.jsx';
 import WeeklyKpiSelectionFlow from './components/WeeklyKpiSelectionFlow.jsx';
 import RoleDiscovery from './components/RoleDiscovery.jsx';
 import Contracts from './components/Contracts.jsx';
+import AdminLayout from './components/admin/AdminLayout.jsx';
 
 export default function App() {
   return (
@@ -70,6 +71,7 @@ export default function App() {
       <Route path="/admin/meeting" element={<AdminMeeting />} />
       <Route path="/admin/meeting/:id" element={<AdminMeetingSession />} />
       <Route path="/contracts" element={<Contracts />} />
+      <Route path="/admin/layout" element={<AdminLayout />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </AppShell>

@@ -6322,3 +6322,50 @@ body:has(.admin-editor-banner) {
 .editable-element * {
   cursor: crosshair !important;
 }
+
+/* ============================================================================
+   AdminLayout overrides audit page (2026-05-24)
+   ============================================================================ */
+.layout-overrides-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.layout-overrides-row {
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.layout-overrides-row__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+.layout-overrides-row__title {
+  font-weight: 600;
+  font-size: var(--text-md);
+}
+.layout-overrides-row__id {
+  font-size: var(--text-xs);
+  font-family: ui-monospace, monospace;
+}
+.layout-overrides-row__props {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+}
+.layout-overrides-prop {
+  background: var(--surface-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+.layout-overrides-prop code {
+  font-family: ui-monospace, monospace;
+  color: var(--violet);
+}

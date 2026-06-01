@@ -23,7 +23,7 @@ export default function AdminEditorBanner() {
   if (mode !== 'on') return null;
 
   return (
-    <div className="admin-editor-banner" role="status" aria-live="polite">
+    <div className="admin-editor-banner" role="status" aria-live="polite" data-no-edit>
       <div className="admin-editor-banner__inner">
         <Pencil size={14} strokeWidth={2} aria-hidden="true" />
         <span>

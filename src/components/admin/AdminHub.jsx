@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { fetchWeeklyKpiSelection, fetchScorecard } from '../../lib/supabase.js';
 import { getMondayOf } from '../../lib/week.js';
 import { HUB_COPY } from '../../data/content.js';
+import EditableElement from './EditableElement.jsx';
+import { useElementConfig } from '../../lib/elementConfig.js';
 
 export default function AdminHub() {
   const navigate = useNavigate();
@@ -110,93 +112,173 @@ export default function AdminHub() {
     }
   }
 
+  // Element configs (global scope — admin hub doesn't have a partner context).
+  const headingCfg = useElementConfig('admin-hub-heading');
+  const statusCfg = useElementConfig('admin-hub-status-banner');
+  const draftCfg = useElementConfig('admin-hub-draft-progress');
+  const meetingCfg = useElementConfig('admin-hub-meeting-card');
+  const partnersCfg = useElementConfig('admin-hub-partners-section');
+  const accountCfg = useElementConfig('admin-hub-accountability-section');
+  const eyebrowCfg = useElementConfig('admin-hub-eyebrow');
+
   return (
     <div className="app-shell">
       <div className="container">
         <div className="screen fade-in">
-          <div className="eyebrow">{copy.eyebrow}</div>
-          <div className="screen-header">
-            <h2>{copy.greeting}</h2>
-          </div>
+          {eyebrowCfg.visible !== false && (
+            <EditableElement
+              id="admin-hub-eyebrow"
+              as="div"
+              className="eyebrow"
+              style={{ color: eyebrowCfg.textColor }}
+            >
+              {copy.eyebrow}
+            </EditableElement>
+          )}
+          {headingCfg.visible !== false && (
+            <div className="screen-header">
+              <EditableElement id="admin-hub-heading" as="h2"
+                style={{
+                  color: headingCfg.textColor,
+                  fontSize: headingCfg.size,
+                }}
+              >
+                {(headingCfg.override && headingCfg.override.trim()) ? headingCfg.override : copy.greeting}
+              </EditableElement>
+            </div>
+          )}
 
           {/* Status Summary (per D-06) */}
-          <div className="status-summary">
-            <h4>{copy.statusHeading}</h4>
-            {statusLines.map((line, i) => (
-              <div key={i} className={`status-item status-item--${line.style}`}>
-                {line.text}
+          {statusCfg.visible !== false && (
+            <EditableElement
+              id="admin-hub-status-banner"
+              as="div"
+              className="status-summary"
+              style={{
+                background: statusCfg.background,
+                borderColor: statusCfg.borderColor,
+              }}
+            >
+              <h4>{copy.statusHeading}</h4>
+              {statusLines.map((line, i) => (
+                <div key={i} className={`status-item status-item--${line.style}`}>
+                  {line.text}
+                </div>
+              ))}
+            </EditableElement>
+          )}
+
+          {/* Draft progress indicator */}
+          {draftCfg.visible !== false && (
+            <EditableElement
+              id="admin-hub-draft-progress"
+              as="div"
+              className="draft-progress"
+              style={{
+                background: draftCfg.background,
+                borderRadius: draftCfg.radius,
+              }}
+            >
+              <div className="draft-progress-heading">Draft progress (this week)</div>
+              <div className="draft-progress-row">
+                <span className="draft-progress-label">Theo</span>
+                <span className="draft-progress-stat">
+                  {theoSummary.touched}/{theoSummary.total || '—'} KPIs touched
+                </span>
+                <span className={`draft-progress-time${theoSummary.submitted ? ' draft-progress-time--submitted' : ''}`}>
+                  {theoSummary.submitted ? 'Submitted' : `Last edit: ${formatRelative(theoSummary.lastEdit)}`}
+                </span>
               </div>
-            ))}
-          </div>
+              <div className="draft-progress-row">
+                <span className="draft-progress-label">Jerry</span>
+                <span className="draft-progress-stat">
+                  {jerrySummary.touched}/{jerrySummary.total || '—'} KPIs touched
+                </span>
+                <span className={`draft-progress-time${jerrySummary.submitted ? ' draft-progress-time--submitted' : ''}`}>
+                  {jerrySummary.submitted ? 'Submitted' : `Last edit: ${formatRelative(jerrySummary.lastEdit)}`}
+                </span>
+              </div>
+            </EditableElement>
+          )}
 
-          {/* Phase 19 follow-up: draft progress indicator. Shows per-partner
-              touch count + last activity so Trace can spot Friday-morning
-              cramming versus genuine through-the-week engagement. */}
-          <div className="draft-progress">
-            <div className="draft-progress-heading">Draft progress (this week)</div>
-            <div className="draft-progress-row">
-              <span className="draft-progress-label">Theo</span>
-              <span className="draft-progress-stat">
-                {theoSummary.touched}/{theoSummary.total || '—'} KPIs touched
-              </span>
-              <span className={`draft-progress-time${theoSummary.submitted ? ' draft-progress-time--submitted' : ''}`}>
-                {theoSummary.submitted ? 'Submitted' : `Last edit: ${formatRelative(theoSummary.lastEdit)}`}
-              </span>
-            </div>
-            <div className="draft-progress-row">
-              <span className="draft-progress-label">Jerry</span>
-              <span className="draft-progress-stat">
-                {jerrySummary.touched}/{jerrySummary.total || '—'} KPIs touched
-              </span>
-              <span className={`draft-progress-time${jerrySummary.submitted ? ' draft-progress-time--submitted' : ''}`}>
-                {jerrySummary.submitted ? 'Submitted' : `Last edit: ${formatRelative(jerrySummary.lastEdit)}`}
-              </span>
-            </div>
-          </div>
+          {/* Meeting Mode Hero Card */}
+          {meetingCfg.visible !== false && (
+            <EditableElement
+              id="admin-hub-meeting-card"
+              as="div"
+              style={{ '--meeting-accent': meetingCfg.accentColor }}
+            >
+              <Link to="/admin/meeting" className="hub-card hub-card--hero"
+                style={{
+                  textDecoration: 'none',
+                  background: meetingCfg.background,
+                  borderRadius: meetingCfg.radius,
+                  borderColor: meetingCfg.accentColor,
+                }}
+              >
+                <h3>{copy.cards.meetingMode.title}</h3>
+                <p>{copy.cards.meetingMode.description}</p>
+              </Link>
+            </EditableElement>
+          )}
 
-          {/* Meeting Mode Hero Card (per D-02 / Pitfall 6) — lives OUTSIDE .hub-grid so it renders full-width */}
-          <Link to="/admin/meeting" className="hub-card hub-card--hero" style={{ textDecoration: 'none' }}>
-                        <h3>{copy.cards.meetingMode.title}</h3>
-            <p>{copy.cards.meetingMode.description}</p>
-          </Link>
+          {/* Partners Section */}
+          {partnersCfg.visible !== false && (
+            <EditableElement
+              id="admin-hub-partners-section"
+              as="div"
+              className="hub-section"
+              style={{
+                '--hub-card-bg': partnersCfg.cardBackground,
+                '--hub-card-radius': partnersCfg.cardRadius,
+              }}
+            >
+              <div className="eyebrow" style={{ color: partnersCfg.eyebrowColor }}>{copy.sections.partners}</div>
+              <div className="hub-grid">
+                <Link to="/admin" className="hub-card">
+                  <h3>{copy.cards.dashboard.title}</h3>
+                  <p>{copy.cards.dashboard.description}</p>
+                </Link>
+                <Link to="/admin/partners" className="hub-card">
+                  <h3>{copy.cards.partnerProfiles.title}</h3>
+                  <p>{copy.cards.partnerProfiles.description}</p>
+                </Link>
+                <Link to="/admin/comparison" className="hub-card">
+                  <h3>{copy.cards.comparison.title}</h3>
+                  <p>{copy.cards.comparison.description}</p>
+                </Link>
+                <Link to="/admin/test" className="hub-card">
+                  <h3>Test Account</h3>
+                  <p>View current state and reset individual pieces of the test account.</p>
+                </Link>
+              </div>
+            </EditableElement>
+          )}
 
-          {/* Partners Section (per D-05) */}
-          <div className="hub-section">
-            <div className="eyebrow">{copy.sections.partners}</div>
-            <div className="hub-grid">
-              <Link to="/admin" className="hub-card">
-                                <h3>{copy.cards.dashboard.title}</h3>
-                <p>{copy.cards.dashboard.description}</p>
-              </Link>
-              <Link to="/admin/partners" className="hub-card">
-                                <h3>{copy.cards.partnerProfiles.title}</h3>
-                <p>{copy.cards.partnerProfiles.description}</p>
-              </Link>
-              <Link to="/admin/comparison" className="hub-card">
-                                <h3>{copy.cards.comparison.title}</h3>
-                <p>{copy.cards.comparison.description}</p>
-              </Link>
-              <Link to="/admin/test" className="hub-card">
-                                <h3>Test Account</h3>
-                <p>View current state and reset individual pieces of the test account.</p>
-              </Link>
-            </div>
-          </div>
-
-          {/* Accountability Section (per D-05) — Meeting Mode promoted to hero above; only two cards remain here */}
-          <div className="hub-section">
-            <div className="eyebrow">{copy.sections.accountability}</div>
-            <div className="hub-grid">
-              <Link to="/admin/kpi" className="hub-card">
-                                <h3>{copy.cards.kpiManagement.title}</h3>
-                <p>{copy.cards.kpiManagement.description}</p>
-              </Link>
-              <Link to="/admin/scorecards" className="hub-card">
-                                <h3>{copy.cards.scorecardOversight.title}</h3>
-                <p>{copy.cards.scorecardOversight.description}</p>
-              </Link>
-            </div>
-          </div>
+          {/* Accountability Section */}
+          {accountCfg.visible !== false && (
+            <EditableElement
+              id="admin-hub-accountability-section"
+              as="div"
+              className="hub-section"
+              style={{
+                '--hub-card-bg': accountCfg.cardBackground,
+                '--hub-card-radius': accountCfg.cardRadius,
+              }}
+            >
+              <div className="eyebrow" style={{ color: accountCfg.eyebrowColor }}>{copy.sections.accountability}</div>
+              <div className="hub-grid">
+                <Link to="/admin/kpi" className="hub-card">
+                  <h3>{copy.cards.kpiManagement.title}</h3>
+                  <p>{copy.cards.kpiManagement.description}</p>
+                </Link>
+                <Link to="/admin/scorecards" className="hub-card">
+                  <h3>{copy.cards.scorecardOversight.title}</h3>
+                  <p>{copy.cards.scorecardOversight.description}</p>
+                </Link>
+              </div>
+            </EditableElement>
+          )}
         </div>
       </div>
     </div>

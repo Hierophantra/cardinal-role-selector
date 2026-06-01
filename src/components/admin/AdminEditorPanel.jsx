@@ -67,7 +67,7 @@ export default function AdminEditorPanel() {
   const spec = getElementSpec(selectedId);
   if (!spec) {
     return (
-      <aside className="admin-editor-panel" role="complementary">
+      <aside className="admin-editor-panel" role="complementary" data-no-edit>
         <PanelHeader
           title="Unknown element"
           onClose={deselect}
@@ -126,7 +126,7 @@ export default function AdminEditorPanel() {
   }
 
   return (
-    <aside className="admin-editor-panel" role="complementary" aria-label="Element editor">
+    <aside className="admin-editor-panel" role="complementary" aria-label="Element editor" data-no-edit>
       <PanelHeader
         title={spec.label}
         onClose={deselect}

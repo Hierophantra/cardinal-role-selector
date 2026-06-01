@@ -103,6 +103,7 @@ function AdminNav({ collapsed, onItemClick }) {
       <NavItem to="/admin/meeting" icon={Calendar} label="Meetings" collapsed={collapsed} onClick={onItemClick} />
       <NavItem to="/admin/comparison" icon={Scale} label="Comparison" collapsed={collapsed} onClick={onItemClick} />
       <NavItem to="/contracts" icon={FileText} label="Contracts" collapsed={collapsed} onClick={onItemClick} />
+      <NavItem to="/admin/layout" icon={SlidersHorizontal} label="Layout overrides" collapsed={collapsed} onClick={onItemClick} />
 
       <div className="sidebar-divider" aria-hidden="true" />
 
@@ -140,7 +141,12 @@ export default function Sidebar({
   const isAdmin = sessionRole === 'admin';
 
   function handleSignOut() {
-    try { sessionStorage.removeItem('cardinal-role'); } catch {}
+    try {
+      sessionStorage.removeItem('cardinal-role');
+      // Also clear the editor-mode flag so the NEXT admin login doesn't
+      // come back with edit mode still on (a confusing bug otherwise).
+      sessionStorage.removeItem('cardinal-admin-editor-mode');
+    } catch {}
     navigate('/', { replace: true });
     if (onItemClick) onItemClick();
   }

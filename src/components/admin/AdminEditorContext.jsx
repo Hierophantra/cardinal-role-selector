@@ -24,7 +24,20 @@ function getSessionRole() {
   try { return sessionStorage.getItem('cardinal-role'); } catch { return null; }
 }
 function readPersistedMode() {
-  try { return sessionStorage.getItem(STORAGE_KEY) === 'on' ? 'on' : 'off'; } catch { return 'off'; }
+  // Defensive: only honor the persisted "on" flag if the current session
+  // belongs to admin. Otherwise clear it so the next admin login starts
+  // in 'off' (fixes the "edit mode was on right after login" bug).
+  try {
+    const role = sessionStorage.getItem('cardinal-role');
+    const persisted = sessionStorage.getItem(STORAGE_KEY);
+    if (role !== 'admin') {
+      if (persisted) sessionStorage.removeItem(STORAGE_KEY);
+      return 'off';
+    }
+    return persisted === 'on' ? 'on' : 'off';
+  } catch {
+    return 'off';
+  }
 }
 
 // Extract partner slug from the URL when we're on a partner-context route.
@@ -129,6 +142,39 @@ export function AdminEditorProvider({ children }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [mode, selectedId]);
+
+  // ---- Global click capture (replaces per-element onClickCapture) ----
+  // When admin mode is on, this single document-level handler intercepts
+  // clicks BEFORE any React onClick fires. It walks up from e.target to
+  // find the nearest [data-editable-id] ancestor and selects THAT one.
+  // Result: clicking nested wrappers selects the innermost, not the
+  // outermost. Elements marked data-no-edit (the editor panel, banner,
+  // global injectors) are skipped entirely.
+  useEffect(() => {
+    if (mode !== 'on') return;
+    function onPointer(e) {
+      // Right-click and middle-click — let them through so admin can still
+      // inspect / open context menus while editing.
+      if (e.type === 'mousedown' && e.button !== 0) return;
+      let el = e.target;
+      while (el && el !== document.body) {
+        if (el.dataset?.noEdit !== undefined) return;  // editor chrome — skip
+        if (el.dataset?.editableId) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (e.type === 'click') setSelectedId(el.dataset.editableId);
+          return;
+        }
+        el = el.parentElement;
+      }
+    }
+    document.addEventListener('click', onPointer, true);
+    document.addEventListener('mousedown', onPointer, true);
+    return () => {
+      document.removeEventListener('click', onPointer, true);
+      document.removeEventListener('mousedown', onPointer, true);
+    };
+  }, [mode]);
 
   // Record a snapshot BEFORE a save lands so undo can roll back to it.
   // Editor panel calls this before invoking applyConfigUpdate.
