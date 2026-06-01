@@ -88,13 +88,13 @@ export default function AppShell({ children }) {
     setCollapsed={setCollapsed}
     drawerOpen={drawerOpen}
     setDrawerOpen={setDrawerOpen}
-  />;
+  >{children}</ShellInner>;
 }
 
 // Inner shell — hooks that depend on element configs MUST run inside the
 // suppressed/auth guard above, otherwise the Login screen tries to subscribe
 // before it has a session.
-function ShellInner({ sessionRole, collapsed, setCollapsed, drawerOpen, setDrawerOpen }) {
+function ShellInner({ sessionRole, collapsed, setCollapsed, drawerOpen, setDrawerOpen, children }) {
   // Element-level admin config — drives sidebar widths + content max-width.
   const sidebarConfig = useElementConfig('sidebar-desktop');
   const contentConfig = useElementConfig('content-area');
