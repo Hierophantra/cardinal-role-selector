@@ -15,6 +15,7 @@ import {
   upsertWeeklyGrowthCommitment,
   upsertGrowthPriority,
   incrementKpiCounter,
+  fetchEndedFridayReviewForWeek,
 } from '../lib/supabase.js';
 import { getMondayOf } from '../lib/week.js';
 import { computeSeasonStats, computeStreaks, computeWeekNumber, getPerformanceColor } from '../lib/seasonStats.js';
@@ -64,6 +65,9 @@ export default function PartnerHub() {
   const [growthPriorities, setGrowthPriorities] = useState([]);
   const [businessPriorities, setBusinessPriorities] = useState(null);
   const [weeklyCommitment, setWeeklyCommitment] = useState(null);
+  // 2026-06-01: true once this week's joint Friday review has ended. Gates the
+  // "Partner View" card — the counterpart's current week opens only after it.
+  const [fridayReviewEnded, setFridayReviewEnded] = useState(false);
   // UAT 2026-05-18 (Week Objectives): holds this partner's objective cards
   // for the current week (null = still loading, [] = loaded but empty).
   const [weekObjectives, setWeekObjectives] = useState(null);
@@ -102,8 +106,14 @@ export default function PartnerHub() {
       // 2026-06-01: this week's mandatory day-pick commitment. May be null
       // (partner hasn't picked yet).
       fetchWeeklyGrowthCommitment(partner, currentMonday).catch(() => null),
+      // 2026-06-01: has this week's joint Friday review ended? Gates the
+      // Partner View card. Skip the query on the admin pass — admin always
+      // sees everything anyway.
+      adminView
+        ? Promise.resolve(null)
+        : fetchEndedFridayReviewForWeek(currentMonday).catch(() => null),
     ])
-      .then(([sub, sels, cards, subs, thisWeek, prevWeek, growth, bizPriorities, objectives, commitment]) => {
+      .then(([sub, sels, cards, subs, thisWeek, prevWeek, growth, bizPriorities, objectives, commitment, fridayReview]) => {
         setSubmission(sub);
         setKpiSelections(sels);
         setScorecards(cards);
@@ -114,6 +124,7 @@ export default function PartnerHub() {
         setBusinessPriorities(bizPriorities);
         setWeekObjectives(objectives);
         setWeeklyCommitment(commitment);
+        setFridayReviewEnded(!!fridayReview);
       })
       .catch((err) => {
         console.error(err);
@@ -495,17 +506,33 @@ export default function PartnerHub() {
                     bypasses the "no weekly KPI picked" empty-guard, so the
                     mandatory rows always render even when the counterpart
                     hasn't picked this week's optional KPI yet. */}
-                {partner !== 'test' && (
-                  <Link
-                    to={`/scorecard/${partner === 'theo' ? 'jerry' : 'theo'}`}
-                    className="hub-card hub-card--partner-view"
-                  >
-                    <span className="eyebrow">PARTNER VIEW</span>
-                    <h3>{PARTNER_DISPLAY[partner === 'theo' ? 'jerry' : 'theo']}'s Scorecard</h3>
-                    <p>Read-only view of {partner === 'theo' ? 'Jerry' : 'Theo'}'s weekly check-in and history. See where they stand alongside your own.</p>
-                    <span className="hub-card-cta">View {partner === 'theo' ? 'Jerry' : 'Theo'}'s scorecard {'→'}</span>
-                  </Link>
-                )}
+                {partner !== 'test' && (() => {
+                  const counterpart = partner === 'theo' ? 'jerry' : 'theo';
+                  const counterpartName = PARTNER_DISPLAY[counterpart];
+                  // 2026-06-01: partners can't review the counterpart's current
+                  // week until the joint Friday review has ended. Admin is exempt.
+                  // The card stays clickable so past weeks remain reachable.
+                  const locked = !adminView && !fridayReviewEnded;
+                  return (
+                    <Link
+                      to={`/scorecard/${counterpart}`}
+                      className={`hub-card hub-card--partner-view${locked ? ' hub-card--partner-view-locked' : ''}`}
+                    >
+                      <span className="eyebrow">PARTNER VIEW{locked ? ' · LOCKED TILL FRIDAY' : ''}</span>
+                      <h3>{counterpartName}'s Scorecard</h3>
+                      {locked ? (
+                        <p>This week's check-in opens after your Friday meeting. {counterpartName}'s past weeks are available now.</p>
+                      ) : (
+                        <p>Read-only view of {counterpartName}'s weekly check-in and history. See where they stand alongside your own.</p>
+                      )}
+                      <span className="hub-card-cta">
+                        {locked
+                          ? `View ${counterpartName}'s past weeks →`
+                          : `View ${counterpartName}'s scorecard →`}
+                      </span>
+                    </Link>
+                  );
+                })()}
 
                 {/* Weekly Scorecard (kept, D-08) */}
                 {kpiReady && (

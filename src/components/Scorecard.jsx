@@ -7,6 +7,7 @@ import {
   fetchAdminSetting,
   fetchScorecards,
   fetchGrowthPriorities,
+  fetchEndedFridayReviewForWeek,
   upsertScorecard,
 } from '../lib/supabase.js';
 import { getMondayOf, isWeekClosed, formatWeekRange, effectiveResult, getFridayAutoSubmitOf, isAfterFridayAutoSubmit } from '../lib/week.js';
@@ -547,6 +548,10 @@ export default function Scorecard() {
   // 2026-06-01 — tracks the real DB submitted_at timestamp so we can
   // distinguish manual vs Friday-9-AM-auto submit in the UI.
   const [manualSubmittedAt, setManualSubmittedAt] = useState(null);
+  // 2026-06-01 — true once this week's joint friday_review meeting has ended.
+  // Gates the counterpart view: partners can't review each other's current-week
+  // scorecard until after the Friday meeting. Only fetched in counterpart view.
+  const [fridayReviewEnded, setFridayReviewEnded] = useState(false);
   // UAT C6: completion message picked once on submit success and held in
   // state so the post-submit view shows a stable string until the partner
   // navigates away (re-pick on next mount only).
@@ -665,11 +670,17 @@ export default function Scorecard() {
       fetchGrowthPriorities(partner).catch(() => []),
       // 2026-05-24: partner-KPI-edit toggle. null/missing row → off.
       fetchAdminSetting('partner_kpi_edit_enabled').then((r) => r?.value === true).catch(() => false),
+      // 2026-06-01: only the counterpart view needs the Friday-meeting gate.
+      // Own-scorecard + admin loads skip the query (resolve null).
+      counterpartView
+        ? fetchEndedFridayReviewForWeek(currentWeekOf).catch(() => null)
+        : Promise.resolve(null),
     ])
-      .then(([templates, sel, jerryActive, scorecards, growth, partnerEdit]) => {
+      .then(([templates, sel, jerryActive, scorecards, growth, partnerEdit, fridayReview]) => {
         setAllScorecards(scorecards);
         setGrowthPriorities(growth ?? []);
         setPartnerKpiEditEnabled(!!partnerEdit);
+        setFridayReviewEnded(!!fridayReview);
 
         // Empty guard: no weekly KPI selected for current week.
         //
@@ -1338,6 +1349,15 @@ export default function Scorecard() {
   const isSubmitted = view === 'submitted' || isAutoSubmitted;
   const hasLateEdits = lateEditCount > 0;
 
+  // 2026-06-01 — counterpart current-week lock. A partner viewing the OTHER
+  // partner's scorecard cannot review the current week's check-in until the
+  // joint Friday review for that week has ended. History (past weeks) stays
+  // visible. Admin/test never hit counterpartView, so they're never locked.
+  // Once the week closes (Saturday), the lock releases — the week has rolled
+  // into reviewable history regardless of whether a meeting was logged.
+  const counterpartCurrentLocked =
+    counterpartView && !fridayReviewEnded && !weekClosed;
+
   // ---- Render ----
   // Tier 3 v2 Wave 5: scorecard-with-rail layout. Desktop (>= 901px) renders
   // a sticky left-rail KPI list alongside the form. Mobile keeps the
@@ -1391,7 +1411,7 @@ export default function Scorecard() {
                 status line states the editability window — "Editable until
                 Saturday at 11:59 PM" while the week is open, swapping to the
                 weekClosed banner once Saturday close fires. */}
-            {isSubmitted && (
+            {isSubmitted && !counterpartCurrentLocked && (
               <div className="scorecard-commit-gate" style={{ marginBottom: 16 }}>
                 <p className="muted" style={{ margin: 0 }}>
                   {isAutoSubmitted
@@ -1436,16 +1456,18 @@ export default function Scorecard() {
               </div>
             )}
 
-            <div className="scorecard-meta-row">
-              <span className={`scorecard-counter${answeredCount === rows.length ? ' complete' : ''}`}>
-                {answeredCount === rows.length
-                  ? SCORECARD_COPY.counterComplete(rows.length)
-                  : SCORECARD_COPY.counter(answeredCount, rows.length)}
-              </span>
-              <span className={`scorecard-saved${savedVisible ? ' visible' : ''}`}>
-                {SCORECARD_COPY.savedIndicator}
-              </span>
-            </div>
+            {!counterpartCurrentLocked && (
+              <div className="scorecard-meta-row">
+                <span className={`scorecard-counter${answeredCount === rows.length ? ' complete' : ''}`}>
+                  {answeredCount === rows.length
+                    ? SCORECARD_COPY.counterComplete(rows.length)
+                    : SCORECARD_COPY.counter(answeredCount, rows.length)}
+                </span>
+                <span className={`scorecard-saved${savedVisible ? ' visible' : ''}`}>
+                  {SCORECARD_COPY.savedIndicator}
+                </span>
+              </div>
+            )}
 
             {weekClosed && !isSubmitted && (
               <p className="muted" style={{ marginBottom: 16 }}>
@@ -1462,6 +1484,18 @@ export default function Scorecard() {
             {/* UAT C1: self-chosen growth reminder — read-only, top of scorecard */}
             <SelfChosenGrowthReminder growthPriorities={growthPriorities} />
 
+            {/* 2026-06-01: counterpart current-week lock. Theo/Jerry can't
+                review each other's in-progress week until the joint Friday
+                review has ended. History (below) stays visible. */}
+            {counterpartCurrentLocked ? (
+              <Callout color="gold" className="scorecard-counterpart-lock">
+                <strong>{partnerName}'s check-in for this week opens after the Friday meeting.</strong>
+                {' '}
+                You'll be able to review it once your joint Friday review has wrapped.
+                Past weeks are available below.
+              </Callout>
+            ) : (
+            <>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {rows.map((tpl) => {
@@ -1906,6 +1940,9 @@ export default function Scorecard() {
               <p className="muted" style={{ color: 'var(--miss)', textAlign: 'center', marginTop: 8 }}>
                 {submitError}
               </p>
+            )}
+
+            </>
             )}
 
             {renderHistory()}

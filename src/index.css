@@ -4316,6 +4316,21 @@ select:focus,
   margin: 0;
 }
 
+/* 2026-06-01: Partner View card locked state — counterpart's current week is
+   gated until the Friday meeting. Gold accent + the "LOCKED TILL FRIDAY"
+   eyebrow signal it without disabling the link (past weeks stay reachable). */
+.hub-card--partner-view-locked {
+  border-color: var(--callout-gold-border, rgba(255, 196, 77, 0.32));
+}
+.hub-card--partner-view-locked .eyebrow {
+  color: var(--gold, #f4c44d);
+}
+
+/* Counterpart current-week lock callout on the Scorecard page. */
+.scorecard-counterpart-lock {
+  margin-bottom: 18px;
+}
+
 /* Counterpart read-only banner on the Scorecard page. Subtle but unmissable. */
 .scorecard-readonly-banner {
   display: flex;

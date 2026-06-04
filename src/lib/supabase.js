@@ -908,6 +908,26 @@ export async function fetchMeeting(meetingId) {
   return data;
 }
 
+// 2026-06-01 — counterpart-view gate. A friday_review meeting for `weekOf` that
+// has ENDED (ended_at set) means Theo + Jerry have had their joint Friday
+// review for that week. Until then, neither partner may review the OTHER's
+// current-week scorecard. Meetings are joint (no partner column), so one row
+// covers both partners. Returns the ended meeting row, or null if no Friday
+// review has been completed for the week yet.
+export async function fetchEndedFridayReviewForWeek(weekOf) {
+  const { data, error } = await supabase
+    .from('meetings')
+    .select('*')
+    .eq('week_of', weekOf)
+    .eq('meeting_type', 'friday_review')
+    .not('ended_at', 'is', null)
+    .order('ended_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export async function fetchMeetingNotes(meetingId) {
   const { data, error } = await supabase
     .from('meeting_notes')
