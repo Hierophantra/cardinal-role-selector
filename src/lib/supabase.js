@@ -1011,7 +1011,28 @@ export async function upsertMeetingNotePerPartner({ meeting_id, agenda_stop_key,
  *          notes is null only when meetingId is null. Otherwise notes always
  *          has all three stop keys with theo+jerry strings (empty when no row).
  */
+// Loads the Monday-set week plan for the Friday Review recap stop.
+//
+// 2026-06-01 BUGFIX: the Monday "week_objectives" consolidation (UAT
+// 2026-05-18) moved the plan OUT of meeting_notes (legacy keys
+// priorities_focus / risks_blockers / commitments) and INTO the
+// weekly_objectives table. This reader still only looked at the legacy
+// meeting_notes keys, so the Friday recap rendered blank for every week
+// after the consolidation. We now read the weekly_objectives table (the
+// live source) AND keep the legacy meeting_notes as a fallback so
+// historical Friday recaps (pre-consolidation weeks) still render.
+//
+// Returns: { meetingId, heldAt, notes (legacy|null), objectives [] }
 export async function fetchWeekPlanForWeek(weekOf) {
+  // New source — card-based objectives keyed by week_of (assignee-scoped).
+  const { data: objectives, error: oErr } = await supabase
+    .from('weekly_objectives')
+    .select('*')
+    .eq('week_of', weekOf)
+    .order('created_at', { ascending: true });
+  if (oErr) throw oErr;
+
+  // Legacy source — Monday prep meeting_notes (pre-2026-05-18).
   const { data: meetings, error: mErr } = await supabase
     .from('meetings')
     .select('id, held_at')
@@ -1021,29 +1042,36 @@ export async function fetchWeekPlanForWeek(weekOf) {
     .limit(1);
   if (mErr) throw mErr;
   const meeting = meetings?.[0] ?? null;
-  if (!meeting) return { meetingId: null, heldAt: null, notes: null };
 
-  const { data: rows, error: nErr } = await supabase
-    .from('meeting_notes')
-    .select('agenda_stop_key, notes_theo, notes_jerry')
-    .eq('meeting_id', meeting.id)
-    .in('agenda_stop_key', ['priorities_focus', 'risks_blockers', 'commitments']);
-  if (nErr) throw nErr;
-
-  const notes = {
-    priorities_focus: { theo: '', jerry: '' },
-    risks_blockers: { theo: '', jerry: '' },
-    commitments: { theo: '', jerry: '' },
-  };
-  for (const r of rows ?? []) {
-    if (notes[r.agenda_stop_key]) {
-      notes[r.agenda_stop_key] = {
-        theo: r.notes_theo ?? '',
-        jerry: r.notes_jerry ?? '',
-      };
+  let notes = null;
+  if (meeting) {
+    const { data: rows, error: nErr } = await supabase
+      .from('meeting_notes')
+      .select('agenda_stop_key, notes_theo, notes_jerry')
+      .eq('meeting_id', meeting.id)
+      .in('agenda_stop_key', ['priorities_focus', 'risks_blockers', 'commitments']);
+    if (nErr) throw nErr;
+    notes = {
+      priorities_focus: { theo: '', jerry: '' },
+      risks_blockers: { theo: '', jerry: '' },
+      commitments: { theo: '', jerry: '' },
+    };
+    for (const r of rows ?? []) {
+      if (notes[r.agenda_stop_key]) {
+        notes[r.agenda_stop_key] = {
+          theo: r.notes_theo ?? '',
+          jerry: r.notes_jerry ?? '',
+        };
+      }
     }
   }
-  return { meetingId: meeting.id, heldAt: meeting.held_at, notes };
+
+  return {
+    meetingId: meeting?.id ?? null,
+    heldAt: meeting?.held_at ?? null,
+    notes,
+    objectives: objectives ?? [],
+  };
 }
 
 // --- Weekly KPI Selections + Counters (Phase 14, v2.0) ---

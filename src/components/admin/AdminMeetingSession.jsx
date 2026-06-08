@@ -2313,14 +2313,28 @@ function WeekPlanRecapStop({
   isEnded,
 }) {
   const stopsCopy = copy.stops;
-  const hasPlan = Boolean(weekPlan && weekPlan.meetingId);
+  // 2026-06-01: prefer the card-based objectives (weekly_objectives table,
+  // the live source since the 2026-05-18 Monday consolidation). Fall back to
+  // the legacy meeting_notes plan for historical (pre-consolidation) weeks.
+  const objectives = weekPlan?.objectives ?? [];
+  const hasObjectives = objectives.length > 0;
   const planNotes = weekPlan?.notes ?? null;
 
-  const sections = [
+  const legacySections = [
     { key: 'priorities_focus', heading: stopsCopy.weekPlanRecapPriorityHeading },
     { key: 'risks_blockers', heading: stopsCopy.weekPlanRecapRisksHeading },
     { key: 'commitments', heading: stopsCopy.weekPlanRecapCommitmentsHeading },
   ];
+  const hasLegacyPlan = Boolean(
+    weekPlan && weekPlan.meetingId && planNotes &&
+    legacySections.some(({ key }) =>
+      (planNotes[key]?.theo ?? '').trim() || (planNotes[key]?.jerry ?? '').trim()
+    )
+  );
+
+  const assigneeLabel = (a) =>
+    OBJECTIVE_ASSIGNEES.find((o) => o.value === a)?.label ??
+    (a === 'both' ? 'Both' : PARTNER_DISPLAY[a] ?? a);
 
   return (
     <>
@@ -2330,9 +2344,38 @@ function WeekPlanRecapStop({
       </h2>
       <p className="meeting-stop-subtext">{stopsCopy.weekPlanRecapSubtext}</p>
 
-      {hasPlan ? (
+      {hasObjectives ? (
+        <div className="week-plan-recap-stop__plan-block objective-board objective-board--readonly">
+          {objectives.map((obj) => {
+            const priority = (obj.priority ?? '').trim();
+            const risks = (obj.risks ?? '').trim();
+            const deadline = (obj.deadline ?? '').trim();
+            return (
+              <div key={obj.id} className="objective-card objective-card--readonly">
+                <span className="objective-card-assignee">{assigneeLabel(obj.assignee)}</span>
+                <div className="objective-readonly-field">
+                  <span className="objective-field-label">Priority</span>
+                  <p>{priority || 'No priority captured.'}</p>
+                </div>
+                {risks && (
+                  <div className="objective-readonly-field">
+                    <span className="objective-field-label">Risks &amp; blockers</span>
+                    <p>{risks}</p>
+                  </div>
+                )}
+                {deadline && (
+                  <div className="objective-card-deadline">
+                    <span className="objective-field-label">Deadline</span>
+                    <span className="objective-card-deadline-value">{deadline}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : hasLegacyPlan ? (
         <div className="week-plan-recap-stop__plan-block week-plan-card">
-          {sections.map(({ key, heading }) => {
+          {legacySections.map(({ key, heading }) => {
             const cell = planNotes?.[key] ?? { theo: '', jerry: '' };
             return (
               <div key={key} className="week-plan-card__section">
