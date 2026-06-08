@@ -4153,6 +4153,112 @@ body::before {
   color: var(--text);
 }
 
+/* 2026-06-01: admin-side weekly day-pick commitment panel (AdminProfile) +
+   meeting-mode day-commitment readout. */
+.day-commit-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold, #f4c44d);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+}
+.day-commit-panel__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.day-commit-panel__title {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--gold, #f4c44d);
+}
+.day-commit-panel__week {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.day-commit-panel__hint {
+  margin: 6px 0 12px;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.day-commit-panel__locked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.day-commit-panel__days {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.day-commit-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  background: rgba(76, 175, 80, 0.14);
+  border: 1px solid rgba(76, 175, 80, 0.34);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+.day-commit-panel__reset {
+  font-size: var(--text-sm);
+  color: var(--miss);
+  white-space: nowrap;
+}
+.day-commit-panel__empty {
+  margin: 0;
+  font-size: var(--text-md);
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Meeting-mode growth stop: per-partner day-commitment readout. */
+.meeting-day-commitment {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 196, 77, 0.06);
+  border: 1px solid var(--callout-gold-border, rgba(255, 196, 77, 0.28));
+}
+.meeting-day-commitment__eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold, #f4c44d);
+  margin-bottom: 6px;
+}
+.meeting-day-commitment__days {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.meeting-day-commitment__day {
+  display: inline-flex;
+  padding: 3px 10px;
+  background: rgba(76, 175, 80, 0.14);
+  border: 1px solid rgba(76, 175, 80, 0.34);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+.meeting-day-commitment__empty {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--muted);
+}
+
 /* ============================================================================
    Tier 1 visual refinement — tech-company-built-for-trades direction.
    Restrained, confident, professional-tool feel. Full overhaul lands in

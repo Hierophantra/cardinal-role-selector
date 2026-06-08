@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchSubmission, fetchBusinessPriorities, fetchScorecards } from '../../lib/supabase.js';
+import {
+  fetchSubmission,
+  fetchBusinessPriorities,
+  fetchScorecards,
+  fetchWeeklyGrowthCommitment,
+  clearWeeklyGrowthCommitment,
+} from '../../lib/supabase.js';
+import { getMondayOf, formatWeekRange } from '../../lib/week.js';
 import {
   purposeOptions,
   salesOptions,
@@ -53,21 +60,47 @@ export default function AdminProfile() {
   const [businessPriorities, setBusinessPriorities] = useState(null);
   const [scorecardHistory, setScorecardHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  // 2026-06-01: this week's personal-growth day-pick commitment (Theo 2 days /
+  // Jerry 3 days). Admin can see what the partner locked in and reset it if
+  // they need to re-pick (the partner-facing copy says "ask Trace").
+  const [dayCommit, setDayCommit] = useState(null);
+  const [dayCommitBusy, setDayCommitBusy] = useState(false);
+  const currentMonday = getMondayOf();
 
   useEffect(() => {
     Promise.all([
       fetchSubmission(partner),
       fetchBusinessPriorities(),
       fetchScorecards(partner).catch(() => []),
+      fetchWeeklyGrowthCommitment(partner, currentMonday).catch(() => null),
     ])
-      .then(([fetchedSub, biz, scorecards]) => {
+      .then(([fetchedSub, biz, scorecards, commit]) => {
         setSub(fetchedSub);
         setBusinessPriorities(biz);
         setScorecardHistory(Array.isArray(scorecards) ? scorecards : []);
+        setDayCommit(commit);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partner]);
+
+  async function handleResetDayCommit() {
+    if (dayCommitBusy) return;
+    if (typeof window !== 'undefined' &&
+        !window.confirm(`Reset ${NAMES[partner]?.split(' ')[0] ?? partner}'s day commitment for this week? They'll be able to pick again.`)) {
+      return;
+    }
+    setDayCommitBusy(true);
+    try {
+      await clearWeeklyGrowthCommitment(partner, currentMonday);
+      setDayCommit(null);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDayCommitBusy(false);
+    }
+  }
 
   // Phase 19 follow-up: repeat-entry detection. Scan the last 6 weeks of
   // submitted scorecards for string values that recur 3+ times in the same
@@ -205,6 +238,52 @@ export default function AdminProfile() {
           {(partner === 'theo' || partner === 'jerry') && (
             <InfractionsPanel partner={partner} editable />
           )}
+
+          {/* 2026-06-01: weekly personal-growth day-pick commitment. Theo locks
+              2 days (out of office by 7:30 PM); Jerry locks 3 days (out of the
+              house by 7:30 AM). Read-only view of what they committed, plus a
+              Reset so Trace can let them re-pick mid-week. */}
+          {(partner === 'theo' || partner === 'jerry') && (() => {
+            const requiredCount = dayCommit?.required_count ?? (partner === 'jerry' ? 3 : 2);
+            const days = dayCommit?.days ?? [];
+            const locked = !!dayCommit?.confirmed_at;
+            const firstName = NAMES[partner]?.split(' ')[0] ?? partner;
+            return (
+              <div className="day-commit-panel">
+                <div className="day-commit-panel__head">
+                  <span className="day-commit-panel__title">
+                    Personal growth — days committed
+                  </span>
+                  <span className="day-commit-panel__week">Week of {formatWeekRange(currentMonday)}</span>
+                </div>
+                <p className="day-commit-panel__hint">
+                  {firstName} commits {requiredCount} weekday{requiredCount === 1 ? '' : 's'} each week.
+                  Resets every Monday.
+                </p>
+                {locked && days.length > 0 ? (
+                  <div className="day-commit-panel__locked">
+                    <div className="day-commit-panel__days">
+                      {days.map((d) => (
+                        <span key={d} className="day-commit-chip">{d}</span>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-ghost day-commit-panel__reset"
+                      onClick={handleResetDayCommit}
+                      disabled={dayCommitBusy}
+                    >
+                      {dayCommitBusy ? 'Resetting…' : 'Reset (let them re-pick)'}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="day-commit-panel__empty">
+                    Not locked in yet this week.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Phase 19 follow-up: repeat-entry watch. Surfaces structured-data
               values that appeared 3+ times in the partner's last 6 submitted

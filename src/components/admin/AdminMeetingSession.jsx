@@ -14,6 +14,7 @@ import {
   fetchBusinessPriorities,
   fetchWeekPlanForWeek,
   fetchWeeklyObjectives,
+  fetchWeeklyGrowthCommitment,
   addWeeklyObjective,
   updateWeeklyObjective,
   deleteWeeklyObjective,
@@ -190,6 +191,8 @@ export default function AdminMeetingSession() {
           noteRows,
           bizPriorities,
           weekPlan,
+          theoDayCommit,
+          jerryDayCommit,
         ] = await Promise.all([
           // UAT A3/A7/A8: compose template-id-keyed 7-row KPI list (Scorecard.jsx parity).
           composePartnerKpis('theo', m.week_of),
@@ -208,6 +211,10 @@ export default function AdminMeetingSession() {
           isFridayReview
             ? fetchWeekPlanForWeek(m.week_of)
             : Promise.resolve(null),
+          // 2026-06-01: this week's personal-growth day-pick commitment so the
+          // growth_personal stop shows what each partner locked in.
+          fetchWeeklyGrowthCommitment('theo', m.week_of).catch(() => null),
+          fetchWeeklyGrowthCommitment('jerry', m.week_of).catch(() => null),
         ]);
         if (!alive) return;
 
@@ -218,11 +225,13 @@ export default function AdminMeetingSession() {
             kpis: theoKpis ?? [],
             growth: theoGrowth ?? [],
             scorecard: theoScorecard ?? null,
+            dayCommitment: theoDayCommit ?? null,
           },
           jerry: {
             kpis: jerryKpis ?? [],
             growth: jerryGrowth ?? [],
             scorecard: jerryScorecard ?? null,
+            dayCommitment: jerryDayCommit ?? null,
           },
           lastWeekScorecards,
           businessPriorities: bizPriorities ?? [],
@@ -2059,6 +2068,29 @@ function GrowthStop({
               {priority.admin_note && (
                 <div className="growth-admin-note">{priority.admin_note}</div>
               )}
+
+              {/* 2026-06-01: the partner's locked weekday commitment for this
+                  week (Theo 2 / Jerry 3). Shown on the mandatory cell since the
+                  mandatory personal-growth rule IS the day-pick. */}
+              {isMandatory && (() => {
+                const commit = data[p].dayCommitment;
+                const days = commit?.days ?? [];
+                const locked = !!commit?.confirmed_at;
+                return (
+                  <div className="meeting-day-commitment">
+                    <div className="meeting-day-commitment__eyebrow">Days committed this week</div>
+                    {locked && days.length > 0 ? (
+                      <div className="meeting-day-commitment__days">
+                        {days.map((d) => (
+                          <span key={d} className="meeting-day-commitment__day">{d}</span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="meeting-day-commitment__empty">Not locked in yet.</div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {isMandatory && followupFields.length > 0 && (
                 <div
